@@ -1,16 +1,19 @@
-Require Import Basics Types Truncations.Core.
-Require Import Cubical.DPath WildCat.
+From HoTT Require Import Basics Types Truncations.Core.
+From HoTT.WildCat Require Import Core Equiv EquivGpd.
+Require Import Cubical.DPath.
 Require Import Colimits.Coeq.
 Require Import Algebra.AbGroups.AbelianGroup.
 Require Import Modalities.ReflectiveSubuniverse.
 
-(** In this file we define what it means for a group homomorphism G -> H into an abelian group H to be an abelianization. We then construct an example of an abelianization. *)
+(** * Abelianization *)
+
+(** In this file we define what it means for a group homomorphism [G -> H] into an abelian group [H] to be an abelianization. We then construct an example of an abelianization. *)
 
 Local Open Scope mc_scope.
 Local Open Scope mc_mult_scope.
 Local Open Scope wc_iso_scope.
 
-(** Definition of Abelianization.
+(** ** Definition of abelianization.
 
   A "unit" homomorphism [eta : G -> G_ab], with [G_ab] abelian, is considered an abelianization if and only if for all homomorphisms [G -> A], where [A] is abelian, there exists a unique [g : G_ab -> A] such that [h == g o eta X].   We express this in funext-free form by saying that precomposition with [eta] in the wild 1-category [Group] induces an equivalence of hom 0-groupoids, in the sense of WildCat/EquivGpd.
 
@@ -19,23 +22,22 @@ Definition group_precomp {a b} := @cat_precomp Group _ _ a b.
 
 Class IsAbelianization {G : Group} (G_ab : AbGroup)
       (eta : GroupHomomorphism G G_ab)
-  := issurjinj_isabel : forall (A : AbGroup),
+  := issurjinj_isabel :: forall (A : AbGroup),
       IsSurjInj (group_precomp A eta).
-Global Existing Instance issurjinj_isabel.
 
 Definition isequiv_group_precomp_isabelianization `{Funext}
   {G : Group} {G_ab : AbGroup} (eta : GroupHomomorphism G G_ab)
   `{!IsAbelianization G_ab eta} (A : AbGroup)
   : IsEquiv (group_precomp A eta).
 Proof.
-  snrapply isequiv_adjointify.
+  snapply isequiv_adjointify.
   - intros g.
-    rapply (surjinj_inv (group_precomp A eta) g).
+    exact (surjinj_inv (group_precomp A eta) g).
   - intros f.
-    snrapply equiv_path_grouphomomorphism.
+    snapply equiv_path_grouphomomorphism.
     exact (eisretr0gpd_inv (group_precomp A eta) f).
   - intros f.
-    snrapply equiv_path_grouphomomorphism.
+    snapply equiv_path_grouphomomorphism.
     exact (eissect0gpd_inv (group_precomp A eta) f).
 Defined.
 
@@ -45,69 +47,60 @@ Definition equiv_group_precomp_isabelianization `{Funext}
   : (G_ab $-> A) <~> (G $-> A)
   := Build_Equiv _ _ _ (isequiv_group_precomp_isabelianization eta A).
 
-(** Here we define abelianization as a HIT. Specifically as a set-coequalizer of the following two maps: (a, b, c) |-> a (b c) and (a, b, c) |-> a (c b).
+(** Here we define abelianization as a HIT. Specifically as a set-coequalizer of the following two maps [fun '(a, b, c) => a * (b * c)] and [fun '(a, b, c) => a * (c * b)].
 
 From this we can show that Abel G is an abelian group.
 
 In fact this models the following HIT:
 
+<<
 HIT Abel (G : Group) := 
  | abel_in : G -> Abel G
  | abel_in_comm : forall x y z, abel_in (x * (y * z)) = abel_in (x * (z * y)).
+>>
 
 We also derive [abel_in] and [abel_in_comm] from our coequalizer definition, and even prove the induction and computation rules for this HIT.
 
-This HIT was suggested by Dan Christensen.
-*)
+This HIT was suggested by Dan Christensen. *)
 
 Section Abel.
 
   (** Let G be a group. *)
   Context (G : Group).
 
-  (** We locally define a map uncurry2 that lets us uncurry A * B * C -> D twice. *)
+  (** We locally define a map uncurry2 that lets us uncurry [A * B * C -> D] twice. *)
   Local Definition uncurry2 {A B C D : Type}
-    : (A -> B -> C -> D) -> A * B * C -> D.
-  Proof.
-    intros f [[a b] c].
-    by apply f.
-  Defined.
+    : (A -> B -> C -> D) -> A * B * C -> D
+    := fun f '(a, b, c) => f a b c.
 
-  (** The type Abel is defined to be the set coequalizer of the following maps G^3 -> G. *)
+  (** The type [Abel] is defined to be the set coequalizer of the following maps [G^3 -> G]. *)
   Definition Abel
     := Tr 0 (Coeq
       (uncurry2 (fun a b c : G => a * (b * c)))
       (uncurry2 (fun a b c : G => a * (c * b)))).
 
-  (** We have a natural map from G to Abel G. *)
-  Definition abel_in : G -> Abel.
-  Proof.
-    intro g.
-    apply tr, coeq, g.
-  Defined.
+  (** We have a natural map from [G] to [Abel G]. *)
+  Definition abel_in : G -> Abel := tr o coeq.
 
-  (** This map satisfies the condition ab_comm. *)
+  (** This map satisfies the condition [ab_comm]. It's a form of commutativity in a right factor. *)
   Definition abel_in_comm a b c
-    : abel_in (a * (b * c)) = abel_in (a * (c * b)).
-  Proof.
-    apply (ap tr).
-    exact (cglue (a, b, c)).
-  Defined.
+    : abel_in (a * (b * c)) = abel_in (a * (c * b))
+    := ap tr (cglue (a, b, c)).
 
   (** It is clear that Abel is a set. *)
-  Global Instance istrunc_abel : IsHSet Abel := _.
+  Definition istrunc_abel : IsHSet Abel := _.
 
   (** We can derive the induction principle from the ones for truncation and the coequalizer. *)
   Definition Abel_ind (P : Abel -> Type) `{forall x, IsHSet (P x)} 
     (a : forall x, P (abel_in x))
-    (c : forall x y z, DPath P (abel_in_comm x y z) (a (x * (y * z))) (a (x * (z * y))))
+    (c : forall x y z, abel_in_comm x y z # a (x * (y * z)) = a (x * (z * y)))
     : forall (x : Abel), P x.
   Proof.
-    srapply Trunc_ind.
-    srapply Coeq_ind.
-    1: apply a.
+    rapply Trunc_ind.
+    snapply Coeq_ind.
+    1: exact a.
     intros [[x y] z].
-    refine (transport_compose _ _ _ _ @ _).
+    nrefine (transport_compose _ _ _ _ @ _).
     apply c.
   Defined.
 
@@ -122,17 +115,16 @@ Section Abel.
   (** The computation rule on paths. *)
   Definition Abel_ind_beta_abel_in_comm (P : Abel -> Type) `{forall x, IsHSet (P x)}
     (a : forall x, P (abel_in x))
-    (c : forall x y z, DPath P (abel_in_comm x y z) (a (x * (y * z))) (a (x * (z * y))))
+    (c : forall x y z, abel_in_comm x y z # a (x * (y * z)) = a (x * (z * y)))
     (x y z : G)
     : apD (Abel_ind P a c) (abel_in_comm x y z) = c x y z.
   Proof.
-    refine (apD_compose' tr _ _ @ ap _ _ @ concat_V_pp _ _).
+    nrefine (apD_compose' tr _ _ @ ap _ _ @ concat_V_pp _ _).
     rapply Coeq_ind_beta_cglue.
   Defined.
 
-  (** We also have a recursion princple. *)
-  Definition Abel_rec (P : Type) `{IsHSet P}
-    (a : G -> P)
+  (** We also have a recursion principle. *)
+  Definition Abel_rec (P : Type) `{IsHSet P} (a : G -> P)
     (c : forall x y z, a (x * (y * z)) = a (x * (z * y)))
     : Abel -> P.
   Proof.
@@ -153,25 +145,25 @@ Section Abel.
 End Abel.
 
 (** The [IsHProp] argument of [Abel_ind_hprop] can usually be found by typeclass resolution, but [srapply] is slow, so we use this tactic instead. *)
-Local Ltac Abel_ind_hprop x := snrapply Abel_ind_hprop; [exact _ | intro x].
+Local Ltac Abel_ind_hprop x := snapply Abel_ind_hprop; [exact _ | intro x].
 
 (** We make sure that [G] is implicit in the arguments of [abel_in]
  and [abel_in_comm]. *)
-Arguments abel_in {_}.
-Arguments abel_in_comm {_}.
+Arguments abel_in {_} g%_mc_mult_scope.
+Arguments abel_in_comm {_} (a b c)%_mc_mult_scope.
 
-(** Now we can show that Abel G is in fact an abelian group. *)
+(** Now we can show that [Abel G] is in fact an abelian group. We will denote the operation in [Abel G] by the multiplicative [*] notation even though it is later shown to be commutative. *)
 
 Section AbelGroup.
 
   Context (G : Group).
 
-  (** Firstly we derive the operation on Abel G. This is defined as follows:
+  (** Firstly we define the operation on [Abel G]. This is defined as follows:
 <<
-        abel_in x + abel_in y := abel_in (x * y)
+        abel_in x * abel_in y := abel_in (x * y)
 >>
-      But we need to also check that it preserves ab_comm in the appropriate way. *)
-  Global Instance abel_sgop : SgOp (Abel G).
+      But we need to also check that it preserves [ab_comm] in the appropriate way. *)
+  #[export] Instance sgop_abel : SgOp (Abel G).
   Proof.
     intro a.
     srapply Abel_rec.
@@ -181,108 +173,109 @@ Section AbelGroup.
       { intro a.
         exact (abel_in (a * b)). }
       intros a c d; hnf.
-      (* The pattern seems to be to alternate associativity and ab_comm. *)
+      (* The pattern seems to be to alternate [associativity] and [ab_comm]. *)
       refine (ap _ (associativity _ _ _)^ @ _).
       refine (abel_in_comm _ _ _ @ _).
       refine (ap _ (associativity _ _ _) @ _).
       refine (abel_in_comm _ _ _ @ _).
       refine (ap _ (associativity _ _ _)^ @ _).
       refine (abel_in_comm _ _ _ @ _).
-      refine (ap _ (associativity _ _ _)). }
+      exact (ap _ (associativity _ _ _)). }
     intros b c d.
     revert a.
     Abel_ind_hprop a; simpl.
     refine (ap _ (associativity _ _ _) @ _).
     refine (abel_in_comm _ _ _ @ _).
-    refine (ap _ (associativity _ _ _)^).
+    exact (ap _ (associativity _ _ _)^).
   Defined.
 
-  (** We can now easily show that this operation is associative by associativity in G and the fact that being associative is a proposition. *)
-  Global Instance abel_sgop_associative : Associative abel_sgop.
+  (** We can now easily show that this operation is associative by [associativity] in [G] and the fact that being associative is a proposition. *)
+  #[export] Instance associative_abel_sgop : Associative (.*.).
   Proof.
     intros x y.
     Abel_ind_hprop z; revert y.
     Abel_ind_hprop y; revert x.
     Abel_ind_hprop x; simpl.
-    apply ap, associativity.
+    napply (ap abel_in); apply associativity.
   Defined.
 
-  (** From this we know that Abel G is a semigroup. *)
-  Global Instance abel_issemigroup : IsSemiGroup (Abel G) := {}.
+  (** From this we know that [Abel G] is a semigroup. *)
+  #[export] Instance issemigroup_abel : IsSemiGroup (Abel G) := {}.
 
-  (** We define the unit as ab of the unit of G *)
-  Global Instance abel_mon_unit : MonUnit (Abel G) := abel_in mon_unit.
+  (** We define the group unit as [abel_in] of the unit of [G] *)
+  #[export] Instance monunit_abel_zero : MonUnit (Abel G) := abel_in mon_unit.
 
   (** By using Abel_ind_hprop we can prove the left and right identity laws. *)
-  Global Instance abel_leftidentity : LeftIdentity abel_sgop abel_mon_unit.
+  #[export] Instance leftidentity_abel : LeftIdentity (.*.) 1.
   Proof.
-    Abel_ind_hprop x.
-    simpl; apply ap, left_identity.
+    Abel_ind_hprop x; cbn beta.
+    napply (ap abel_in); apply left_identity.
   Defined.
 
-  Global Instance abel_rightidentity : RightIdentity abel_sgop abel_mon_unit.
+  #[export] Instance rightidentity_abel : RightIdentity (.*.) 1.
   Proof.
-    Abel_ind_hprop x.
-    simpl; apply ap, right_identity.
+    Abel_ind_hprop x; cbn beta.
+    napply (ap abel_in); apply right_identity.
   Defined.
 
-  (** Hence Abel G is a monoid *)
-  Global Instance ismonoid_abel : IsMonoid (Abel G) := {}.
+  (** Hence [Abel G] is a monoid *)
+  #[export] Instance ismonoid_abel : IsMonoid (Abel G) := {}.
 
   (** We can also prove that the operation is commutative! This will come in handy later. *)
-  Global Instance abel_commutative : Commutative abel_sgop.
+  #[export] Instance commutative_abel : Commutative (.*.).
   Proof.
     intro x.
     Abel_ind_hprop y.
     revert x.
-    Abel_ind_hprop x.
+    Abel_ind_hprop x; cbn beta.
     refine ((ap abel_in (left_identity _))^ @ _).
     refine (_ @ (ap abel_in (left_identity _))).
     apply abel_in_comm.
   Defined.
 
-  (** Now we can define the negation. This is just
+  (** Now we can define the inverse operation. This is just
 <<
-        - (abel_in g) := abel_in (- g)
+        (abel_in g)^ := abel_in g^
 >>
-      However when checking that it respects ab_comm we have to show the following:
+      However when checking that it respects [ab_comm] we have to show the following:
 <<
-        abel_in (- z * - y * - x) = abel_in (- y * - z * - x)
+        abel_in (z^ * y^ * x^) = abel_in (y^ * z^ * x^)
 >>
-      there is no obvious way to do this, but we note that [abel_in (x * y)] is exactly the definition of [abel_in x + abel_in y]! Hence by commutativity we can show this. *)
-  Global Instance abel_negate : Negate (Abel G).
+      there is no obvious way to do this, but we note that [abel_in (x * y)] is exactly the definition of [abel_in x * abel_in y]! Hence by [commutativity] we can show this. *)
+  #[export] Instance inverse_abel : Inverse (Abel G).
   Proof.
-    srapply Abel_rec.
-    { intro g.
-      exact (abel_in (-g)). }
-    intros x y z; cbn.
-    rewrite ?negate_sg_op.
-    change (abel_in (- z) * abel_in (- y) * abel_in (- x)
-      = abel_in (- y) * abel_in (- z) * abel_in (- x)).
-    by rewrite (commutativity (abel_in (-z)) (abel_in (-y))).
+    srapply (Abel_rec _ _ (abel_in o inv)).
+    intros x y z; cbn beta.
+    lhs napply ap.
+    2: rhs napply ap.
+    1,3: lhs rapply inverse_sg_op; napply (ap (.* _)); rapply inverse_sg_op.
+    change (abel_in z^ * abel_in y^ * abel_in x^
+      = abel_in y^ * abel_in z^ * abel_in x^).
+    apply (ap (.* _)).
+    exact (commutativity (abel_in z^) (abel_in y^)).
   Defined.
 
-  (** Again by Abel_ind_hprop and the corresponding laws for G we can prove the left and right inverse laws. *)
-  Global Instance abel_leftinverse : LeftInverse abel_sgop abel_negate abel_mon_unit.
+  (** Again by [Abel_ind_hprop] and the corresponding laws for [G] we can prove the left and right inverse laws. *)
+  #[export] Instance leftinverse_abel : LeftInverse (.*.) (^) 1.
   Proof.
     Abel_ind_hprop x; simpl.
-    apply ap; apply left_inverse.
+    napply (ap abel_in); apply left_inverse.
   Defined.
 
-  Instance abel_rightinverse : RightInverse abel_sgop abel_negate abel_mon_unit.
+  Instance rightinverse_abel : RightInverse (.*.) (^) 1.
   Proof.
     Abel_ind_hprop x; simpl.
-    apply ap; apply right_inverse.
+    napply (ap abel_in); apply right_inverse.
   Defined.
 
-  (** Thus Abel G is a group *)
-  Global Instance isgroup_abel : IsGroup (Abel G) := {}.
+  (** Thus [Abel G] is a group *)
+  #[export] Instance isgroup_abel : IsGroup (Abel G) := {}.
 
-  (** And since the operation is commutative, an abelian group. *)
-  Global Instance isabgroup_abel : IsAbGroup (Abel G) := {}.
+  (** And furthermore, since the operation is commutative, it is an abelian group. *)
+  #[export] Instance isabgroup_abel : IsAbGroup (Abel G) := {}.
 
   (** By definition, the map [abel_in] is also a group homomorphism. *)
-  Global Instance issemigrouppreserving_abel_in : IsSemiGroupPreserving abel_in.
+  #[export] Instance issemigrouppreserving_abel_in : IsSemiGroupPreserving abel_in.
   Proof.
     by unfold IsSemiGroupPreserving.
   Defined.
@@ -290,11 +283,10 @@ Section AbelGroup.
 End AbelGroup.
 
 (** We can easily prove that [abel_in] is a surjection. *)
-Global Instance issurj_abel_in {G : Group} : IsSurjection (@abel_in G).
+Instance issurj_abel_in {G : Group} : IsSurjection (@abel_in G).
 Proof.
   apply BuildIsSurjection.
-  Abel_ind_hprop x.
-  cbn.
+  Abel_ind_hprop x; cbn beta.
   apply tr.
   exists x.
   reflexivity.
@@ -302,29 +294,29 @@ Defined.
 
 (** Now we finally check that our definition of abelianization satisfies the universal property of being an abelianization. *)
 
-(** We define abel to be the abelianization of a group. This is a map from Group to AbGroup. *)
+(** We define [abel] to be the abelianization of a group. This is a map from [Group] to [AbGroup]. *)
 Definition abel : Group -> AbGroup.
 Proof.
   intro G.
-  snrapply Build_AbGroup.
+  snapply Build_AbGroup.
   - srapply (Build_Group (Abel G)).
   - exact _.
 Defined.
 
+(** We don't wish for [abel G] to be unfolded when using [simpl] or [cbn]. *)
 Arguments abel G : simpl never.
 
 (** The unit of this map is the map [abel_in] which typeclasses can pick up to be a homomorphism. We write it out explicitly here. *)
-Definition abel_unit {G : Group}
-  : G $-> (abel G)
+Definition abel_unit {G : Group} : G $-> abel G
   := @Build_GroupHomomorphism G (abel G) abel_in _.
 
 Definition grp_homo_abel_rec {G : Group} {A : AbGroup} (f : G $-> A)
   : abel G $-> A.
 Proof.
-  snrapply Build_GroupHomomorphism.
+  snapply Build_GroupHomomorphism.
   { srapply (Abel_rec _ _ f).
     intros x y z.
-    nrapply grp_homo_op_agree; trivial.
+    napply grp_homo_op_agree; trivial.
     refine (grp_homo_op _ _ _ @ _ @ (grp_homo_op _ _ _)^).
     apply commutativity. }
   intros y.
@@ -338,11 +330,11 @@ Definition abel_ind_homotopy {G H : Group} {f g : Hom (A:=Group) (abel G) H}
   : f $== g.
 Proof.
   rapply Abel_ind_hprop.
-  rapply p.
+  exact p.
 Defined.
 
 (** Finally we can prove that our construction abel is an abelianization. *)
-Global Instance isabelianization_abel {G : Group}
+Instance isabelianization_abel {G : Group}
   : IsAbelianization (abel G) abel_unit.
 Proof.
   intros A. constructor.
@@ -384,11 +376,12 @@ Theorem homotopic_isabelianization {G : Group} (A B : AbGroup)
   : eta2 == grp_homo_compose (groupiso_isabelianization A B eta1 eta2) eta1.
 Proof.
   intros x.
-  exact (((esssurj (group_precomp B eta1) eta2).2 x)^).
+  symmetry.
+  exact ((esssurj (group_precomp B eta1) eta2).2 x).
 Defined.
 
 (** Hence any abelianization is surjective. *)
-Global Instance issurj_isabelianization {G : Group}
+Instance issurj_isabelianization {G : Group}
   (A : AbGroup) (eta : GroupHomomorphism G A)
   : IsAbelianization A eta -> IsSurjection eta.
 Proof.
@@ -398,36 +391,36 @@ Proof.
     (conn_map_homotopic _ _ _ p _)).
 Defined.
 
-Global Instance isabelianization_identity (A : AbGroup) : IsAbelianization A grp_homo_id.
+Instance isabelianization_identity (A : AbGroup) : IsAbelianization A grp_homo_id.
 Proof.
   intros B. constructor.
   - intros h; exact (h ; fun _ => idpath).
   - intros g h p; exact p.
 Defined.
 
-Global Instance isequiv_abgroup_abelianization
+Instance isequiv_abgroup_abelianization
   (A B : AbGroup) (eta : GroupHomomorphism A B) {isab : IsAbelianization B eta}
   : IsEquiv eta.
 Proof.
   srapply isequiv_homotopic.
-  - srapply (groupiso_isabelianization A B grp_homo_id eta).
+  - exact (groupiso_isabelianization A B grp_homo_id eta).
   - exact _.
   - symmetry; apply homotopic_isabelianization.
 Defined.
 
 (** ** Functoriality *)
 
-Global Instance is0functor_abel : Is0Functor abel.
+Instance is0functor_abel : Is0Functor abel.
 Proof.
-  snrapply Build_Is0Functor.
+  snapply Build_Is0Functor.
   intros A B f.
-  snrapply grp_homo_abel_rec.
+  snapply grp_homo_abel_rec.
   exact (abel_unit $o f).
 Defined.
 
-Global Instance is1functor_abel : Is1Functor abel.
+Instance is1functor_abel : Is1Functor abel.
 Proof.
-  snrapply Build_Is1Functor.
+  snapply Build_Is1Functor.
   - intros A B f g p.
     unfold abel.
     rapply Abel_ind_hprop.

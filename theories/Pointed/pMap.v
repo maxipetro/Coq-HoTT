@@ -1,4 +1,4 @@
-Require Import Basics Types.
+From HoTT Require Import Basics Types.
 Require Import Pointed.Core.
 
 Local Open Scope pointed_scope.
@@ -8,12 +8,12 @@ Local Open Scope pointed_scope.
 (** Not infrequently we have a map between two unpointed types and want to consider it as a pointed map that trivially respects some given point in the domain. *)
 Definition pmap_from_point {A B : Type} (f : A -> B) (a : A)
   : [A, a] ->* [B, f a]
-  := Build_pMap [A, a] [B, f a] f 1%path.
+  := Build_pMap f 1%path.
 
 (** A variant of [pmap_from_point] where the domain is pointed, but the codomain is not. *)
 Definition pmap_from_pointed {A : pType} {B : Type} (f : A -> B)
   : A ->* [B, f (point A)]
-  := Build_pMap A [B, f (point A)] f 1%path.
+  := Build_pMap f 1%path.
 
 (** The same, for a dependent pointed map. *)
 Definition pforall_from_pointed {A : pType} {B : A -> Type} (f : forall x, B x)
@@ -78,13 +78,13 @@ Proof.
   apply H.
 Defined.
 
-(** A alternative constructor to build a pHomotopy between maps into pForall *)
+(** A alternative constructor to build a [pHomotopy] between maps into [pForall] *)
 Definition Build_pHomotopy_pForall `{Funext} {A B : pType} {C : B -> pType}
   {f g : A ->* ppforall b, C b} (p : forall a, f a ==* g a)
   (q : p (point A) ==* phomotopy_path (point_eq f) @* (phomotopy_path (point_eq g))^*)
   : f ==* g.
 Proof.
-  snrapply Build_pHomotopy.
+  snapply Build_pHomotopy.
   1: intro a; exact (path_pforall (p a)).
   hnf; rapply moveR_equiv_M'.
   refine (_^ @ ap10 _ _).
@@ -125,7 +125,7 @@ Definition functor2_pforall_right {A : pType} {B C : pFam A}
   : functor_pforall_right g g₀ f ==* functor_pforall_right g' g₀' f'.
 Proof.
   srapply Build_pHomotopy.
-  1: { intro a. refine (p a (f a) @ ap (g' a) (q a)). }
+  1: { intro a. exact (p a (f a) @ ap (g' a) (q a)). }
   pointed_reduce_rewrite. symmetry. apply concat_Ap.
 Defined.
 
@@ -204,7 +204,7 @@ Definition pmap_compose_ppforall_pid_left {A : pType} {P : A -> pType}
 Proof.
   srapply Build_pHomotopy.
   + reflexivity.
-  + symmetry. refine (whiskerR (concat_p1 _ @ ap_idmap _) _ @ concat_pV _).
+  + symmetry. exact (whiskerR (concat_p1 _ @ ap_idmap _) _ @ concat_pV _).
 Defined.
 
 Definition pmap_compose_ppforall_path_pforall `{Funext} {A : pType} {P Q : A -> pType}

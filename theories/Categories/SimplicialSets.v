@@ -1,5 +1,5 @@
 (** * The simplex category Δ, and the precategory of simplicial sets, [Δᵒᵖ → set] *)
-Require Import Basics Types Spaces.Nat.Core.
+From HoTT Require Import Basics Types Spaces.Nat.Core.
 Require Import Category.Core Functor.Core Functor.Paths.
 Require Import SetCategory.Core.
 Require Import ChainCategory FunctorCategory.Core.
@@ -14,7 +14,7 @@ Set Asymmetric Patterns.
 Local Open Scope functor_scope.
 Local Open Scope category_scope.
 
-(** We define the precategory Δ of simplexes, or finite non-empty linear
+(** We define the precategory Δ of simplices, or finite non-empty linear
     orders *)
 
 Module Export Core.

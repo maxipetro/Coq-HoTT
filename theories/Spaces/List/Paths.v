@@ -5,12 +5,12 @@ Require Import Spaces.List.Core.
 
 (** * Path spaces of lists *)
 
-(** This proof was adapted from a proof given in agda/cubical by Evan Cavallo. *)
+(** This proof was adapted from a proof given in Agda/cubical by Evan Cavallo. *)
 
 Section PathList.
   Context {A : Type}.
   
-  (** This type is equivalent to the path space of lists. We don't actually show that it is equivalent to the type of paths but rather that the path type is a retract of this type. This is sufficient to determine the h-level of the type of lists. *)
+  (** We'll show that this type is equivalent to the path space [l = l'] in [list A]. *)
   Fixpoint ListEq (l l' : list A) : Type :=
     match l, l' with
       | nil, nil => Unit
@@ -18,7 +18,7 @@ Section PathList.
       | _, _ => Empty
     end.
 
-  Global Instance reflexive_listeq : Reflexive ListEq. 
+  #[export] Instance reflexive_listeq : Reflexive ListEq. 
   Proof.
     intros l.
     induction l as [| a l IHl].
@@ -52,11 +52,11 @@ Section PathList.
     : decode (encode p) = p.
   Proof.
     destruct p.
-    apply decode_refl.
+    exact decode_refl.
   Defined.
 
   (** By case analysis on both lists, it's easy to show that [ListEq] is [n.+1]-truncated if [A] is [n.+2]-truncated. *)
-  Global Instance istrunc_listeq n {l1 l2} {H : IsTrunc n.+2 A}
+  #[export] Instance istrunc_listeq n {l1 l2} {H : IsTrunc n.+2 A}
     : IsTrunc n.+1 (ListEq l1 l2).
   Proof.
     induction l1 in l2 |- *.
@@ -64,15 +64,15 @@ Section PathList.
       1,2: exact _.
     - destruct l2.
       1: exact _.
-      rapply istrunc_prod.
+      exact istrunc_prod.
   Defined.
 
   (** The path space of lists is a retract of [ListEq], therefore it is [n.+1]-truncated if [ListEq] is [n.+1]-truncated. By the previous result, this holds when [A] is [n.+2]-truncated. *) 
-  Global Instance istrunc_list n {H : IsTrunc n.+2 A} : IsTrunc n.+2 (list A).
+  #[export] Instance istrunc_list n {H : IsTrunc n.+2 A} : IsTrunc n.+2 (list A).
   Proof.
     apply istrunc_S.
     intros x y.
-    rapply (inO_retract_inO n.+1 _ _ encode decode decode_encode).
+    exact (inO_retract_inO n.+1 _ _ encode decode decode_encode).
   Defined.
 
   (** With a little more work, we can show that [ListEq] is also a retract of the path space. *)
@@ -89,13 +89,13 @@ Section PathList.
     - simpl.
       destruct (decode p).
       by destruct r.
-    - rhs_V nrapply IHl1.
+    - rhs_V napply IHl1.
       simpl.
       destruct (decode p).
       by destruct r.
   Defined.
 
-  (** Giving us a way of characterising paths in lists. *)
+  (** Giving us a way of characterizing paths in lists. *)
   Definition equiv_path_list {l1 l2}
     : ListEq l1 l2 <~> l1 = l2
     := equiv_adjointify decode encode decode_encode encode_decode.

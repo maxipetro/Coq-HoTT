@@ -1,10 +1,10 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Export Basics.Nat.
 Require Export HoTT.Universes.DProp.
 
 (** * Characterization of the path types of [nat] *)
 
-(** We characterize the path types of [nat].  We put this in its own file because it uses DProp, which has a lot of dependencies. *)
+(** We characterize the path types of [nat].  We put this in its own file because it uses [DProp], which has a lot of dependencies. *)
 
 Local Set Universe Minimization ToSet.
 
@@ -33,7 +33,7 @@ Fixpoint path_nat {n m} : (n =n m) -> (n = m) :=
   | _, _ => fun H => match H with end
   end.
 
-Global Instance isequiv_path_nat {n m} : IsEquiv (@path_nat n m).
+Instance isequiv_path_nat {n m} : IsEquiv (@path_nat n m).
 Proof.
   refine (isequiv_adjointify
             (@path_nat n m)

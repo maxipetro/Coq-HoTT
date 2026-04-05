@@ -1,4 +1,4 @@
-(** * Extensions and extendible maps *)
+(** * Extensions and extensible maps *)
 
 Require Import HoTT.Basics HoTT.Types.
 Require Import Equiv.PathSplit Homotopy.IdentitySystems.
@@ -76,7 +76,7 @@ Section Extensions.
     -> ext = ext'
   := equiv_path_extension ext ext'.
 
-  Global Instance isequiv_path_extension `{Funext} {A B : Type} {f : A -> B}
+  #[export] Instance isequiv_path_extension `{Funext} {A B : Type} {f : A -> B}
          {P : B -> Type} {d : forall x:A, P (f x)}
          (ext ext' : ExtensionAlong f P d)
     : IsEquiv (path_extension ext ext') | 0
@@ -113,7 +113,7 @@ Section Extensions.
     - intros ext; split.
       + intros g; exact (lift_extensionalong@{a1 a2 amin b1 b2 bmin p1 p2 pmin m1 m2} _ _ _ (fst ext g)).
       + intros h k. 
-        (** Unles we give the universe explicitly here, [kmin] gets collapsed to [k1]. *)
+        (** Unless we give the universe explicitly here, [kmin] gets collapsed to [k1]. *)
         pose (P' := (fun b => h b = k b) : B -> Type@{pmin}).
         exact (IH P' (snd ext h k)).
   Defined.
@@ -124,7 +124,7 @@ Section Extensions.
     <~> PathSplit n (fun (g : forall b, C b) => g oD f).
   Proof.
     generalize dependent C; simple_induction n n IHn; intros C.
-    1:apply equiv_idmap.
+    1:exact equiv_idmap.
     refine (_ *E _); simpl.
     - refine (equiv_functor_forall' 1 _); intros g; simpl.
       refine (equiv_functor_sigma' 1 _); intros rec.
@@ -144,7 +144,7 @@ Section Extensions.
     -> IsEquiv (fun g => g oD f)
     := isequiv_pathsplit n o (equiv_extendable_pathsplit n.+2 C f).
 
-  Global Instance ishprop_extendable `{Funext} (n : nat)
+  #[export] Instance ishprop_extendable `{Funext} (n : nat)
          {A B : Type} (C : B -> Type) (f : A -> B)
   : IsHProp (ExtendableAlong n.+2 f C).
   Proof.
@@ -183,7 +183,7 @@ Section Extensions.
   Proof.
     generalize dependent C; revert D.
     simple_induction n n IH; intros C D g; simpl.
-    1:apply idmap.
+    1:exact idmap.
     refine (functor_prod _ _).
     - refine (functor_forall (functor_forall idmap
                                              (fun a => (g (f a))^-1)) _);
@@ -237,7 +237,7 @@ Section Extensions.
       refine (extendable_postcompose' n (fun b => h' (g b) = k' (g b)) (fun b => h b = k b) f _ _).
       + intros b.
         exact (equiv_concat_lr ((fst extg h).2 b)^ ((fst extg k).2 b)).
-      + apply (IHn (fun c => h' c = k' c) (snd extg h' k') (snd extgf h' k')).
+      + exact (IHn (fun c => h' c = k' c) (snd extg h' k') (snd extgf h' k')).
   Defined.
 
   Definition cancelR_extendable (n : nat)
@@ -251,8 +251,8 @@ Section Extensions.
       apply ((fst extgf (h oD f)).2).
     - intros h k.
       apply IHn.
-      + apply (snd extf (h oD g) (k oD g)).
-      + apply (snd extgf h k).
+      + exact (snd extf (h oD g) (k oD g)).
+      + exact (snd extgf h k).
   Defined.
 
   (** And transfer across homotopies *)
@@ -346,11 +346,11 @@ Section Extensions.
     apply equiv_extendable_pathsplit.
   Defined.
 
-  Global Instance ishprop_ooextendable `{Funext}
+  #[export] Instance ishprop_ooextendable `{Funext}
          {A B : Type} (C : B -> Type) (f : A -> B)
   : IsHProp (ooExtendableAlong f C).
   Proof.
-    refine (istrunc_equiv_istrunc _ (equiv_ooextendable_pathsplit C f)^-1).
+    exact (istrunc_equiv_istrunc _ (equiv_ooextendable_pathsplit C f)^-1).
   Defined.
 
   Definition equiv_ooextendable_isequiv `{Funext}
@@ -576,7 +576,7 @@ Definition ooextendable_functor_sigma_id
   : ooExtendableAlong (functor_sigma idmap f) C
   := fun n => extendable_functor_sigma_id n f C (fun a => ef a n).
 
-(** Unfortunately, the technology of [ExtensionAlong] seems to be insufficient to state a general, funext-free version of [extension_functor_sigma] with a nonidentity map on the bases; the hypothesis on the fiberwise map would have to be the existence of an extension in a function-type "up to pointwise equality".  With wild oo-groupoids we could probably manage it.  For now, we say something a bit hacky. *)
+(** Unfortunately, the technology of [ExtensionAlong] seems to be insufficient to state a general, funext-free version of [extension_functor_sigma] with a non-identity map on the bases; the hypothesis on the fiberwise map would have to be the existence of an extension in a function-type "up to pointwise equality".  With wild oo-groupoids we could probably manage it.  For now, we say something a bit hacky. *)
 
 Definition HomotopyExtensionAlong {A B} {Q : B -> Type}
            (f : A -> B) (C : sig Q -> Type)
@@ -705,7 +705,7 @@ Definition extension_functor_coeq {B A f g B' A' f' g'}
            (s : forall x, C (functor_coeq h k p q x))
   : ExtensionAlong (functor_coeq h k p q) C s.
 Proof.
-  (** We start by change the problem to involve [CylCoeq] with cofibrations. *)
+  (** We start by changing the problem to involve [CylCoeq] with cofibrations. *)
   set (C' := C o pr_cylcoeq p q).
   set (s' x := pr_cyl_cylcoeq p q x # s x).
   assert (e : ExtensionAlong (cyl_cylcoeq p q) C' s').
@@ -750,7 +750,7 @@ Proof.
     rapply ds_G1.
     refine (dp_apD_compose' _ _ (ap_cyl_cylcoeq_cglue p q b) _ @ _).
     apply moveR_equiv_V.
-    nrapply Coeq_ind_beta_cglue.
+    napply Coeq_ind_beta_cglue.
 Defined.
 
 (** Now we can easily iterate into higher extendability. *)

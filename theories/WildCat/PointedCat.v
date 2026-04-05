@@ -5,14 +5,11 @@ Require Import WildCat.Equiv.
 (** A wild category is pointed if the initial and terminal object are the same. *)
 Class IsPointedCat (A : Type) `{Is1Cat A} := {
   zero_object : A;
-  isinitial_zero_object : IsInitial zero_object;
-  isterminal_zero_object : IsTerminal zero_object;
+  isinitial_zero_object :: IsInitial zero_object;
+  isterminal_zero_object :: IsTerminal zero_object;
 }.
 
-Global Existing Instance isinitial_zero_object.
-Global Existing Instance isterminal_zero_object.
-
-(** The zero morphism between objects [a] and [b] of a pointed category [A] is the unique morphism that factors throguh the zero object. *)
+(** The zero morphism between objects [a] and [b] of a pointed category [A] is the unique morphism that factors through the zero object. *)
 Definition zero_morphism {A : Type} `{IsPointedCat A} {a b : A} : a $-> b
   := (mor_initial _ b) $o (mor_terminal a _).
 
@@ -27,7 +24,7 @@ Section ZeroLaws.
   Definition cat_zero_target (h : a $-> zero_object) : h $== zero_morphism
     := (mor_terminal_unique _ _ _)^$ $@ (mor_terminal_unique _ _ _).
 
-  (** We show the last two arguments so that end pointes can easily be specified. *)
+  (** We show the last two arguments so that end points can easily be specified. *)
   Arguments zero_morphism {_ _ _ _ _ _} _ _.
 
   Definition cat_zero_l : zero_morphism b c $o f $== zero_morphism a c.
@@ -60,10 +57,9 @@ Local Arguments zero_morphism {_ _ _ _ _ _} _ _.
 (** A functor is pointed if it preserves the zero object. *)
 Class IsPointedFunctor {A B : Type} (F : A -> B) `{Is1Functor A B F} :=
 {
-  preservesinitial_pfunctor : PreservesInitial F ;
-  preservesterminal_pfunctor : PreservesTerminal F ;
+  preservesinitial_pfunctor :: PreservesInitial F ;
+  preservesterminal_pfunctor :: PreservesTerminal F ;
 }.
-Global Existing Instances preservesinitial_pfunctor preservesterminal_pfunctor.
 
 (** Here is an alternative constructor using preservation of the zero object. This requires more structure on the categories however. *)
 Definition Build_IsPointedFunctor' {A B : Type} (F : A -> B)
@@ -86,7 +82,7 @@ Proof.
     rapply cate_isterminal.
 Defined.
 
-(** Pointed functors preserve the zero object upto isomorphism. *)
+(** Pointed functors preserve the zero object up to isomorphism. *)
 Lemma pfunctor_zero {A B : Type} (F : A -> B)
   `{IsPointedCat A, IsPointedCat B, !HasEquivs B,
     !Is0Functor F, !Is1Functor F, !IsPointedFunctor F}
@@ -95,7 +91,7 @@ Proof.
   rapply cate_isinitial.
 Defined.
 
-(** Pointed functors preserve the zero morphism upto homotopy *)
+(** Pointed functors preserve the zero morphism up to homotopy *)
 Lemma fmap_zero_morphism {A B : Type} (F : A -> B)
   `{IsPointedCat A, IsPointedCat B, !HasEquivs B,
     !Is0Functor F, !Is1Functor F, !IsPointedFunctor F} {a b : A}
@@ -103,17 +99,17 @@ Lemma fmap_zero_morphism {A B : Type} (F : A -> B)
 Proof.
   refine (fmap_comp F _ _ $@ _).
   refine (_ $@R _ $@ _).
-  1: nrapply fmap_initial; [exact _].
+  1: napply fmap_initial; [exact _].
   refine (_ $@L _ $@ _).
-  1: nrapply fmap_terminal; [exact _].
+  1: napply fmap_terminal; [exact _].
   rapply cat_zero_m.
   rapply pfunctor_zero.
 Defined.
 
 (** Opposite category of a pointed category is also pointed. *)
-Global Instance ispointedcat_op {A : Type} `{IsPointedCat A} : IsPointedCat A^op.
+Instance ispointedcat_op {A : Type} `{IsPointedCat A} : IsPointedCat A^op.
 Proof.
-  snrapply Build_IsPointedCat.
+  snapply Build_IsPointedCat.
   1: unfold op; exact zero_object.
   1,2: exact _.
 Defined.

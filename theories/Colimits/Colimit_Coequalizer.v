@@ -1,4 +1,4 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Types.
 Require Import Diagrams.ParallelPair.
 Require Import Diagrams.Cocone.
@@ -9,7 +9,7 @@ Generalizable All Variables.
 
 (** * Coequalizer as a colimit *)
 
-(** In this file, we define [Coequalizer] the coequalizer of two maps as the colimit of a particuliar diagram, and then show that it is equivalent to [Coeq] the primitive coequalizer defined as an HIT. *)
+(** In this file, we define [Coequalizer] the coequalizer of two maps as the colimit of a particular diagram, and then show that it is equivalent to [Coeq] the primitive coequalizer defined as an HIT. *)
 
 
 (** ** [Coequalizer] *)
@@ -69,8 +69,8 @@ Section Coequalizer.
         | [|- ?G == _ ] => simple refine (Coeq_ind (fun w => G w = F w) _ _)
       end.
       + reflexivity.
-      + intros b; simpl.
-        nrapply (transport_paths_FlFr' (g:=F)).
+      + intros b.
+        transport_paths FlFr; simpl.
         apply equiv_p1_1q.
         refine (Coeq_rec_beta_cglue _ _ _ _ @ _).
         apply concat_p1.

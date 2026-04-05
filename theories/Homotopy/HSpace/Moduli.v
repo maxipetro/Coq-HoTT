@@ -1,8 +1,9 @@
-Require Import Basics Types HSpace.Core HSpace.Coherent HSpace.Pointwise
+From HoTT Require Import Basics Types HSpace.Core HSpace.Coherent HSpace.Pointwise
   Pointed Homotopy.EvaluationFibration.
 
 Local Open Scope pointed_scope.
 Local Open Scope mc_mult_scope.
+Local Open Scope path_scope.
 
 (** * The moduli type of coherent H-space structures *)
 
@@ -73,35 +74,35 @@ Proof.
   apply concat_p1.
 Defined.
 
-(** Our next goal is to see that when [A] is a left-invertible H-space, then the fibration [ev A] is trivial. *)
+(** Our next goal is to see that when [A] is a left-invertible H-space, then the fibration [ev A] is trivial. We begin with two results that allow the domain to be a general pointed type [B]. We'll later just need the case when [B] is [A]. *)
 
-(** This lemma says that the family [fun a => A ->* [A,a]] is trivial. *)
-Lemma equiv_pmap_hspace `{Funext} {A : pType}
+(** This lemma says that the family [fun a => B ->* [A,a]] is trivial. *)
+Lemma equiv_pmap_hspace `{Funext} {A B : pType}
   (a : A) `{IsHSpace A} `{!IsEquiv (hspace_op a)}
-  : (A ->* A) <~> (A ->* [A,a]).
+  : (B ->* A) <~> (B ->* [A,a]).
 Proof.
-  nrapply pequiv_pequiv_postcompose.
+  napply pequiv_pequiv_postcompose.
   rapply pequiv_hspace_left_op.
 Defined.
 
-(** The lemma gives us an equivalence on the total spaces (domains) of [ev A] and [psnd] (the projection out of the displayed product). *)
-Proposition equiv_map_pmap_hspace `{Funext} {A : pType}
+(** The next result is a consequence of the previous lemma. *)
+Proposition equiv_map_pmap_hspace `{Funext} {A B : pType}
   `{IsHSpace A} `{forall a:A, IsEquiv (a *.)}
-  : (A ->* A) * A <~> (A -> A).
+  : (B ->* A) * A <~> (B -> A).
 Proof.
-  transitivity {a : A  & {f : A -> A & f pt = a}}.
+  transitivity {a : A  & {f : B -> A & f pt = a}}.
   2: exact (equiv_sigma_contr _ oE (equiv_sigma_symm _)^-1%equiv).
   refine (_ oE (equiv_sigma_prod0 _ _)^-1%equiv oE equiv_prod_symm _ _).
   apply equiv_functor_sigma_id; intro a.
-  exact ((issig_pmap A [A,a])^-1%equiv oE equiv_pmap_hspace a).
+  exact ((issig_pmap B [A,a])^-1%equiv oE equiv_pmap_hspace a).
 Defined.
 
-(** The above is a pointed equivalence. *)
+(** The equivalence [equiv_map_pmap_hspace] is pointed when [B] is [A]. (Note that [selfmaps A] is pointed at [idmap].) This is a pointed equivalence between the domains of [psnd : (A ->* A) * A ->* A] and [ev A : selfmaps A -> A], respectively. *)
 Proposition pequiv_map_pmap_hspace `{Funext} {A : pType}
   `{IsHSpace A} `{forall a:A, IsEquiv (a *.)}
   : [(A ->* A) * A, (pmap_idmap, pt)] <~>* selfmaps A.
 Proof.
-  snrapply Build_pEquiv'.
+  snapply Build_pEquiv'.
   1: exact equiv_map_pmap_hspace.
   cbn.
   apply path_forall, hspace_left_identity.
@@ -112,14 +113,14 @@ Proposition hspace_ev_trivialization `{Funext} {A : pType}
   `{IsCoherent A} `{forall a:A, IsEquiv (a *.)}
   : ev A o* pequiv_map_pmap_hspace ==* psnd (A:=[A ->* A, pmap_idmap]).
 Proof.
-  snrapply Build_pHomotopy.
+  snapply Build_pHomotopy.
   { intros [f x]; cbn.
     exact (ap _ (dpoint_eq f) @ hspace_right_identity _). }
   cbn.
   refine (concat_1p _ @ _^).
   refine (concat_p1 _ @ concat_p1 _ @ _).
   refine (ap10_path_forall _ _ _ _ @ _).
-  apply iscoherent.
+  exact iscoherent.
 Defined.
 
 (** ** The equivalence [IsCohHSpace A <~> (A ->* (A ->** A))] *)
@@ -145,10 +146,10 @@ Proof.
   equiv_via {s : {act : A -> (A -> A) & forall a, act a pt = a} & {h : s.1 pt == idmap & h pt = s.2 pt}}.
   1: make_equiv.
   (* Then we break up [->*] and [==*] on the RHS using issig lemmas, and handle a trailing [@ 1]. *)
-  snrapply equiv_functor_sigma'.
+  snapply equiv_functor_sigma'.
   - refine (equiv_functor_forall_id (fun a => issig_pmap A [A,a]) oE _).
     unfold IsPointed.
-    nrapply equiv_sig_coind.
+    napply equiv_sig_coind.
   - cbn.
     intros [act p]; simpl.
     refine (issig_phomotopy _ _ oE _); cbn.
@@ -162,7 +163,7 @@ Definition iscohhspace_homogeneous `{Funext} {A : pType} `{IsHomogeneous A}
 Proof.
   apply (equiv_iscohhspace_ptd_action A)^-1.
   exists homogeneous_pt_id.
-  apply homogeneous_pt_id_beta.
+  exact homogeneous_pt_id_beta.
 Defined.
 
 (** One can also show directly that the H-space structure defined by [ishspace_homogeneous] is coherent. This also avoids [Funext]. *)
@@ -174,8 +175,8 @@ Proof.
   change (eisretr f pt = ap f (moveR_equiv_V pt pt (point_eq f)^) @ point_eq f).
   rewrite <- (point_eq f).
   unfold moveR_equiv_V; simpl.
-  rhs nrapply concat_p1.
-  lhs nrapply (eisadj f).
+  rhs napply concat_p1.
+  lhs napply (eisadj f).
   apply ap.
   symmetry; apply concat_1p.
 Defined.
@@ -185,10 +186,10 @@ Definition iscohhspace_hspace' (A : pType)
   `{IsHSpace A} `{forall a, IsEquiv (a *.)}
   : IsCohHSpace A.
 Proof.
-  snrapply Build_IsCohHSpace.
-  { nrapply ishspace_homogeneous.
-    apply ishomogeneous_hspace. }
-  apply iscoherent_homogeneous.
+  snapply Build_IsCohHSpace.
+  { napply ishspace_homogeneous.
+    exact ishomogeneous_hspace. }
+  exact iscoherent_homogeneous.
 Defined.
 
 (** The new multiplication is homotopic to the original one.  Relative to this, we expect that one of the identity laws also agrees, but that the other does not. *)
@@ -208,17 +209,17 @@ Definition iscohhspace_hspace (A : pType)
   {m : IsHSpace A} `{forall a, IsEquiv (a *.)}
   : IsCohHSpace A.
 Proof.
-  snrapply Build_IsCohHSpace.
-  1: snrapply Build_IsHSpace.
+  snapply Build_IsCohHSpace.
+  1: snapply Build_IsHSpace.
   - exact (@hspace_op A m).
   - exact (@hspace_left_identity A m).
   - intro a.
-    lhs nrapply (ap (a *.) (hspace_right_identity pt))^.
-    lhs nrapply (ap (a *.) (hspace_left_identity pt)).
+    lhs exact (ap (a *.) (hspace_right_identity pt))^.
+    lhs exact (ap (a *.) (hspace_left_identity pt)).
     exact (hspace_right_identity a).
   - unfold IsCoherent; cbn.
     apply moveL_Vp.
-    lhs nrapply concat_A1p.
+    lhs napply concat_A1p.
     refine (_ @@ 1).
     apply (cancelR _ _ (hspace_left_identity pt)).
     symmetry; apply concat_A1p.

@@ -1,14 +1,14 @@
-Require Import Basics Types.
+From HoTT Require Import Basics Types.
+From HoTT.WildCat Require Import Core Universe Equiv.
 Require Import Pointed.
 Require Import Cubical.DPath.
-Require Import Algebra.AbGroups.
+Require Import Algebra.AbGroups.AbelianGroup.
 Require Import Homotopy.Suspension.
 Require Import Homotopy.ClassifyingSpace.
 Require Import Homotopy.HSpace.Coherent.
 Require Import Homotopy.HomotopyGroup.
 Require Import Homotopy.Hopf.
 Require Import Truncations.Core Truncations.Connectedness.
-Require Import WildCat.
 
 (** * Eilenberg-Mac Lane spaces *)
 
@@ -17,10 +17,10 @@ Local Open Scope nat_scope.
 Local Open Scope mc_mult_scope.
 
 (** The definition of the Eilenberg-Mac Lane spaces.  Note that while we allow [G] to be non-abelian for [n > 1], later results will need to assume that [G] is abelian. *)
-Fixpoint EilenbergMacLane (G : Group) (n : nat) : pType
+Fixpoint EilenbergMacLane@{u v | u <= v} (G : Group@{u}) (n : nat) : pType@{v}
   := match n with
       | 0    => G
-      | 1    => pClassifyingSpace G
+      | 1    => pClassifyingSpace@{u v} G
       | m.+1 => pTr m.+1 (psusp (EilenbergMacLane G m))
      end.
 
@@ -29,19 +29,19 @@ Notation "'K(' G , n )" := (EilenbergMacLane G n).
 Section EilenbergMacLane.
   Context `{Univalence}.
 
-  Global Instance istrunc_em {G : Group} {n : nat} : IsTrunc n K(G, n).
+  #[export] Instance istrunc_em {G : Group} {n : nat} : IsTrunc n K(G, n).
   Proof.
     destruct n as [|[]]; exact _.
   Defined.
 
   (** This is subsumed by the next result, but Coq doesn't always find the next result when it should. *)
-  Global Instance isconnected_em {G : Group} (n : nat)
+  #[export] Instance isconnected_em {G : Group} (n : nat)
     : IsConnected n K(G, n.+1).
   Proof.
     induction n; exact _.
   Defined.
 
-  Global Instance isconnected_em' {G : Group} (n : nat)
+  #[export] Instance isconnected_em' {G : Group} (n : nat)
     : IsConnected n.-1 K(G, n).
   Proof.
     destruct n.
@@ -49,7 +49,7 @@ Section EilenbergMacLane.
     apply isconnected_em.
   Defined.
 
-  Global Instance is0connected_em {G : Group} (n : nat)
+  #[export] Instance is0connected_em {G : Group} (n : nat)
     : IsConnected 0 K(G, n.+1).
   Proof.
     rapply (is0connected_isconnected n.-2).
@@ -61,19 +61,19 @@ Section EilenbergMacLane.
   Local Lemma pequiv_ptr_loop_psusp' (X : pType) (n : nat) `{IsConnected n.+1 X}
     : pTr n.+2 X <~>* pTr n.+2 (loops (psusp X)).
   Proof.
-    snrapply Build_pEquiv.
-    1: rapply (fmap (pTr _) (loop_susp_unit _)).
-    nrapply O_inverts_conn_map.
-    nrapply (isconnmap_pred_add n.-2).
+    snapply Build_pEquiv.
+    1: exact (fmap (pTr _) (loop_susp_unit _)).
+    napply O_inverts_conn_map.
+    napply (isconnmap_pred_add n.-2).
     rewrite 2 trunc_index_add_succ.
-    apply (conn_map_loop_susp_unit n X).
+    exact (conn_map_loop_susp_unit n X).
   Defined.
 
   Lemma pequiv_loops_em_em (G : AbGroup) (n : nat)
     : K(G, n) <~>* loops K(G, n.+1).
   Proof.
     destruct n.
-    1: apply pequiv_g_loops_bg.
+    1: exact pequiv_g_loops_bg.
     change (K(G, n.+1) <~>* loops (pTr n.+2 (psusp (K(G, n.+1))))).
     refine (ptr_loops _ _ o*E _).
     destruct n.
@@ -86,7 +86,7 @@ Section EilenbergMacLane.
     : G <~>* iterated_loops n K(G, n).
   Proof.
     induction n.
-    - reflexivity.
+    - exact pequiv_pmap_idmap.
     - refine ((unfold_iterated_loops' _ _)^-1* o*E _ o*E IHn).
       exact (emap (iterated_loops n) (pequiv_loops_em_em _ _)).
   Defined.
@@ -96,18 +96,18 @@ Section EilenbergMacLane.
     : GroupIsomorphism G (Pi n.+1 K(G, n.+1)).
   Proof.
     induction n.
-    - apply grp_iso_g_pi1_bg.
+    - exact grp_iso_g_pi1_bg.
     - nrefine (grp_iso_compose _ IHn).
       nrefine (grp_iso_compose _ (groupiso_pi_functor _ (pequiv_loops_em_em _ _))).
-      symmetry; apply (groupiso_pi_loops _ _).
+      symmetry; exact (groupiso_pi_loops _ _).
   Defined.
 
   Definition iscohhspace_em {G : AbGroup} (n : nat)
     : IsCohHSpace K(G, n).
   Proof.
-    nrapply iscohhspace_equiv_cohhspace.
+    napply iscohhspace_equiv_cohhspace.
     2: apply pequiv_loops_em_em.
-    apply iscohhspace_loops.
+    exact iscohhspace_loops.
   Defined.
 
   (** If [G] and [G'] are isomorphic, then [K(G,n)] and [K(G',n)] are equivalent.  TODO:  We should show that [K(-,n)] is a functor, which implies this. *)

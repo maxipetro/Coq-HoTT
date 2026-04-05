@@ -1,6 +1,6 @@
-Require Import Basics Types.
+From HoTT Require Import Basics Types.
 Require Import WildCat.Equiv.
-Require Import NullHomotopy.
+Require Import Homotopy.NullHomotopy.
 Require Import Homotopy.Suspension.
 Require Import Pointed.
 Require Import Truncations.
@@ -43,7 +43,7 @@ Proof.
   exact (fun b => if b then North else South).
 Defined.
 
-Global Instance isequiv_S0_to_Bool : IsEquiv (S0_to_Bool) | 0.
+Instance isequiv_S0_to_Bool : IsEquiv (S0_to_Bool) | 0.
 Proof.
   apply isequiv_adjointify with Bool_to_S0.
   - intros [ | ]; exact 1.
@@ -64,7 +64,7 @@ Definition pequiv_S0_Bool : psphere 0 <~>* pBool
 Definition pmap_from_bool `{Funext} (X : pType)
   : (pBool ->** X) <~>* X.
 Proof.
-  snrapply Build_pEquiv'.
+  snapply Build_pEquiv'.
   - refine (_ oE (issig_pmap _ _)^-1%equiv).
     refine (_ oE (equiv_functor_sigma_pb (equiv_bool_rec_uncurried X))^-1%equiv); cbn.
     make_equiv_contr_basedpaths.
@@ -84,28 +84,27 @@ Proof.
   exact (merid North @ (merid South)^).
 Defined.
 
-Global Instance isequiv_S1_to_Circle : IsEquiv (S1_to_Circle) | 0.
+Instance isequiv_S1_to_Circle : IsEquiv (S1_to_Circle) | 0.
 Proof.
   apply isequiv_adjointify with Circle_to_S1.
   - refine (Circle_ind _ 1 _).
-    nrapply transport_paths_FFlr'; apply equiv_p1_1q.
+    transport_paths FFlr; apply equiv_p1_1q.
     refine (ap _ (Circle_rec_beta_loop _ _ _) @ _).
-    refine (ap_pp _ _ (merid South)^ @ _).
-    refine ((1 @@ ap_V _ _) @ _).
-    refine ((_ @@ (ap inverse _)) @ _). 1, 2: nrapply Susp_rec_beta_merid.
+    lhs napply Susp_rec_beta_zigzag.
     simpl.
     apply concat_p1.
-  - refine (Susp_ind (fun x => Circle_to_S1 (S1_to_Circle x) = x)
-                     1 (merid South) _); intros x.
-    nrapply transport_paths_FFlr'; symmetry.
+  - snapply Susp_ind_FFlr; simpl.
+    1: reflexivity.
+    1: exact (merid South).
+    intro x.
     unfold S1_to_Circle; rewrite (Susp_rec_beta_merid x).
     revert x. change (Susp Empty) with (Sphere 0).
     apply (equiv_ind (S0_to_Bool ^-1)); intros x.
     case x; simpl.
     2: reflexivity.
-    lhs nrapply concat_1p.
+    rhs napply concat_1p.
     unfold Circle_to_S1; rewrite Circle_rec_beta_loop.
-    symmetry; apply concat_pV_p.
+    apply concat_pV_p.
 Defined.
 
 Definition equiv_S1_Circle : Sphere 1 <~> Circle
@@ -114,7 +113,7 @@ Definition equiv_S1_Circle : Sphere 1 <~> Circle
 Definition pequiv_S1_Circle : psphere 1 <~>* [Circle, _].
 Proof.
   srapply Build_pEquiv'.
-  1: apply equiv_S1_Circle.
+  1: exact equiv_S1_Circle.
   reflexivity.
 Defined.
 
@@ -124,14 +123,14 @@ Proof.
   apply (Susp_rec base base).
   apply (Susp_rec (idpath base) (idpath base)).
   apply (Susp_rec surf (idpath (idpath base))).
-  apply Empty_rec.
+  exact Empty_rec.
 Defined.
 
 Definition TwoSphere_to_S2 : TwoSphere -> (Sphere 2).
 Proof.
   apply (TwoSphere_rec (Sphere 2) North).
   refine (transport (fun x => x = x) (concat_pV (merid North)) _).
-  refine (((ap (fun u => merid u @ (merid North)^) 
+  exact (((ap (fun u => merid u @ (merid North)^) 
                (merid North @ (merid South)^)))).
 Defined.
 
@@ -139,7 +138,7 @@ Definition issect_TwoSphere_to_S2 : S2_to_TwoSphere o TwoSphere_to_S2 == idmap.
 Proof.
   refine (TwoSphere_ind _ 1 _). 
   rhs_V rapply concat_p1.
-  rhs refine (@concat_Ap (base = base) _ _
+  rhs exact (@concat_Ap (base = base) _ _
                           (fun p => (p^ @ ap S2_to_TwoSphere (ap TwoSphere_to_S2 p))^)
                           (fun x =>
                              (transport_paths_FFlr x 1) 
@@ -148,14 +147,14 @@ Proof.
                                @ (inv_pp _ _)^) 
                           1 1 surf).
   rhs rapply concat_1p.
-  rhs refine (ap_compose (fun p => p^ @ ap S2_to_TwoSphere (ap TwoSphere_to_S2 p))
+  rhs exact (ap_compose (fun p => p^ @ ap S2_to_TwoSphere (ap TwoSphere_to_S2 p))
                           inverse
                           surf).
   refine (@ap _ _ (ap inverse) 1 _ _).
   rhs_V rapply concat2_ap_ap.
-  rhs refine (ap (fun w => inverse2 surf @@ w)
+  rhs exact (ap (fun w => inverse2 surf @@ w)
                   (ap_compose (ap TwoSphere_to_S2) (ap S2_to_TwoSphere) surf)).
-  lhs_V refine (concat_Vp_inverse2 _ _ surf).
+  lhs_V exact (concat_Vp_inverse2 _ _ surf).
   lhs rapply concat_p1.
   refine (ap (fun p : 1 = 1 => inverse2 surf @@ p) _).
 
@@ -166,42 +165,28 @@ Proof.
                         (ap (fun u => merid u @ (merid North)^)
                             (merid North @ (merid South)^))).
   
-  lhs_V refine (ap (transport (fun z => ap S2_to_TwoSphere z = ap S2_to_TwoSphere z)
+  lhs_V exact (ap (transport (fun z => ap S2_to_TwoSphere z = ap S2_to_TwoSphere z)
                       (concat_pV (merid North)))
                (ap_compose (fun u => merid u @ (merid North)^) (ap S2_to_TwoSphere)
                            (merid North @ (merid South)^))).
-  apply transport_paths_FlFr'; symmetry.
-  lhs_V refine (1 @@ ap_pp_concat_pV S2_to_TwoSphere (merid North)).
-  lhs_V refine (1 @@ (1 @@ (1 @@
-                              (concat_pV_inverse2 (ap S2_to_TwoSphere (merid North))
-                                  _
-                                  (Susp_rec_beta_merid North))))).
-  lhs refine (@concat_Ap (Sphere 1) _
-                      (fun x => ap S2_to_TwoSphere (merid x @ (merid North)^))
-                      (fun x => Susp_rec 1 1 
-                                (Susp_rec surf 1 
-                                Empty_rec) x 
-                                @ 1)
-                      (fun x => ap_pp S2_to_TwoSphere (merid x) (merid North)^ 
-                                @ ((1 @@ ap_V S2_to_TwoSphere (merid North)) 
-                                @ ((Susp_rec_beta_merid x 
-                                   @@ inverse2 (Susp_rec_beta_merid North)) 
-                                @ 1)))
-                      North North (merid North @ (merid South)^)). f_ap.
-  { rhs_V refine (ap_pp_concat_pV _ _).
-    exact (1 @@ (1 @@ (concat_pV_inverse2 _ _ _))). }
-  lhs_V refine (concat2_ap_ap (Susp_rec 1 1 (Susp_rec surf 1
-                                         Empty_rec)) 
-                         (fun _ => 1) 
+  transport_paths FlFr; symmetry.
+  lhs_V refine (1 @@ ap_ap_concat_pV _ _ _ (Susp_rec_beta_merid North)).
+  simpl.
+  lhs exact (concat_Ap (fun x => ap_pV S2_to_TwoSphere (merid x) (merid North)
+                                  @ ((Susp_rec_beta_merid x
+                                        @@ inverse2 (Susp_rec_beta_merid North))
+                                       @ 1))
+               (merid North @ (merid South)^)).
+  f_ap.
+  1: exact (ap_ap_concat_pV _ _ _ (Susp_rec_beta_merid North)).
+  lhs_V exact (concat2_ap_ap (Susp_rec 1 1 (Susp_rec surf 1 Empty_rec))
+                         (fun _ => 1)
                          (merid North @ (merid South)^)).
-  lhs refine (ap (fun w => _ @@ w) (ap_const _ _)).
-  lhs rapply whiskerR_p1_1.
-  lhs refine (ap_pp _ (merid North) (merid South)^).
-  rhs_V rapply concat_p1. f_ap.
-  - exact (Susp_rec_beta_merid North).
-  - lhs rapply ap_V. refine (@inverse2 _ _ _ _ 1 _).
-    exact (Susp_rec_beta_merid South).
-Defined.
+  lhs nrefine (ap (fun w => _ @@ w) (ap_const _ _)).
+  lhs napply whiskerR_p1_1.
+  rhs_V napply concat_p1.
+  napply Susp_rec_beta_zigzag.
+Defined. (* A bit slow, ~0.2s. *)
 
 Definition issect_S2_to_TwoSphere : TwoSphere_to_S2 o S2_to_TwoSphere == idmap.
 Proof.
@@ -215,7 +200,7 @@ Proof.
   refine (_ @ (ap (fun w => w @ _) (ap_idmap _)^)).
   refine ((Susp_rec_beta_merid _) @ _).
   path_via (ap TwoSphere_to_S2 (ap S2_to_TwoSphere (merid x))).
-  { apply (ap_compose S2_to_TwoSphere TwoSphere_to_S2 (merid x)). }
+  { exact (ap_compose S2_to_TwoSphere TwoSphere_to_S2 (merid x)). }
   path_via (ap TwoSphere_to_S2 
                (Susp_rec 1 1 (Susp_rec surf 1 Empty_rec) x)). 
   { repeat f_ap. apply Susp_rec_beta_merid. }
@@ -223,7 +208,7 @@ Proof.
 
   simple refine (Susp_ind _ (concat_pV (merid North)) _ _).
   - refine (_ @ (concat_pV (merid North))). 
-    apply (ap (fun w => merid w @ (merid North)^) (merid South)^).
+    exact (ap (fun w => merid w @ (merid North)^) (merid South)^).
   - intro x.
     refine ((transport_paths_FlFr (merid x) (concat_pV (merid North))) @ _).
     rewrite_moveR_Vp_p. symmetry. refine ((dpath_path_lr _ _ _)^-1 _).
@@ -236,7 +221,7 @@ Proof.
     symmetry. generalize dependent x.
     
     simple refine (Susp_ind _ _ _ _).
-    + refine (TwoSphere_rec_beta_surf _ _ _).
+    + exact (TwoSphere_rec_beta_surf _ _ _).
     + refine (_ @ (ap (fun w => transport _ _ (ap _ w))
                       (concat_pV (merid South))^)).
       refine (_ @ (transport_paths_lr _ _)^).
@@ -245,11 +230,11 @@ Proof.
     + apply Empty_ind.
 Defined.
 
-Global Instance isequiv_S2_to_TwoSphere : IsEquiv (S2_to_TwoSphere) | 0.
+Instance isequiv_S2_to_TwoSphere : IsEquiv (S2_to_TwoSphere) | 0.
 Proof.
   apply isequiv_adjointify with TwoSphere_to_S2.
-  - apply issect_TwoSphere_to_S2.
-  - apply issect_S2_to_TwoSphere.
+  - exact issect_TwoSphere_to_S2.
+  - exact issect_S2_to_TwoSphere.
 Defined.
 
 Definition equiv_S2_TwoSphere : Sphere 2 <~> TwoSphere
@@ -258,23 +243,23 @@ Definition equiv_S2_TwoSphere : Sphere 2 <~> TwoSphere
 (** ** Truncation and connectedness of spheres. *)
 
 (** S0 is 0-truncated. *)
-Global Instance istrunc_s0 : IsHSet (Sphere 0).
+Instance istrunc_s0 : IsHSet (Sphere 0).
 Proof.
-  srapply (istrunc_isequiv_istrunc _ S0_to_Bool^-1).
+  exact (istrunc_isequiv_istrunc _ S0_to_Bool^-1).
 Defined.
 
 (** S1 is 1-truncated. *)
-Global Instance istrunc_s1 `{Univalence} : IsTrunc 1 (Sphere 1).
+Instance istrunc_s1 `{Univalence} : IsTrunc 1 (Sphere 1).
 Proof.
   srapply (istrunc_isequiv_istrunc _ S1_to_Circle^-1).
 Defined.
 
-Global Instance isconnected_sn n : IsConnected n.+1 (Sphere n.+2).
+Instance isconnected_sn n : IsConnected n.+1 (Sphere n.+2).
 Proof.
   induction n.
   { srapply contr_inhabited_hprop.
     apply tr, North. }
-  apply isconnected_susp.
+  exact isconnected_susp.
 Defined.
 
 (** ** Truncatedness via spheres  *)
@@ -306,7 +291,7 @@ Proof.
     intro f. apply nullhomot_paths_from_susp, HX.
 Defined.
 
-(** Iterated loop spaces can be described using pointed maps from spheres.  The [n = 0] case of this is stated using Bool in [pmap_from_bool] above, and the [n = 1] case of this is stated using [Circle] in [pmap_from_circle_loops] in Circle.v. *)
+(** Iterated loop spaces can be described using pointed maps from spheres.  The [n = 0] case of this is stated using [Bool] in [pmap_from_bool] above, and the [n = 1] case of this is stated using [Circle] in [pmap_from_circle_loops] in Circle.v. *)
 Definition pmap_from_psphere_iterated_loops `{Funext} (n : nat) (X : pType)
   : (psphere n ->** X) <~>* iterated_loops n X.
 Proof.

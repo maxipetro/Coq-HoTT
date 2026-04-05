@@ -1,8 +1,8 @@
-Require Import Basics Types Pointed HSet.
+From HoTT Require Import Basics Types Pointed HSet.
 Require Import Modalities.Modality.
 Require Import Truncations.Core Truncations.SeparatedTrunc.
-Require Import Algebra.AbGroups.
-Require Import WildCat.
+Require Import Algebra.AbGroups.AbelianGroup.
+From HoTT.WildCat Require Import Core Universe Equiv.
 
 Local Open Scope nat_scope.
 Local Open Scope pointed_scope.
@@ -15,7 +15,7 @@ Definition HomotopyGroup_type (n : nat) : Type
       | n.+1 => Group
      end.
 
-(* Every homotopy group is, in particular, a pointed type. *)
+(** Every homotopy group is, in particular, a pointed type. *)
 Definition HomotopyGroup_type_ptype (n : nat) : HomotopyGroup_type n -> pType
   := match n return HomotopyGroup_type n -> pType with
      | 0 => fun X => X
@@ -25,19 +25,19 @@ Definition HomotopyGroup_type_ptype (n : nat) : HomotopyGroup_type n -> pType
 
 Coercion HomotopyGroup_type_ptype : HomotopyGroup_type >-> pType.
 
-(** We construct the wildcat structure on HomotopyGroup_type in the obvious way. *)
-Global Instance isgraph_homotopygroup_type (n : nat)
+(** We construct the wildcat structure on [HomotopyGroup_type] in the obvious way. *)
+Instance isgraph_homotopygroup_type (n : nat)
   : IsGraph (HomotopyGroup_type n) := ltac:(destruct n; exact _).
-Global Instance is2graph_homotopygroup_type (n : nat)
+Instance is2graph_homotopygroup_type (n : nat)
   : Is2Graph (HomotopyGroup_type n) := ltac:(destruct n; exact _).
-Global Instance is01cat_homotopygroup_type (n : nat)
+Instance is01cat_homotopygroup_type (n : nat)
   : Is01Cat (HomotopyGroup_type n) := ltac:(destruct n; exact _).
-Global Instance is1cat_homotopygroup_type (n : nat)
+Instance is1cat_homotopygroup_type (n : nat)
   : Is1Cat (HomotopyGroup_type n) := ltac:(destruct n; exact _).
-Global Instance is0functor_homotopygroup_type_ptype (n : nat)
+Instance is0functor_homotopygroup_type_ptype (n : nat)
   : Is0Functor (HomotopyGroup_type_ptype n)
   := ltac:(destruct n; exact _).
-Global Instance is1functor_homotopygroup_type_ptype (n : nat)
+Instance is1functor_homotopygroup_type_ptype (n : nat)
   : Is1Functor (HomotopyGroup_type_ptype n)
   := ltac:(destruct n; exact _).
 
@@ -47,40 +47,40 @@ Global Instance is1functor_homotopygroup_type_ptype (n : nat)
 Definition Pi1 (X : pType) : Group.
 Proof.
   srapply (Build_Group (Tr 0 (loops X)));
-  repeat split.
+    repeat split.
   (** Operation *)
-  + intros x y.
+  - intros x y.
     strip_truncations.
     exact (tr (x @ y)).
   (** Unit *)
-  + exact (tr 1).
+  - exact (tr 1).
   (** Inverse *)
-  + srapply Trunc_rec; intro x.
+  - srapply Trunc_rec; intro x.
     exact (tr x^).
-  (** IsHSet *)
-  + exact _.
+  (** [IsHSet] *)
+  - exact _.
   (** Associativity *)
-  + intros x y z.
+  - intros x y z.
     strip_truncations.
     cbn; apply ap.
     apply concat_p_pp.
   (** Left identity *)
-  + intro x.
+  - intro x.
     strip_truncations.
     cbn; apply ap.
     apply concat_1p.
   (** Right identity *)
-  + intro x.
+  - intro x.
     strip_truncations.
     cbn; apply ap.
     apply concat_p1.
   (** Left inverse *)
-  + intro x.
+  - intro x.
     strip_truncations.
     apply (ap tr).
     apply concat_Vp.
   (** Right inverse *)
-  + intro x.
+  - intro x.
     strip_truncations.
     apply (ap tr).
     apply concat_pV.
@@ -102,16 +102,14 @@ Module PiUtf8.
   Notation "'π'" := Pi.
 End PiUtf8.
 
-Global Instance ishset_pi {n : nat} {X : pType}
+Instance ishset_pi {n : nat} {X : pType}
   : IsHSet (Pi n X)
   := ltac:(destruct n; exact _).
 
 (** When n >= 2 we have that the nth homotopy group is an abelian group. Note that we don't actually define it as an abelian group but merely show that it is one. This would cause lots of complications with the typechecker. *)
-Global Instance isabgroup_pi (n : nat) (X : pType)
-  : IsAbGroup (Pi n.+2 X).
+Instance commutative_pi (n : nat) (X : pType)
+  : Commutative (A:=Pi n.+2 X) sg_op.
 Proof.
-  nrapply Build_IsAbGroup.
-  1: exact _.
   intros x y.
   strip_truncations.
   cbn; apply (ap tr).
@@ -119,13 +117,13 @@ Proof.
 Defined.
 
 (** For the same reason as above, we make [Pi1] a functor before making [Pi] a functor. *)
-Global Instance is0functor_pi1 : Is0Functor Pi1.
+Instance is0functor_pi1 : Is0Functor Pi1.
 Proof.
   apply Build_Is0Functor.
   intros X Y f.
-  snrapply Build_GroupHomomorphism.
-  { rapply (fmap (Tr 0)).
-    rapply (fmap loops).
+  snapply Build_GroupHomomorphism.
+  { tapply (fmap (Tr 0)).
+    tapply (fmap loops).
     assumption. }
   (** Note: we don't have to be careful about which paths we choose here since we are trying to inhabit a proposition. *)
   intros x y.
@@ -141,7 +139,7 @@ Proof.
   apply ap_pp.
 Defined.
 
-Global Instance is0functor_pi (n : nat) : Is0Functor (Pi n)
+Instance is0functor_pi (n : nat) : Is0Functor (Pi n)
   := ltac:(destruct n; exact _).
 
 Definition fmap_pi_succ {X Y : pType} (f : X $-> Y) (n : nat)
@@ -150,7 +148,7 @@ Proof.
   reflexivity.
 Defined.
 
-Global Instance is1functor_pi1 : Is1Functor Pi1.
+Instance is1functor_pi1 : Is1Functor Pi1.
 Proof.
   (** The conditions for [Pi1] to be a 1-functor only involve equalities of maps between groups, which reduce to equalities of maps between types.  Type inference shows that [Tr 0 o loops] is a 1-functor, and so it follows that [Pi1] is a 1-functor. *)
   assert (is1f : Is1Functor (Tr 0 o loops)) by exact _.
@@ -160,13 +158,13 @@ Proof.
     | by rapply (fmap_comp _ (is1functor_F := is1f)) ].
 Defined.
 
-Global Instance is1functor_pi (n : nat) : Is1Functor (Pi n)
+Instance is1functor_pi (n : nat) : Is1Functor (Pi n)
   := ltac:(destruct n; exact _).
 
 (** Sometimes it is convenient to regard [Pi n] as landing in pointed types.  On objects, this is handled by the coercion [HomotopyGroup_type_ptype], but on morphisms it doesn't seem possible to define a coercion.  So we explicitly name the composite functor. *)
 Definition pPi (n : nat) : pType -> pType := HomotopyGroup_type_ptype n o Pi n.
-Global Instance is0functor_ppi (n : nat) : Is0Functor (pPi n) := _.
-Global Instance is1functor_ppi (n : nat) : Is1Functor (pPi n) := _.
+Instance is0functor_ppi (n : nat) : Is0Functor (pPi n) := _.
+Instance is1functor_ppi (n : nat) : Is1Functor (pPi n) := _.
 
 (** [pPi] is equal to a more explicit map.  These are definitional for [n = 0] and [n] a successor; it would be nice to make them definitional for generic [n]. *)
 Definition ppi_ptr_iterated_loops (n : nat)
@@ -184,7 +182,7 @@ Definition fmap_ppi_ptr_iterated_loops (n : nat) {X Y : pType} (f : X ->* Y)
      ==* fmap (pTr 0) (fmap (iterated_loops n) f) o* pequiv_ppi_ptr_iterated_loops n X.
 Proof.
   destruct n; unfold pequiv_ppi_ptr_iterated_loops.
-  1: refine (pmap_postcompose_idmap _ @* (pmap_precompose_idmap _)^*).
+  1: exact (pmap_postcompose_idmap _ @* (pmap_precompose_idmap _)^*).
   refine (pmap_postcompose_idmap _ @* _ @* (pmap_precompose_idmap _)^*).
   srapply phomotopy_homotopy_hset; reflexivity.
 Defined.
@@ -199,14 +197,14 @@ Definition pi_loops n X : Pi n.+1 X <~>* Pi n (loops X).
 Proof.
   destruct n.
   1: reflexivity.
-  rapply (emap (pTr 0 o loops)).
+  tapply (emap (pTr 0 o loops)).
   apply unfold_iterated_loops'.
 Defined.
 
 (** Except in the lowest case, this can be expressed as an isomorphism of groups. *)
 Definition groupiso_pi_loops n X : Pi n.+2 X $<~> Pi n.+1 (loops X).
 Proof.
-  snrapply (groupiso_pi_functor 0).
+  snapply (groupiso_pi_functor 0).
   apply unfold_iterated_loops'.
 Defined.
 
@@ -232,9 +230,9 @@ Proof.
                                (pequiv_ppi_ptr_iterated_loops _ _))^-1* o*E _).
   (* For this composite, the proof is straightforward. *)
   refine (_ o*E pequiv_ptr_functor 0 _).
-  1: nrapply iterated_loops_prod.
-  snrapply Build_pEquiv'; cbn.
-  - refine (equiv_O_prod_cmp 0 _ _).
+  1: napply iterated_loops_prod.
+  snapply Build_pEquiv'; cbn.
+  - exact (equiv_O_prod_cmp 0 _ _).
   - reflexivity.
 Defined.
 
@@ -242,13 +240,13 @@ Defined.
 Definition pi_prod {n : nat} (X Y : pType)
   : pPi n (X * Y) <~>* (pPi n X) * (pPi n Y).
 Proof.
-  snrapply Build_pEquiv.
+  snapply Build_pEquiv.
   (* This describes the natural map. *)
   - rapply (equiv_pprod_coind (pfam_const _) (pfam_const _)); split.
     + exact (fmap (pPi n) (@pfst X Y)).
     + exact (fmap (pPi n) (@psnd X Y)).
   (* To see that it is an equivalence, we show that it is homotopic to [pi_prod']. *)
-  - snrapply (isequiv_homotopic' (pi_prod' X Y)).
+  - snapply (isequiv_homotopic' (pi_prod' X Y)).
     intro xy.
     destruct n; strip_truncations.
     + apply path_prod; reflexivity.
@@ -262,7 +260,7 @@ Defined.
 Lemma grp_iso_pi_prod {n : nat} (X Y : pType)
   : GroupIsomorphism (Pi n.+1 (X * Y)) (grp_prod (Pi n.+1 X) (Pi n.+1 Y)).
 Proof.
-  snrapply Build_GroupIsomorphism.
+  snapply Build_GroupIsomorphism.
   (* The underlying map is the natural one, so it is automatically a group homomorphism. *)
   - apply grp_prod_corec.
     + exact (fmap (Pi n.+1) (@pfst X Y)).
@@ -279,25 +277,25 @@ Definition isequiv_pi_connmap' `{Univalence} (n : nat) {X Y : pType} (f : X ->* 
   : IsEquiv (fmap (pTr 0) (fmap (iterated_loops n) f)).
 Proof.
   rapply O_inverts_conn_map.
-  rapply isconnected_iterated_fmap_loops.
+  rapply conn_map_iterated_fmap_loops.
   rewrite 2 trunc_index_inc'_succ.
   rewrite <- trunc_index_inc_agree.
   assumption.
 Defined.
 
 (** The same holds for [pPi n]. *)
-Global Instance isequiv_pi_connmap `{Univalence} (n : nat) {X Y : pType} (f : X ->* Y)
+Instance isequiv_pi_connmap `{Univalence} (n : nat) {X Y : pType} (f : X ->* Y)
   `{!IsConnMap n f}
   : IsEquiv (fmap (pPi n) f).
 Proof.
   (* For [n = 0] and [n] a successor, [fmap (pPi n) f] is definitionally equal to the map in the previous result as a map of types. *)
-  destruct n; rapply isequiv_pi_connmap'.
+  destruct n; tapply isequiv_pi_connmap'.
 Defined.
 
 Definition pequiv_pi_connmap `{Univalence} (n : nat) {X Y : pType} (f : X ->* Y)
   `{!IsConnMap n f}
   : Pi n X <~>* Pi n Y
-  := Build_pEquiv _ _ (fmap (pPi n) f) _.
+  := Build_pEquiv (fmap (pPi n) f) _.
 
 (** For positive [n], it is a group isomorphism. *)
 Definition grp_iso_pi_connmap `{Univalence} (n : nat) {X Y : pType} (f : X ->* Y)
@@ -312,7 +310,7 @@ Definition isequiv_pi_Tr `{Univalence} (n : nat) (X : pType)
 
 Definition pequiv_pi_Tr `{Univalence} (n : nat) (X : pType)
   : Pi n X <~>* Pi n (pTr n X)
-  := Build_pEquiv _ _ (fmap (pPi n) ptr) _.
+  := Build_pEquiv (fmap (pPi n) ptr) _.
 
 (** For positive [n], it is a group isomorphism. *)
 Definition grp_iso_pi_Tr `{Univalence} (n : nat) (X : pType)
@@ -324,7 +322,7 @@ Definition issurj_iterated_loops_connmap `{Univalence} (n : nat) {X Y : pType} (
   {C : IsConnMap n f}
   : IsSurjection (fmap (iterated_loops (n.+1)) f).
 Proof.
-  apply isconnected_iterated_fmap_loops. cbn.
+  apply conn_map_iterated_fmap_loops. cbn.
   rewrite trunc_index_inc'_0n; assumption.
 Defined.
 
@@ -342,10 +340,10 @@ Proposition isembedding_pi_psect {n : nat} {X Y : pType}
   : IsEmbedding (fmap (pPi n) s).
 Proof.
   apply isembedding_isinj_hset.
-  rapply (isinj_section (r:=fmap (pPi n) r)).
+  tapply (isinj_section (r:=fmap (pPi n) r)).
   intro x.
-  lhs_V rapply (fmap_comp (pPi n) s r x).
-  lhs rapply (fmap2 (pPi n) k x).
+  lhs_V exact (fmap_comp (pPi n) s r x).
+  lhs exact (fmap2 (pPi n) k x).
   exact (fmap_id (pPi n) X x).
 Defined.
 

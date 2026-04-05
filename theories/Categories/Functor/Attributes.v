@@ -53,7 +53,7 @@ Section full_faithful.
            IsIsomorphism (induced_hom_natural_transformation (x, y)).
 
   (** ** Fully Faithful → Full *)
-  Global Instance isfull_isfullyfaithful `{IsFullyFaithful}
+  #[export] Instance isfull_isfullyfaithful `{IsFullyFaithful}
   : IsFull.
   Proof.
     intros ? ?; hnf in * |- .
@@ -61,7 +61,7 @@ Section full_faithful.
   Qed.
 
   (** ** Fully Faithful → Faithful *)
-  Global Instance isfaithful_isfullyfaithful `{IsFullyFaithful}
+  #[export] Instance isfaithful_isfullyfaithful `{IsFullyFaithful}
   : IsFaithful.
   Proof.
     intros ? ?; hnf in * |- .
@@ -106,7 +106,7 @@ Section fully_faithful_helpers.
     := @isequiv_isepi_ismono _ x y m Hepi Hmono.
 End fully_faithful_helpers.
 
-Global Instance isfullyfaithful_isfull_isfaithful
+Instance isfullyfaithful_isfull_isfaithful
        `{Univalence}
        `{Hfull : @IsFull _ C D F}
        `{Hfaithful : @IsFaithful _ C D F}
@@ -143,8 +143,5 @@ Class IsEssentiallySurjective A B (F : Functor A B)
     We say [F] is a _weak equivalence_ if it is fully faithful and
     essentially surjective. *)
 Class IsWeakEquivalence `{Funext} A B (F : Functor A B)
-  := { is_fully_faithful__is_weak_equivalence : IsFullyFaithful F;
-       is_essentially_surjective__is_weak_equivalence : IsEssentiallySurjective F }.
-#[export] Existing Instances
-  is_fully_faithful__is_weak_equivalence
-  is_essentially_surjective__is_weak_equivalence.
+  := { is_fully_faithful__is_weak_equivalence :: IsFullyFaithful F;
+       is_essentially_surjective__is_weak_equivalence :: IsEssentiallySurjective F }.

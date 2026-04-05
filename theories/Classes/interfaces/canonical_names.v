@@ -4,8 +4,8 @@ Require Export
   HoTT.Truncations.Core.
 
 Declare Scope mc_scope.
-Delimit Scope mc_scope with mc.
-Global Open Scope mc_scope.
+
+Open Scope mc_scope.
 
 Generalizable Variables A B f g x y.
 
@@ -17,11 +17,11 @@ Lemma merely_destruct {A} {P : Type} {sP : IsHProp P}
 Proof.
 intros E;revert x.
 apply Trunc_ind.
-- apply _.
+- exact _.
 - exact E.
 Qed.
 
-Notation " g ∘ f " := (Compose g f)%mc.
+Notation " g ∘ f " := (Compose g f).
 Notation "(∘)" := Compose (only parsing) : mc_scope.
 
 Definition id {A : Type} (a : A) := a.
@@ -43,9 +43,8 @@ Notation "(≶ x )" := (fun y => apart y x) (only parsing) : mc_scope.
 (* Even for setoids with decidable equality x <> y does not imply x ≶ y.
 Therefore we introduce the following class. *)
 Class TrivialApart A {Aap : Apart A} :=
-  { trivial_apart_prop : is_mere_relation A apart
+  { trivial_apart_prop :: is_mere_relation A apart
   ; trivial_apart : forall x y, x ≶ y <-> x <> y }.
-#[export] Existing Instance trivial_apart_prop.
 
 Definition sig_apart `{Apart A} (P: A -> Type) : Apart (sig P) := fun x y => x.1 ≶ y.1.
 #[export]
@@ -64,6 +63,7 @@ Class Mult A := mult: A -> A -> A.
 Class One A := one: A.
 Class Zero A := zero: A.
 Class Negate A := negate: A -> A.
+Class Inverse A := inv: A -> A.
 Class DecRecip A := dec_recip: A -> A.
 Definition ApartZero R `{Zero R} `{Apart R} := sig (≶ zero).
 Class Recip A `{Apart A} `{Zero A} := recip: ApartZero A -> A.
@@ -83,14 +83,30 @@ Definition NonNeg R `{Zero R} `{Le R} := sig (le zero).
 Definition Pos R `{Zero R} `{Lt R} := sig (lt zero).
 Definition NonPos R `{Zero R} `{Le R} := sig (fun y => le y zero).
 
-Global Instance plus_is_sg_op `{f : Plus A} : SgOp A := f.
-Global Instance mult_is_sg_op `{f : Mult A} : SgOp A := f.
-Global Instance one_is_mon_unit `{c : One A} : MonUnit A := c.
-Global Instance zero_is_mon_unit `{c : Zero A} : MonUnit A := c.
-Global Instance meet_is_sg_op `{f : Meet A} : SgOp A := f.
-Global Instance join_is_sg_op `{f : Join A} : SgOp A := f.
-Global Instance top_is_mon_unit `{s : Top A} : MonUnit A := s.
-Global Instance bottom_is_mon_unit `{s : Bottom A} : MonUnit A := s.
+(** *** Hints for converting between types of operations *)
+
+Instance plus_is_sg_op `{f : Plus A} : SgOp A := f.
+Definition sg_op_is_plus `{f : SgOp A} : Plus A := f.
+
+Instance mult_is_sg_op `{f : Mult A} : SgOp A := f.
+Definition sg_op_is_mult `{f : SgOp A} : Mult A := f.
+
+Instance zero_is_mon_unit `{c : Zero A} : MonUnit A := c.
+Definition mon_unit_is_zero `{c : MonUnit A} : Zero A := c.
+
+Instance one_is_mon_unit `{c : One A} : MonUnit A := c.
+Definition mon_unit_is_one `{c : MonUnit A} : One A := c.
+
+Instance meet_is_sg_op `{f : Meet A} : SgOp A := f.
+
+Instance join_is_sg_op `{f : Join A} : SgOp A := f.
+
+Definition top_is_mon_unit `{s : Top A} : MonUnit A := s.
+
+Definition bottom_is_mon_unit `{s : Bottom A} : MonUnit A := s.
+
+Instance negate_is_inverse `{i : Negate A} : Inverse A := i.
+Definition inverse_is_negate `{i : Inverse A} : Negate A := i.
 
 #[export]
 Hint Extern 4 (Apart (ApartZero _)) => apply @sig_apart : typeclass_instances.
@@ -99,48 +115,74 @@ Hint Extern 4 (Apart (NonNeg _)) => apply @sig_apart : typeclass_instances.
 #[export]
 Hint Extern 4 (Apart (Pos _)) => apply @sig_apart : typeclass_instances.
 
+(** For more information on using [mc_add_scope] and [mc_mult_scope], see the files test/Algebra/Groups/Expressions.v and test/Algebra/Rings/Expressions.v. *)
+
+Module AdditiveNotations.
+
+  (** [mc_add_scope] is generally used when working with abelian groups. *)
+
+  Declare Scope mc_add_scope.
+  Infix "+" := sg_op : mc_add_scope.
+  Notation "(+)" := sg_op (only parsing) : mc_add_scope.
+  Notation "( x +)" := (sg_op x) (only parsing) : mc_add_scope.
+  Notation "(+ x )" := (fun y => sg_op y x) (only parsing) : mc_add_scope.
+  
+  Notation "0" := mon_unit : mc_add_scope.
+
+  Notation "- x" := (inv x) : mc_add_scope.
+  Notation "(-)" := inv (only parsing) : mc_add_scope.
+  Notation "x - y" := (sg_op x (inv y)) : mc_add_scope.
+
+End AdditiveNotations.
+
+Module MultiplicativeNotations.
+
+  (** [mc_mult_scope] is generally used when working with general groups. *)
+
+  Declare Scope mc_mult_scope.
+  Infix "*" := sg_op : mc_mult_scope.
+  Notation "( x *.)" := (sg_op x) (only parsing) : mc_mult_scope.
+  Notation "(.*.)" := sg_op (only parsing) : mc_mult_scope.
+  Notation "(.* x )" := (fun y => sg_op y x) (only parsing) : mc_mult_scope.
+
+  Notation "1" := mon_unit : mc_mult_scope.
+
+  Notation "x ^" := (inv x) : mc_mult_scope.
+  Notation "(^)" := inv (only parsing) : mc_mult_scope.
+
+End MultiplicativeNotations.
+
 (** We group these notations into a module, so that just this subset can be exported in some cases. *)
 Module Export BinOpNotations.
-(* Notations: *)
-Declare Scope mc_add_scope.
-Infix "+" := sg_op : mc_add_scope.
-Notation "(+)" := sg_op (only parsing) : mc_add_scope.
-Notation "( x +)" := (sg_op x) (only parsing) : mc_add_scope.
-Notation "(+ x )" := (fun y => sg_op y x) (only parsing) : mc_add_scope.
+  Export AdditiveNotations MultiplicativeNotations.
 
-Declare Scope mc_mult_scope.
-Infix "*" := sg_op : mc_mult_scope.
-Notation "( x *.)" := (sg_op x) (only parsing) : mc_mult_scope.
-Notation "(.*.)" := sg_op (only parsing) : mc_mult_scope.
-Notation "(.* x )" := (fun y => sg_op y x) (only parsing) : mc_mult_scope.
+  Infix "+" := plus : mc_scope.
+  Notation "(+)" := plus (only parsing) : mc_scope.
+  Notation "( x +)" := (plus x) (only parsing) : mc_scope.
+  Notation "(+ x )" := (fun y => y + x) (only parsing) : mc_scope.
 
-Infix "+" := plus : mc_scope.
-Notation "(+)" := plus (only parsing) : mc_scope.
-Notation "( x +)" := (plus x) (only parsing) : mc_scope.
-Notation "(+ x )" := (fun y => y + x) (only parsing) : mc_scope.
+  Infix "*" := mult : mc_scope.
+  (* We don't add "( * )", "( * x )" and "( x * )" notations because they conflict with comments. *)
+  Notation "( x *.)" := (mult x) (only parsing) : mc_scope.
+  Notation "(.*.)" := mult (only parsing) : mc_scope.
+  Notation "(.* x )" := (fun y => y * x) (only parsing) : mc_scope.
 
-Infix "*" := mult : mc_scope.
-(* We don't add "( * )", "( * x )" and "( x * )" notations
-   because they conflict with comments. *)
-Notation "( x *.)" := (mult x) (only parsing) : mc_scope.
-Notation "(.*.)" := mult (only parsing) : mc_scope.
-Notation "(.* x )" := (fun y => y * x) (only parsing) : mc_scope.
+  Notation "- x" := (negate x) : mc_scope.
+  Notation "(-)" := negate (only parsing) : mc_scope.
+  Notation "x - y" := (x + negate y) : mc_scope.
 
-Notation "- x" := (negate x) : mc_scope.
-Notation "(-)" := negate (only parsing) : mc_scope.
-Notation "x - y" := (x + -y) : mc_scope.
+  Notation "0" := zero : mc_scope.
+  Notation "1" := one : mc_scope.
 
-Notation "0" := zero : mc_scope.
-Notation "1" := one : mc_scope.
-Notation "2" := (1 + 1) : mc_scope.
-Notation "3" := (1 + (1 + 1)) : mc_scope.
-Notation "4" := (1 + (1 + (1 + 1))) : mc_scope.
-Notation "5" := (1 + (1 + (1 + (1 + 1)))) : mc_scope.
-Notation "6" := (1 + (1 + (1 + (1 + (1 + 1))))) : mc_scope.
-Notation "- 1" := (-(1)) : mc_scope.
-Notation "- 2" := (-(2)) : mc_scope.
-Notation "- 3" := (-(3)) : mc_scope.
-Notation "- 4" := (-(4)) : mc_scope.
+  Notation "2" := (1 + 1) : mc_scope.
+  Notation "3" := (1 + (1 + 1)) : mc_scope.
+  Notation "4" := (1 + (1 + (1 + 1))) : mc_scope.
+  Notation "5" := (1 + (1 + (1 + (1 + 1)))) : mc_scope.
+  Notation "6" := (1 + (1 + (1 + (1 + (1 + 1))))) : mc_scope.
+  Notation "- 1" := (-(1)) : mc_scope.
+  Notation "- 2" := (-(2)) : mc_scope.
+  Notation "- 3" := (-(3)) : mc_scope.
+  Notation "- 4" := (-(4)) : mc_scope.
 End BinOpNotations.
 
 Notation "/ x" := (dec_recip x) : mc_scope.
@@ -210,25 +252,36 @@ Class Idempotent `(f: A -> A -> A) (x : A) : Type := idempotency: f x x = x.
 Arguments idempotency {A} _ _ {Idempotent}.
 
 Class UnaryIdempotent {A} (f: A -> A) : Type :=
-  unary_idempotent : Idempotent Compose f.
-#[export] Existing Instances unary_idempotent.
+  unary_idempotent :: Idempotent Compose f.
 
 Lemma unary_idempotency `{UnaryIdempotent A f} x : f (f x) = f x.
 Proof.
 change (f (f x)) with (Compose f f x).
 apply (ap (fun g => g x)).
 change (Compose f f = f).
-apply idempotency. apply _.
+apply idempotency. exact _.
 Qed.
 
 Class BinaryIdempotent `(op: A -> A -> A) : Type
-  := binary_idempotent : forall x, Idempotent op x.
-#[export] Existing Instances binary_idempotent.
+  := binary_idempotent :: forall x, Idempotent op x.
 
 Class LeftIdentity {A B} (op : A -> B -> B) (x : A): Type
   := left_identity: forall y, op x y = y.
+
+Instance istrunc_leftidentity `{Funext} {n A B} op x
+   : IsTrunc n.+1 B -> IsTrunc n (@LeftIdentity A B op x).
+Proof.
+  unfold LeftIdentity; exact _.
+Defined.
+
 Class RightIdentity {A B} (op : A -> B -> A) (y : B): Type
   := right_identity: forall x, op x y = x.
+
+Instance istrunc_rightidentity `{Funext} {n A B} op y
+  : IsTrunc n.+1 A -> IsTrunc n (@RightIdentity A B op y).
+Proof.
+  unfold RightIdentity; exact _.
+Defined.
 
 Class Absorption {A B C} (op1: A -> C -> A) (op2: A -> B -> C) : Type
   := absorption: forall x y, op1 x (op2 x y) = x.
@@ -240,8 +293,21 @@ Class RightAbsorb {A B} (op : A -> B -> B) (y : B): Type
 
 Class LeftInverse {A} {B} {C} (op : A -> B -> C) (inv : B -> A) (unit : C)
   := left_inverse: forall x, op (inv x) x = unit.
+
+Instance istrunc_leftinverse `{Funext} {n A B C} op inv unit
+  : IsTrunc n.+1 C -> IsTrunc n (@LeftInverse A B C op inv unit).
+Proof.
+  unfold LeftInverse; exact _.
+Defined.
+
 Class RightInverse {A} {B} {C} (op : A -> B -> C) (inv : A -> B) (unit : C)
   := right_inverse: forall x, op x (inv x) = unit.
+
+Instance istrunc_rightinverse `{Funext} {n A B C} op inv unit
+  : IsTrunc n.+1 C -> IsTrunc n (@RightInverse A B C op inv unit).
+Proof.
+  unfold RightInverse; exact _.
+Defined.
 
 Class Commutative {B A} (f : A -> A -> B) : Type
   := commutativity: forall x y, f x y = f y x.
@@ -253,8 +319,21 @@ Class HeteroAssociative {A B C AB BC ABC}
   (fAB_C: AB -> C -> ABC) (fAB : A -> B -> AB): Type
   := associativity : forall x y z, fA_BC x (fBC y z) = fAB_C (fAB x y) z.
 Class Associative {A} (f : A -> A -> A)
-  := simple_associativity : HeteroAssociative f f f f.
-#[export] Existing Instances simple_associativity.
+  := simple_associativity :: HeteroAssociative f f f f.
+
+Instance istrunc_associative `{Funext} A n f `{IsTrunc n.+1 A}
+  : IsTrunc n (@Associative A f).
+Proof.
+  unfold Associative, HeteroAssociative; exact _.
+Defined.
+
+Definition associative_flip A f
+  : @Associative A f -> Associative (flip f).
+Proof.
+  intros assoc z y x; unfold flip.
+  exact (assoc x y z)^.
+Defined.
+Hint Immediate associative_flip : typeclass_instances.
 
 Class Involutive {A} (f : A -> A) := involutive: forall x, f (f x) = x.
 
@@ -272,21 +351,20 @@ Class CoTransitive `(R : Relation A) : Type := cotransitive
 Arguments cotransitive {A R CoTransitive x y} _ _.
 
 Class EquivRel `(R : Relation A) : Type := Build_EquivRel
-  { EquivRel_Reflexive : Reflexive R ;
-    EquivRel_Symmetric : Symmetric R ;
-    EquivRel_Transitive : Transitive R }.
-#[export] Existing Instances EquivRel_Reflexive EquivRel_Symmetric EquivRel_Transitive.
+  { EquivRel_Reflexive :: Reflexive R ;
+    EquivRel_Symmetric :: Symmetric R ;
+    EquivRel_Transitive :: Transitive R }.
 
 Definition SigEquivRel {A:Type} (R : Relation A) : Type :=
   {_ : Reflexive R | { _ : Symmetric R | Transitive R}}.
 
-Global Instance trunc_sig_equiv_rel `{Funext} {A : Type}
+Instance trunc_sig_equiv_rel `{Funext} {A : Type}
   (R : Relation A) {n} `{!forall (x y : A), IsTrunc n (R x y)}
   :  IsTrunc n (SigEquivRel R).
 Proof.
   apply @istrunc_sigma.
-  - apply istrunc_forall.
-  - intros. apply @istrunc_sigma; intros; apply istrunc_forall.
+  - exact istrunc_forall.
+  - intros. apply @istrunc_sigma; intros; exact istrunc_forall.
 Defined.
 
 Lemma issig_equiv_rel {A:Type} (R : Relation A)
@@ -295,7 +373,7 @@ Proof.
   issig.
 Defined.
 
-Global Instance istrunc_equiv_rel `{Funext} {A : Type}
+Instance istrunc_equiv_rel `{Funext} {A : Type}
   (R : Relation A) {n} `{!forall (x y : A), IsTrunc n (R x y)}
   : IsTrunc n (EquivRel R).
 Proof.
@@ -323,12 +401,10 @@ Class RightHeteroDistribute {A B C}
   (f : A -> B -> C) (g_l : A -> A -> A) (g : C -> C -> C) : Type
   := distribute_r: forall a b c, f (g_l a b) c = g (f a c) (f b c).
 Class LeftDistribute {A} (f g: A -> A -> A)
-  := simple_distribute_l : LeftHeteroDistribute f g g.
-#[export] Existing Instances simple_distribute_l.
-Class RightDistribute {A} (f g: A -> A -> A)
-  := simple_distribute_r : RightHeteroDistribute f g g.
-#[export] Existing Instances simple_distribute_r.
+  := simple_distribute_l :: LeftHeteroDistribute f g g.
 
+Class RightDistribute {A} (f g: A -> A -> A)
+  := simple_distribute_r :: RightHeteroDistribute f g g.
 
 Class HeteroSymmetric {A} {T : A -> A -> Type}
   (R : forall {x y}, T x y -> T y x -> Type) : Type
@@ -360,7 +436,7 @@ Class ZeroDivisor {R} `{Zero R} `{Mult R} (x : R) : Type
 Class NoZeroDivisors R `{Zero R} `{Mult R} : Type
   := no_zero_divisors x : ~ZeroDivisor x.
 
-Global Instance zero_product_no_zero_divisors `{ZeroProduct A}
+Instance zero_product_no_zero_divisors `{ZeroProduct A}
   : NoZeroDivisors A.
 Proof.
 intros x [? [? [? E]]].
@@ -412,8 +488,8 @@ Class Bind (M : Type -> Type) := bind : forall {A B}, M A -> (A -> M B) -> M B.
 
 Class Enumerable@{i} (A : Type@{i}) :=
   { enumerator : nat -> A
-  ; enumerator_issurj : IsSurjection enumerator }.
-#[export] Existing Instance enumerator_issurj.
+  ; enumerator_issurj :: IsSurjection enumerator }.
+
 Arguments enumerator A {_} _.
 Arguments enumerator_issurj A {_} _.
 

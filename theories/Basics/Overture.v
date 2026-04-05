@@ -16,6 +16,7 @@ Local Unset Elimination Schemes.
 
 (** Notation for non-dependent function types *)
 Notation "A -> B" := (forall (_ : A), B) : type_scope.
+Notation "(->)" := (fun A B : Type => A -> B) : type_scope.
 
 (** *** Option type *)
 
@@ -92,11 +93,8 @@ Class Transitive {A} (R : Relation A) :=
 
 (** A [PreOrder] is both Reflexive and Transitive. *)
 Class PreOrder {A} (R : Relation A) :=
-  { PreOrder_Reflexive : Reflexive R | 2 ;
-    PreOrder_Transitive : Transitive R | 2 }.
-
-Global Existing Instance PreOrder_Reflexive.
-Global Existing Instance PreOrder_Transitive.
+  { PreOrder_Reflexive :: Reflexive R | 2 ;
+    PreOrder_Transitive :: Transitive R | 2 }.
 
 Arguments reflexivity {A R _} / _.
 Arguments symmetry {A R _} / _ _ _.
@@ -140,15 +138,8 @@ Tactic Notation "transitivity" constr(x) := etransitivity x.
 
 (** ** Basic definitions *)
 
-(** Define an alias for [Set], which is really [Type₀]. *)
+(** Define an alias for [Set], which is really [Type₀], the smallest universe. *)
 Notation Type0 := Set.
-
-(** We make the identity map a notation so we do not have to unfold it,
-    or complicate matters with its type. *)
-Notation idmap := (fun x => x).
-
-(** *** Constant functions *)
-Definition const {A B} (b : B) := fun x : A => b.
 
 (** ** Sigma types *)
 
@@ -202,9 +193,16 @@ Notation pr2 := proj2.
 Notation "x .1" := (pr1 x) : fibration_scope.
 Notation "x .2" := (pr2 x) : fibration_scope.
 
-Definition uncurry {A B C} (f : A -> B -> C) (p : A * B) : C := f (fst p) (snd p).
+(** ** Functions *)
 
-Arguments uncurry {A B C} f%_function_scope p /. 
+(** We make the identity map a notation so we do not have to unfold it, or complicate matters with its type. *)
+Notation idmap := (fun x => x).
+
+Instance reflexive_fun : Reflexive (fun A B => A -> B)
+  := fun _ => idmap.
+
+(** Constant functions. *)
+Definition const {A B} (b : B) := fun x : A => b.
 
 (** Composition of functions. *)
 
@@ -227,6 +225,39 @@ Global Arguments composeD {A B C}%_type_scope (g f)%_function_scope x.
 #[export] Hint Unfold composeD : core.
 
 Notation "g 'oD' f" := (composeD g f) : function_scope.
+
+Instance transitive_fun : Transitive (fun A B => A -> B)
+  := fun _ _ _ f g => g o f.
+
+(** Arguments to a two-variable function can be paired. *)
+
+Definition uncurry {A B C} (f : A -> B -> C) (p : A * B) : C := f (fst p) (snd p).
+
+Arguments uncurry {A B C} f%_function_scope p /.
+
+(** Arguments to a two-variable function can be swapped.  In Types/Forall.v, this is shown to be an equivalence. *)
+
+Definition flip A B `{P : A -> B -> Type}
+  : (forall a b, P a b) -> (forall b a, P a b)
+  := fun f b a => f a b.
+
+Arguments flip {A B P} f b a /.
+
+Definition reflexive_flip {A : Type} (R : Relation A) `{Reflexive _ R}
+  : Reflexive (flip R)
+  := @reflexivity A R _.
+
+Definition transitive_flip {A : Type} (R : Relation A) `{Transitive _ R}
+  : Transitive (flip R)
+  := fun a b c rab rbc => @transitivity A R _ c b a rbc rab.
+
+Definition symmetric_flip {A : Type} (R : Relation A) `{Symmetric _ R}
+  : Symmetric (flip R)
+  := fun a b rab => @symmetry A R _ b a rab.
+
+Hint Immediate reflexive_flip : typeclass_instances.
+Hint Immediate transitive_flip : typeclass_instances.
+Hint Immediate symmetric_flip : typeclass_instances.
 
 (** ** The groupoid structure of identity types. *)
 
@@ -251,14 +282,15 @@ Definition paths_rect := paths_ind.
 Register paths as core.identity.type.
 Register idpath as core.identity.refl.
 Register paths_rect as core.identity.ind.
+Register paths_rec as core.identity.rec.
 
 Notation "x = y :> A" := (@paths A x y) : type_scope.
 Notation "x = y" := (x = y :>_) : type_scope.
 
-Global Instance reflexive_paths {A} : Reflexive (@paths A) | 0 := @idpath A.
+Instance reflexive_paths {A} : Reflexive (@paths A) | 0 := @idpath A.
 Arguments reflexive_paths / .
 
-(** Our identity type is the Paulin-Mohring style.  We derive the Martin-Lof eliminator. *)
+(** Our identity type is the Paulin-Mohring style.  We derive the Martin-Löf eliminator. *)
 
 Definition paths_ind' {A : Type} (P : forall (a b : A), (a = b) -> Type)
   : (forall (a : A), P a a idpath) -> forall (a b : A) (p : a = b), P a b p.
@@ -278,6 +310,13 @@ Proof.
   exact u.
 Defined.
 
+Definition related_reflexive_path {A : Type} (R : Relation A) `{Reflexive A R}
+  {a b : A} (p : a = b)
+  : R a b.
+Proof.
+  destruct p; reflexivity.
+Defined.
+
 (** We declare a scope in which we shall place path notations. This way they can be turned on and off by the user. *)
 
 (** We bind [path_scope] to [paths] so that when we are constructing arguments to things like [concat], we automatically are in [path_scope]. *)
@@ -294,7 +333,7 @@ Register inverse as core.identity.sym.
 (** Declaring this as [simpl nomatch] prevents the tactic [simpl] from expanding it out into [match] statements.  We only want [inverse] to simplify when applied to an identity path. *)
 Arguments inverse {A x y} p : simpl nomatch.
 
-Global Instance symmetric_paths {A} : Symmetric (@paths A) | 0 := @inverse A.
+Instance symmetric_paths {A} : Symmetric (@paths A) | 0 := @inverse A.
 Arguments symmetric_paths / .
 
 (** If we wanted to not have the constant [symmetric_paths] floating around, and wanted to resolve [inverse] directly, instead, we could play this trick, discovered by Georges Gonthier to fool Coq's restriction on [Identity Coercion]s:
@@ -326,7 +365,7 @@ Definition concat {A : Type} {x y z : A} (p : x = y) (q : y = z) : x = z :=
 (** See above for the meaning of [simpl nomatch]. *)
 Arguments concat {A x y z} p q : simpl nomatch.
 
-Global Instance transitive_paths {A} : Transitive (@paths A) | 0 := @concat A.
+Instance transitive_paths {A} : Transitive (@paths A) | 0 := @concat A.
 Arguments transitive_paths / .
 
 Register concat as core.identity.trans.
@@ -358,14 +397,15 @@ Arguments transport {A}%_type_scope P%_function_scope {x y} p%_path_scope u : si
 Notation "p # u" := (transport _ p u) (only parsing) : path_scope.
 
 (** The first time [rewrite] is used in each direction, it creates transport lemmas called [internal_paths_rew] and [internal_paths_rew_r].  See ../Tactics.v for how these compare to [transport].  We use [rewrite] here to trigger the creation of these lemmas.  This ensures that they are defined outside of sections, so they are not unnecessarily polymorphic.  The lemmas below are not used in the library. *)
-(** TODO: If Coq PR#18299 is merged (possibly in Coq 8.20), then we can instead register wrappers for [transport] to be used for rewriting.  See the comment by Dan Christensen in that PR for how to do this.  Then the tactics [internal_paths_rew_to_transport] and [rewrite_to_transport] can be removed from ../Tactics.v. *)
+(** TODO: Since Coq 8.20 has PR#18299, once that is our minimum version we can instead register wrappers for [transport] to be used for rewriting.  See the comment by Dan Christensen in that PR for how to do this.  Then the tactics [internal_paths_rew_to_transport] and [rewrite_to_transport] can be removed from ../Tactics.v.  Rocq 9.2 will contain PR#21098 which adds further registration options.  It should be possible to do things in a way that works across these versions.  See #2332 for a discussion of this. *)
 Local Lemma define_internal_paths_rew A x y P (u : P x) (H : x = y :> A) : P y.
 Proof. rewrite <- H. exact u. Defined.
 
 Local Lemma define_internal_paths_rew_r A x y P (u : P y) (H : x = y :> A) : P x.
 Proof. rewrite -> H. exact u. Defined.
 
-Arguments internal_paths_rew {A%_type_scope} {a} P%_function_scope f {a0} p.
+(* TODO: ": rename" is needed because the default names changed in Rocq 9.2.0.  When the minimum supported version is >= 9.2.0, the ": rename" can be removed. *)
+Arguments internal_paths_rew {A%_type_scope} {a} P%_function_scope f {a0} p : rename.
 Arguments internal_paths_rew_r {A%_type_scope} {a y} P%_function_scope HC X.
 
 (** Having defined transport, we can use it to talk about what a homotopy theorist might see as "paths in a fibration over paths in the base"; and what a type theorist might see as "heterogeneous equality in a dependent type".  We will first see this appearing in the type of [apD]. *)
@@ -403,20 +443,20 @@ Definition pointwise_paths_concat {A} {P : A -> Type} {f g h : forall x, P x}
   : pointwise_paths A P f g -> pointwise_paths A P g h
     -> pointwise_paths A P f h := fun p q x => p x @ q x.
 
-Global Instance reflexive_pointwise_paths A P
+Instance reflexive_pointwise_paths A P
   : Reflexive (pointwise_paths A P).
 Proof.
   intros ? ?; reflexivity.
 Defined.
 
-Global Instance transitive_pointwise_paths A P
+Instance transitive_pointwise_paths A P
   : Transitive (pointwise_paths A P).
 Proof.
   intros f g h.
-  apply pointwise_paths_concat.
+  exact pointwise_paths_concat.
 Defined.
 
-Global Instance symmetric_pointwise_paths A P
+Instance symmetric_pointwise_paths A P
   : Symmetric (pointwise_paths A P).
 Proof.
   intros ? ? p ?; symmetry; apply p.
@@ -488,12 +528,10 @@ Global Opaque eisadj.
 (** A record that includes all the data of an adjoint equivalence. *)
 Record Equiv A B := {
   equiv_fun : A -> B ;
-  equiv_isequiv : IsEquiv equiv_fun
+  equiv_isequiv :: IsEquiv equiv_fun
 }.
 
 Coercion equiv_fun : Equiv >-> Funclass.
-
-Global Existing Instance equiv_isequiv.
 
 Arguments equiv_fun {A B} _ _.
 Arguments equiv_isequiv {A B} _.
@@ -522,7 +560,7 @@ Definition ap10_equiv {A B : Type} {f g : A <~> B} (h : f = g) : f == g
 Monomorphic Axiom Funext : Type0.
 Existing Class Funext.
 Axiom isequiv_apD10 : forall `{Funext} (A : Type) (P : A -> Type) f g, IsEquiv (@apD10 A P f g).
-Global Existing Instance isequiv_apD10.
+Existing Instance isequiv_apD10.
 
 Definition path_forall `{Funext} {A : Type} {P : A -> Type} (f g : forall x : A, P x)
   : f == g -> f = g
@@ -572,7 +610,7 @@ Notation "n .+4" := (n.+1.+3)%trunc : trunc_scope.
 Notation "n .+5" := (n.+1.+4)%trunc : trunc_scope.
 Local Open Scope trunc_scope.
 
-(** We define truncatedness using an inductive type [IsTrunc_internal A n].  We use a notation [IsTrunc n A] simply to swap the orders of arguments, and notations [Contr], [IsHProp] and [IsHSet] which specialize to [n] being [-2], [-1] and [0], respectively.  An alternative is to use a [Fixpoint], and that was done in the past.  The advantages of the inductive approach are:  [IsTrunc_internal] is cumulative; typeclass inherence works smoothly; the library builds faster.  Some disadvantages are that we need to manually apply the constructors when proving that something is truncated, and that the induction principle is awkward to work with. *)
+(** We define truncatedness using an inductive type [IsTrunc_internal A n].  We use a notation [IsTrunc n A] simply to swap the orders of arguments, and notations [Contr], [IsHProp] and [IsHSet] which specialize to [n] being [-2], [-1] and [0], respectively.  An alternative is to use a [Fixpoint], and that was done in the past.  The advantages of the inductive approach are:  [IsTrunc_internal] is cumulative; typeclass inference works smoothly; the library builds faster.  Some disadvantages are that we need to manually apply the constructors when proving that something is truncated, and that the induction principle is awkward to work with. *)
 
 Inductive IsTrunc_internal (A : Type@{u}) : trunc_index -> Type@{u} :=
 | Build_Contr : forall (center : A) (contr : forall y, center = y), IsTrunc_internal A minus_two
@@ -616,7 +654,7 @@ Definition equiv_istrunc_unfold (n : trunc_index) (A : Type)
   := Build_Equiv _ _ _  (isequiv_istrunc_unfold n A).
 
 (** A version of [istrunc_unfold] for successors. *)
-Global Instance istrunc_paths (A : Type) n `{H : IsTrunc n.+1 A} (x y : A)
+Instance istrunc_paths (A : Type) n `{H : IsTrunc n.+1 A} (x y : A)
   : IsTrunc n (x = y)
   := istrunc_unfold n.+1 A H x y.
 
@@ -728,11 +766,9 @@ Arguments point A {_}.
 
 Record pType :=
   { pointed_type : Type ;
-    ispointed_type : IsPointed pointed_type }.
+    ispointed_type :: IsPointed pointed_type }.
 
 Coercion pointed_type : pType >-> Sortclass.
-
-Global Existing Instance ispointed_type.
 
 (** *** Homotopy fibers *)
 

@@ -100,12 +100,12 @@ Coercion intermediate : Factorization >-> Sortclass.
 (** A ("unique" or "orthogonal") factorization system consists of a couple of classes of maps, closed under composition, such that every map admits a unique factorization. *)
 Record FactorizationSystem@{i j k} :=
   { class1 : forall {X Y : Type@{i}}, (X -> Y) -> Type@{j} ;
-    ishprop_class1 : forall {X Y : Type@{i}} (g:X->Y), IsHProp (class1 g) ;
+    ishprop_class1 :: forall {X Y : Type@{i}} (g:X->Y), IsHProp (class1 g) ;
     class1_isequiv : forall {X Y : Type@{i}} (g:X->Y) {geq:IsEquiv g}, class1 g ;
     class1_compose : forall {X Y Z : Type@{i}} (g:X->Y) (h:Y->Z),
                        class1 g -> class1 h -> class1 (h o g) ;
     class2 : forall {X Y : Type@{i}}, (X -> Y) -> Type@{k} ;
-    ishprop_class2 : forall {X Y : Type@{i}} (g:X->Y), IsHProp (class2 g) ;
+    ishprop_class2 :: forall {X Y : Type@{i}} (g:X->Y), IsHProp (class2 g) ;
     class2_isequiv : forall {X Y : Type@{i}} (g:X->Y) {geq:IsEquiv g}, class2 g ;
     class2_compose : forall {X Y Z : Type@{i}} (g:X->Y) (h:Y->Z),
                        class2 g -> class2 h -> class2 (h o g) ;
@@ -116,8 +116,6 @@ Record FactorizationSystem@{i j k} :=
                          (fact' : Factorization@{i} (@class1) (@class2) f),
                     PathFactorization@{i} fact fact'
   }.
-
-Global Existing Instances ishprop_class1 ishprop_class2.
 
 (** The type of factorizations is, as promised, contractible. *)
 Theorem contr_factor `{Univalence} (factsys : FactorizationSystem)
@@ -158,7 +156,7 @@ Section FactSys.
     refine (transport (class1 factsys) (path_arrow _ _ gf) _).
     refine (class1_compose factsys g1 g2 c1g1 _).
     apply class1_isequiv.
-    apply (isequiv_homotopic _ (fun i => (q2 i)^)).
+    exact (isequiv_homotopic _ (fun i => (q2 i)^)).
   Defined.
 
   Definition cancelL_class2 `{Funext} {X Y Z} (f : X -> Y) (g : Y -> Z)
@@ -176,7 +174,7 @@ Section FactSys.
     refine (transport (class2 factsys) (path_arrow _ _ ff) _).
     refine (class2_compose factsys f1 f2 _ c2f2).
     apply class2_isequiv.
-    apply (isequiv_homotopic _ q1).
+    exact (isequiv_homotopic _ q1).
   Defined.
 
   (** The two classes of maps are automatically orthogonal, i.e. any commutative square from a [class1] map to a [class2] map has a unique diagonal filler.  For now, we only bother to define the lift; in principle we ought to show that the type of lifts is contractible. *)
@@ -262,7 +260,7 @@ Section FactSys.
     repeat rewrite concat_p_pp; apply whiskerR.
     (* Next we set up for a naturality. *)
     rewrite (ap_compose q^-1 f2), <- ap_pp, <- inv_pp.
-    (* The next line appears to do nothing, but in fact it is necessary for the subsequent [rewrite] to succeed, because [lift_factsys] appears in the invisible implicit point-arguments of [paths].  One way to discover issues of that sort is to turn on printing of all implicit argumnets with [Set Printing All]; another is to use [Set Debug Tactic Unification] and inspect the output to see what [rewrite] is trying and failing to unify. *)
+    (* The next line appears to do nothing, but in fact it is necessary for the subsequent [rewrite] to succeed, because [lift_factsys] appears in the invisible implicit point-arguments of [paths].  One way to discover issues of that sort is to turn on printing of all implicit arguments with [Set Printing All]; another is to use [Set Debug Tactic Unification] and inspect the output to see what [rewrite] is trying and failing to unify. *)
     unfold lift_factsys.
     rewrite <- ap_pp.
     rewrite <- ap_V, <- ap_compose.

@@ -1,4 +1,4 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Types.
 Require Import HoTT.Tactics.
 Require Import Diagrams.CommutativeSquares.
@@ -78,18 +78,31 @@ Section Diagram.
   Global Arguments DiagramMap_comm  [D1 D2] m [i j] f x : rename.
   Global Arguments Build_DiagramMap [D1 D2] _ _.
 
+  Definition DiagramMap_homotopy {D1 D2 : Diagram G}
+    (m1 m2 : DiagramMap D1 D2) : Type
+    := {h_obj : (forall i, m1 i == m2 i) & (forall i j (g : G i j) x,
+      DiagramMap_comm m1 g x @ h_obj j (D1 _f g x)
+      = ap (D2 _f g) (h_obj i x) @ DiagramMap_comm m2 g x)}.
+
+  #[export] Instance reflexive_DiagramMap_homotopy {D1 D2 : Diagram G} : Reflexive (@DiagramMap_homotopy D1 D2).
+  Proof.
+    intros m.
+    snapply exist.
+    - intro i; reflexivity.
+    - intros i j g x; cbn.
+      apply concat_p1_1p.
+  Defined.
+
   (** [path_DiagramMap] says when two maps are equals (up to funext). *)
 
   Definition path_DiagramMap {D1 D2 : Diagram G}
-    {m1 m2 : DiagramMap D1 D2} (h_obj : forall i, m1 i == m2 i)
-    (h_comm : forall i j (g : G i j) x,
-      DiagramMap_comm m1 g x @ h_obj j (D1 _f g x)
-      = ap (D2 _f g) (h_obj i x) @ DiagramMap_comm m2 g x)
+    {m1 m2 : DiagramMap D1 D2} (h : DiagramMap_homotopy m1 m2)
     : m1 = m2.
   Proof.
     destruct m1 as [m1_obj m1_comm].
     destruct m2 as [m2_obj m2_comm].
     simpl in *.
+    destruct h as [h_obj h_comm].
     revert h_obj h_comm.
     set (E := (@equiv_functor_forall _
        G (fun i => m1_obj i = m2_obj i)
@@ -104,8 +117,8 @@ Section Diagram.
     intros h_comm.
     assert (HH : m1_comm = m2_comm).
     { funext i j f x.
-      apply (concatR (concat_1p _)).
-      apply (concatR (h_comm _ _ _ _)).
+      rhs_V napply concat_1p.
+      rhs_V napply h_comm.
       apply inverse, concat_p1. }
     destruct HH.
     reflexivity.
@@ -156,11 +169,12 @@ Section Diagram.
   Proof.
     destruct w as [[w_obj w_comm] is_eq_w]. simpl in *.
     set (we i := Build_Equiv _ _ _ (is_eq_w i)).
-    simple refine (path_DiagramMap _ _).
-    - exact (fun i => eisretr (we i)).
-    - simpl.
-      intros i j f x. apply (concatR (concat_p1 _)^).
-      apply (comm_square_inverse_is_retr (we i) (we j) _ x).
+    apply path_DiagramMap.
+    exists (fun i => eisretr (we i)).
+    simpl.
+    intros i j f x.
+    rhs napply concat_p1.
+    exact (comm_square_inverse_is_retr (we i) (we j) _ x).
   Defined.
 
   Lemma diagram_inv_is_retraction {D1 D2 : Diagram G}
@@ -169,26 +183,29 @@ Section Diagram.
   Proof.
     destruct w as [[w_obj w_comm] is_eq_w]. simpl in *.
     set (we i := Build_Equiv _ _ _ (is_eq_w i)).
-    simple refine (path_DiagramMap _ _).
-    - exact (fun i => eissect (we i)).
-    - simpl.
-      intros i j f x. apply (concatR (concat_p1 _)^).
-      apply (comm_square_inverse_is_sect (we i) (we j) _ x).
+    apply path_DiagramMap.
+    exists (fun i => eissect (we i)).
+    simpl.
+    intros i j f x.
+    rhs napply concat_p1.
+    exact (comm_square_inverse_is_sect (we i) (we j) _ x).
   Defined.
 
   (** The equivalence of diagram is an equivalence relation. *)
   (** Those instances allows to use the tactics reflexivity, symmetry and transitivity. *)
-  Global Instance reflexive_diagram_equiv : Reflexive diagram_equiv | 1
+  #[export] Instance reflexive_diagram_equiv : Reflexive diagram_equiv | 1
     := fun D => Build_diagram_equiv (diagram_idmap D) _.
 
-  Global Instance symmetric_diagram_equiv : Symmetric diagram_equiv | 1
+  #[export] Instance symmetric_diagram_equiv : Symmetric diagram_equiv | 1
     := fun D1 D2 m => Build_diagram_equiv (diagram_equiv_inv m) _.
 
-  Global Instance transitive_diagram_equiv : Transitive diagram_equiv | 1.
+  #[export] Instance transitive_diagram_equiv : Transitive diagram_equiv | 1.
   Proof.
-  simple refine (fun D1 D2 D3 m1 m2 =>
-                   Build_diagram_equiv (diagram_comp m2 m1) _).
-  simpl. intros i; apply isequiv_compose';[apply m1 | apply m2].
+    intros D1 D2 D3 m1 m2.
+    napply (Build_diagram_equiv (diagram_comp m2 m1)).
+    intros i.
+    simpl.
+    apply isequiv_compose; [apply m1 | apply m2].
   Defined.
 End Diagram.
 

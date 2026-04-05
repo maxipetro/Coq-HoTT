@@ -1,6 +1,6 @@
 Require Import Basics.Overture Basics.PathGroupoids Basics.Tactics.
 
-(** * Comutative squares *)
+(** * Commutative squares *)
 
 (** Commutative squares compose vertically.
 
@@ -49,7 +49,7 @@ Proof.
 Defined.
 
 (** Given any commutative square from [f] to [f'] whose verticals
-[wA, wB] are equivalences, the equiv_inv square from [f'] to [f] with verticals [wA ^-1, wB ^-1] also commutes. *)
+[wA, wB] are equivalences, the [equiv_inv] square from [f'] to [f] with verticals [wA ^-1, wB ^-1] also commutes. *)
 Lemma comm_square_inverse
   {A B : Type} {f : A -> B}
   {A' B' : Type} {f' : A' -> B'}
@@ -75,20 +75,25 @@ Lemma comm_square_inverse_is_sect
    = ap f (eissect wA a).
 Proof.
   unfold comm_square_inverse, comm_square_comp; simpl.
-  repeat apply (concat (concat_pp_p _ _ _)). apply moveR_Vp.
+  repeat lhs napply concat_pp_p. apply moveR_Vp.
   transitivity (ap (wB ^-1 o wB) (ap f (eissect wA a)) @ eissect wB (f a)).
-  2: apply (concat (concat_Ap (eissect wB) _)). 2: apply ap, ap_idmap.
-  apply (concat (concat_p_pp _ _ _)), whiskerR.
-  apply (concat (ap_pp (wB ^-1) _ _)^), (concatR (ap_compose wB _ _)^).
-  apply ap, (concat (concat_pp_p _ _ _)), moveR_Vp.
+  2: { lhs napply (concat_Ap (eissect wB)).
+       apply ap, ap_idmap. }
+  lhs napply concat_p_pp.
+  apply whiskerR.
+  lhs_V napply ap_pp.
+  rhs napply ap_compose.
+  apply ap.
+  lhs napply concat_pp_p.
+  apply moveR_Vp.
   path_via (ap (f' o wA) (eissect wA a) @ wf a).
-  - apply whiskerR.  apply (concatR (ap_compose wA f' _)^).
+  - apply whiskerR. rhs napply ap_compose.
     apply ap, eisadj.
-  - apply (concat (concat_Ap wf _)).
+  - lhs napply (concat_Ap wf).
     apply whiskerL, (ap_compose f wB).
 Defined.
 
-(** and similarly, [comm_square_inverse] is a section (aka right equiv_inv). *)
+(** and similarly, [comm_square_inverse] is a section (aka right [equiv_inv]). *)
 Lemma comm_square_inverse_is_retr
   {A B : Type} {f : A -> B}
   {A' B' : Type} {f' : A' -> B'}
@@ -112,7 +117,7 @@ Proof.
       transitivity (ap idmap (wf ((wA ^-1) a))
                        @ (eisretr wB (wB (f ((wA ^-1) a))))^).
       * apply whiskerR, inverse, ap_idmap.
-      * apply (concat_Ap (fun b' => (eisretr wB b')^) _).
+      * exact (concat_Ap (fun b' => (eisretr wB b')^) _).
     + apply ap.
       rewrite ap_compose, !ap_V.
       apply inverse, inv_V.
@@ -120,6 +125,6 @@ Proof.
     subst p.
     rewrite <- ap_compose.
     path_via (eisretr wB _ @ ap idmap (ap f' (eisretr wA a))).
-    + apply (concat_Ap (eisretr wB) _).
+    + exact (concat_Ap (eisretr wB) _).
     + apply ap, ap_idmap.
 Defined.

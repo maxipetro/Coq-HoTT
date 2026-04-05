@@ -1,14 +1,12 @@
-Require Import Basics Types.
+From HoTT Require Import Basics Types.
 Require Import Truncations.Core.
 Require Import Algebra.Congruence.
 Require Import Algebra.Groups.Group.
 Require Import Algebra.Groups.Subgroup.
-Require Export Algebra.Groups.Image.
-Require Export Algebra.Groups.Kernel.
 Require Export Colimits.Quotient.
 Require Import HSet.
 Require Import Spaces.Finite.Finite.
-Require Import WildCat.
+From HoTT.WildCat Require Import Core Equiv.
 Require Import Modalities.Modality.
 
 (** * Quotient groups *)
@@ -16,6 +14,8 @@ Require Import Modalities.Modality.
 Local Open Scope mc_scope.
 Local Open Scope mc_mult_scope.
 Local Open Scope wc_iso_scope.
+
+(** ** Congruence quotients *)
 
 Section GroupCongruenceQuotient.
 
@@ -25,7 +25,7 @@ Section GroupCongruenceQuotient.
   (** The type underlying the quotient group is [Quotient R]. *)
   Definition CongruenceQuotient := G / R.
 
-  Global Instance congquot_sgop : SgOp CongruenceQuotient.
+  #[export] Instance congquot_sgop : SgOp CongruenceQuotient.
   Proof.
     srapply Quotient_rec2.
     - intros x y.
@@ -34,71 +34,126 @@ Section GroupCongruenceQuotient.
     - intros x y y' q. apply qglue. by apply iscong.
   Defined.
 
-  Global Instance congquot_mon_unit : MonUnit CongruenceQuotient.
+  #[export] Instance congquot_mon_unit : MonUnit CongruenceQuotient.
   Proof.
     apply class_of, mon_unit.
   Defined.
 
-  Global Instance congquot_negate : Negate CongruenceQuotient.
+  #[export] Instance congquot_inverse : Inverse CongruenceQuotient.
   Proof.
     srapply Quotient_rec.
-    1: exact (class_of R o negate).
-    intros x y p; cbn.
-    symmetry.
-    rewrite <- (left_identity (-x)).
-    destruct (left_inverse y).
-    set (-y * y * -x).
-    rewrite <- (right_identity (-y)).
-    destruct (right_inverse x).
-    unfold g; clear g.
-    rewrite <- simple_associativity.
-    apply qglue.
-    apply iscong; try reflexivity.
-    apply iscong; try reflexivity.
-    exact p.
+    1: exact (class_of R o (^)).
+    intros x y p; cbn beta.
+    transitivity (class_of R (y^ * (y * x^))).
+    - rewrite grp_assoc.
+      rewrite grp_inv_l.
+      rewrite grp_unit_l.
+      reflexivity.
+    - transitivity (class_of R (y^ * (x * x^))).
+      + symmetry; apply qglue; repeat apply iscong.
+        1,3: reflexivity.
+        exact p.
+      + rewrite grp_inv_r.
+        rewrite grp_unit_r.
+        reflexivity.
   Defined.
 
-  Global Instance congquot_sgop_associative : Associative congquot_sgop.
+  #[export] Instance congquot_sgop_associative : Associative congquot_sgop.
   Proof.
     srapply Quotient_ind3_hprop; intros x y z.
-    simpl; by rewrite associativity.
-  Qed.
+    snapply (ap (class_of R)).
+    rapply associativity.
+  Defined.
+  Global Opaque congquot_sgop_associative.
 
-  Global Instance issemigroup_congquot : IsSemiGroup CongruenceQuotient := {}.
+  #[export] Instance issemigroup_congquot : IsSemiGroup CongruenceQuotient := {}.
 
-  Global Instance congquot_leftidentity
-    : LeftIdentity congquot_sgop congquot_mon_unit.
+  #[export] Instance congquot_leftidentity : LeftIdentity (.*.) mon_unit.
   Proof.
     srapply Quotient_ind_hprop; intro x.
-    by simpl; rewrite left_identity.
-  Qed.
+    snapply (ap (class_of R)).
+    rapply left_identity.
+  Defined.
+  Global Opaque congquot_leftidentity.
 
-  Global Instance congquot_rightidentity
-    : RightIdentity congquot_sgop congquot_mon_unit.
+  #[export] Instance congquot_rightidentity : RightIdentity (.*.) mon_unit.
   Proof.
     srapply Quotient_ind_hprop; intro x.
-    by simpl; rewrite right_identity.
-  Qed.
+    snapply (ap (class_of R)).
+    rapply right_identity.
+  Defined.
+  Global Opaque congquot_rightidentity.
 
-  Global Instance ismonoid_quotientgroup : IsMonoid CongruenceQuotient := {}.
+  #[export] Instance ismonoid_quotientgroup : IsMonoid CongruenceQuotient := {}.
 
-  Global Instance quotientgroup_leftinverse
-    : LeftInverse congquot_sgop congquot_negate congquot_mon_unit.
+  #[export] Instance quotientgroup_leftinverse : LeftInverse (.*.) (^) mon_unit.
   Proof.
-    srapply Quotient_ind_hprop; intro x.
-    by simpl; rewrite left_inverse.
-  Qed.
+    srapply Quotient_ind_hprop; intro x; cbn beta.
+    snapply (ap (class_of R)).
+    rapply left_inverse.
+  Defined.
+  Global Opaque quotientgroup_leftinverse.
 
-  Global Instance quotientgroup_rightinverse
-    : RightInverse congquot_sgop congquot_negate congquot_mon_unit.
+  #[export] Instance quotientgroup_rightinverse : RightInverse (.*.) (^) mon_unit.
   Proof.
-    srapply Quotient_ind_hprop; intro x.
-    by simpl; rewrite right_inverse.
-  Qed.
+    srapply Quotient_ind_hprop; intro x; cbn beta.
+    snapply (ap (class_of R)).
+    rapply right_inverse.
+  Defined.
+  Global Opaque quotientgroup_rightinverse.
 
-  Global Instance isgroup_quotientgroup : IsGroup CongruenceQuotient := {}.
+  #[export] Instance isgroup_quotientgroup : IsGroup CongruenceQuotient := {}.
 
 End GroupCongruenceQuotient.
+
+(** ** Sets of cosets *)
+
+Section Cosets.
+
+  Context (G : Group) (H : Subgroup G).
+
+  Definition LeftCoset := G / in_cosetL H.
+
+  (** TODO: Way too many universes, needs fixing *)
+  (** The set of left cosets of a finite subgroup of a finite group is finite. *)
+  #[export] Instance finite_leftcoset `{Univalence, Finite G, Finite H}
+    : Finite LeftCoset.
+  Proof.
+    napply finite_quotient.
+    1-5: exact _.
+    intros x y.
+    apply (detachable_finite_subset H).
+  Defined.
+
+  (** The index of a subgroup is the number of cosets of the subgroup. *)
+  Definition subgroup_index `{Univalence, Finite G, Finite H} : nat
+    := fcard LeftCoset.
+
+  Definition RightCoset := G / in_cosetR H.
+
+  (** The set of left cosets is equivalent to the set of right coset. *)
+  Definition equiv_leftcoset_rightcoset
+    : LeftCoset <~> RightCoset.
+  Proof.
+    snapply equiv_quotient_functor.
+    - exact inv.
+    - exact _.
+    - intros x y; simpl.
+      by rewrite grp_inv_inv.
+  Defined.
+
+  (** The set of right cosets of a finite subgroup of a finite group is finite since it is equivalent to the set of left cosets. *)
+  #[export] Instance finite_rightcoset `{Univalence, Finite G, Finite H}
+    : Finite RightCoset.
+  Proof.
+    napply finite_equiv'.
+    1: exact equiv_leftcoset_rightcoset.
+    exact _.
+  Defined.
+
+End Cosets.
+
+(** ** Quotient groups *)
 
 (** Now we can define the quotient group by a normal subgroup. *)
 
@@ -106,13 +161,13 @@ Section QuotientGroup.
 
   Context (G : Group) (N : NormalSubgroup G).
 
-  Global Instance iscongruence_in_cosetL : IsCongruence (in_cosetL N).
+  #[export] Instance iscongruence_in_cosetL : IsCongruence (in_cosetL N).
   Proof.
     srapply Build_IsCongruence.
     intros; by apply in_cosetL_cong.
   Defined.
 
-  Global Instance iscongruence_in_cosetR: IsCongruence (in_cosetR N).
+  #[export] Instance iscongruence_in_cosetR: IsCongruence (in_cosetR N).
   Proof.
     srapply Build_IsCongruence.
     intros; by apply in_cosetR_cong.
@@ -120,11 +175,11 @@ Section QuotientGroup.
 
   (** Now we have to make a choice whether to pick the left or right cosets. Due to existing convention we shall pick left cosets but we note that we could equally have picked right. *)
   Definition QuotientGroup : Group
-    := Build_Group (G / (in_cosetL N)) _ _ _ _.
+    := Build_Group (LeftCoset G N) _ _ _ _.
 
   Definition grp_quotient_map : G $-> QuotientGroup.
   Proof.
-    snrapply Build_GroupHomomorphism.
+    snapply Build_GroupHomomorphism.
     1: exact (class_of _).
     intros ??; reflexivity.
   Defined.
@@ -133,13 +188,13 @@ Section QuotientGroup.
              (h : forall n : G, N n -> f n = mon_unit)
     : QuotientGroup $-> A.
   Proof.
-    snrapply Build_GroupHomomorphism.
+    snapply Build_GroupHomomorphism.
     - srapply Quotient_rec.
       + exact f.
       + cbn; intros x y n.
         apply grp_moveR_M1.
-        rhs_V nrapply (ap (.* f y) (grp_homo_inv _ _)).
-        rhs_V nrapply grp_homo_op.
+        rhs_V napply (ap (.* f y) (grp_homo_inv _ _)).
+        rhs_V napply grp_homo_op.
         symmetry; apply h; assumption.
     - intro x.
       refine (Quotient_ind_hprop _ _ _).
@@ -171,7 +226,7 @@ Definition QuotientGroup' (G : Group) (N : Subgroup G) (H : IsNormalSubgroup N)
 
 Local Open Scope group_scope.
 
-(** Computation rule for grp_quotient_rec. *)
+(** Computation rule for [grp_quotient_rec]. *)
 Corollary grp_quotient_rec_beta `{F : Funext} {G : Group}
           (N : NormalSubgroup G) (H : Group)
           {A : Group} (f : G $-> A)
@@ -181,7 +236,7 @@ Proof.
   apply equiv_path_grouphomomorphism; reflexivity.
 Defined.
 
-(** Computation rule for grp_quotient_rec. *)
+(** Computation rule for [grp_quotient_rec]. *)
 Definition grp_quotient_rec_beta' {G : Group}
           (N : NormalSubgroup G) (H : Group)
           {A : Group} (f : G $-> A)
@@ -189,17 +244,27 @@ Definition grp_quotient_rec_beta' {G : Group}
   : (grp_quotient_rec G N f h) $o grp_quotient_map == f
     := fun _ => idpath.
 
-(** The proof of normality is irrelevent up to equivalence. This is unfortunate that it doesn't hold definitionally. *)
+(** The proof of normality is irrelevant up to equivalence. It is unfortunate that it doesn't hold definitionally. *)
 Definition grp_iso_quotient_normal (G : Group) (H : Subgroup G)
   {k k' : IsNormalSubgroup H}
   : QuotientGroup' G H k ≅ QuotientGroup' G H k'.
 Proof.
-  snrapply Build_GroupIsomorphism'.
+  snapply Build_GroupIsomorphism'.
   1: reflexivity.
   intro x.
   srapply Quotient_ind_hprop; intro y; revert x.
   srapply Quotient_ind_hprop; intro x.
   reflexivity.
+Defined.
+
+(** The quotient map is trivial on the normal subgroup. *)
+Definition grp_quotient_map_trivial {G : Group} (N : NormalSubgroup G)
+  (n : G) (inN : N n)
+  : grp_quotient_map (N:=N) n = 1.
+Proof.
+  apply qglue; cbn.
+  rewrite right_identity.
+  by apply issubgroup_in_inv.
 Defined.
 
 (** The universal mapping property for groups *)
@@ -212,12 +277,10 @@ Proof.
     exact (grp_quotient_rec _ _ f p).
   - intro f.
     exists (f $o grp_quotient_map).
-    intros n h; cbn.
-    refine (_ @ grp_homo_unit f).
-    apply ap.
-    apply qglue; cbn.
-    rewrite right_identity;
-      by apply issubgroup_in_inv.
+    intros n h.
+    rhs_V napply (grp_homo_unit f).
+    apply (ap f).
+    by apply grp_quotient_map_trivial.
   - intros f.
     rapply equiv_path_grouphomomorphism.
       by srapply Quotient_ind_hprop.
@@ -235,25 +298,24 @@ Section FirstIso.
     : A / grp_kernel phi $-> grp_image phi.
   Proof.
     srapply grp_quotient_rec.
-    + srapply grp_image_in.
+    + srapply grp_homo_image_in.
     + intros n x.
       by apply path_sigma_hprop.
   Defined.
 
   (** The underlying map of this homomorphism is an equivalence *)
-  Global Instance isequiv_grp_image_quotient
+  #[export] Instance isequiv_grp_image_quotient
     : IsEquiv grp_image_quotient.
   Proof.
-    snrapply isequiv_surj_emb.
+    snapply isequiv_surj_emb.
     1: srapply cancelR_conn_map.
     srapply isembedding_isinj_hset.
-    refine (Quotient_ind_hprop _ _ _); intro x.
-    refine (Quotient_ind_hprop _ _ _); intro y.
-    intros h; simpl in h.
+    srapply Quotient_ind2_hprop.
+    intros x y h; simpl in h.
     apply qglue; cbn.
     apply (equiv_path_sigma_hprop _ _)^-1%equiv in h; cbn in h.
     cbn. rewrite grp_homo_op, grp_homo_inv, h.
-    srapply negate_l.
+    apply grp_inv_l.
   Defined.
 
   (** First isomorphism theorem for groups *)
@@ -266,11 +328,11 @@ End FirstIso.
 
 (** Quotient groups are finite. *)
 (** Note that we cannot constructively conclude that the normal subgroup [H] must be finite since [G] is, therefore we keep it as an assumption. *)
-Global Instance finite_quotientgroup {U : Univalence} (G : Group) (H : NormalSubgroup G)
+Instance finite_quotientgroup {U : Univalence} (G : Group) (H : NormalSubgroup G)
   (fin_G : Finite G) (fin_H : Finite H)
   : Finite (QuotientGroup G H).
 Proof.
-  nrapply finite_quotient.
+  napply finite_quotient.
   1-5: exact _.
   intros x y.
   pose (dec_H := detachable_finite_subset H).
@@ -282,19 +344,71 @@ Definition grp_kernel_quotient_iso `{Univalence} {G : Group} (N : NormalSubgroup
 Proof.
   srapply Build_GroupIsomorphism.
   - srapply (grp_kernel_corec (subgroup_incl N)).
-    intro x; cbn.
-    apply qglue.
-    apply issubgroup_in_op.
-    + exact (issubgroup_in_inv _ x.2).
-    + exact issubgroup_in_unit.
+    intro x.
+    apply grp_quotient_map_trivial.
+    exact x.2.
   - apply isequiv_surj_emb.
-    2: apply (cancelL_isembedding (g:=pr1)).
+    2: exact (cancelL_isembedding (g:=pr1)).
     intros [g p].
     rapply contr_inhabited_hprop.
     srefine (tr ((g; _); _)).
-    + rewrite <- grp_unit_l, <- negate_mon_unit.
-      apply (related_quotient_paths (fun x y => N (-x * y))).
-      exact p^.
+    + rewrite <- grp_unit_l, <- inverse_mon_unit.
+      apply (related_quotient_paths (fun x y => N (x^ * y))).
+      exact p^%path.
     + srapply path_sigma_hprop.
       reflexivity.
+Defined.
+
+(** When the normal subgroup [N] is trivial, the inclusion map [G $-> G / N] is an isomorphism. *)
+Instance catie_grp_quotient_map_trivial {G : Group} (N : NormalSubgroup G)
+  (triv : IsTrivialGroup N)
+  : CatIsEquiv (@grp_quotient_map G N).
+Proof.
+  snapply catie_adjointify.
+  - srapply (grp_quotient_rec _ _ (Id _)).
+    exact triv.
+  - by srapply grp_quotient_ind_hprop.
+  - reflexivity.
+Defined.
+
+(** The group quotient by a trivial group is isomorphic to the original group. *)
+Definition grp_quotient_trivial (G : Group) (N : NormalSubgroup G)
+  (triv : IsTrivialGroup N)
+  : G $<~> G / N
+  := Build_CatEquiv grp_quotient_map.
+
+(** A quotient by a maximal subgroup is trivial. *)
+Instance istrivial_grp_quotient_maximal
+  (G : Group) (N : NormalSubgroup G)
+  : IsMaximalSubgroup N -> IsTrivialGroup (G / N).
+Proof.
+  intros max x _; revert x.
+  rapply grp_quotient_ind_hprop.
+  intros x.
+  apply qglue, max.
+Defined.
+
+(** Conversely, a trivial quotient means the subgroup is maximal.  First a version where we only assume that the quotient map is trivial. *)
+Definition ismaximalsubgroup_istrivial_grp_quotient_map `{Univalence}
+  (G : Group) (N : NormalSubgroup G)
+  (triv : forall x, grp_quotient_map (N:=N) x = 1)
+  : IsMaximalSubgroup N.
+Proof.
+  intro x.
+  specialize (triv x).
+  apply related_quotient_paths in triv.
+  2-5: exact _.
+  apply equiv_subgroup_inv.
+  napply (subgroup_in_op_l _ _ 1 triv) .
+  apply subgroup_in_unit.
+Defined.
+
+Definition ismaximalsubgroup_istrivial_grp_quotient `{Univalence}
+  (G : Group) (N : NormalSubgroup G)
+  (triv : IsTrivialGroup (G / N))
+  : IsMaximalSubgroup N.
+Proof.
+  apply ismaximalsubgroup_istrivial_grp_quotient_map.
+  intro x.
+  exact (triv (grp_quotient_map x) tt).
 Defined.

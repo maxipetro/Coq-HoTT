@@ -1,4 +1,4 @@
-Require Import Basics HSpace.Core Pointed.Core Pointed.Loops.
+From HoTT Require Import Basics HSpace.Core Pointed.Core Pointed.Loops.
 
 Local Open Scope mc_mult_scope.
 Local Open Scope pointed_scope.
@@ -11,10 +11,9 @@ Class IsCoherent (X : pType) `{IsHSpace X} :=
   iscoherent : left_identity pt = right_identity pt.
 
 Record IsCohHSpace (A : pType) := {
-    ishspace_cohhspace : IsHSpace A;
-    iscoherent_cohhspace : IsCoherent A;
+    ishspace_cohhspace :: IsHSpace A;
+    iscoherent_cohhspace :: IsCoherent A;
   }.
-#[export] Existing Instances ishspace_cohhspace iscoherent_cohhspace.
 
 Definition issig_iscohhspace (A : pType)
   : { hspace_op : SgOp A
@@ -28,7 +27,7 @@ Definition issig_iscohhspace (A : pType)
 Definition iscohhspace_equiv_cohhspace {X Y : pType} `{IsCohHSpace Y} (f : X <~>* Y)
   : IsCohHSpace X.
 Proof.
-  snrapply Build_IsCohHSpace.
+  snapply Build_IsCohHSpace.
   - rapply (ishspace_equiv_hspace f).
     apply ishspace_cohhspace; assumption.
   - unfold IsCoherent; cbn.
@@ -36,13 +35,13 @@ Proof.
     refine (ap (ap f^-1) _).
     pelim f.
     refine (1 @@ _).
-    apply iscoherent.
+    exact iscoherent.
 Defined.
 
 (** Every loop space is a coherent H-space. *)
 Definition iscohhspace_loops {X : pType} : IsCohHSpace (loops X).
 Proof.
-  snrapply Build_IsCohHSpace.
-  - apply ishspace_loops.
+  srapply Build_IsCohHSpace.
+  - exact ishspace_loops.
   - reflexivity.
 Defined.

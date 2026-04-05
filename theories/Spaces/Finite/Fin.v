@@ -1,4 +1,4 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Types.
 Require Import HSet.
 Require Import Spaces.Nat.Core.
@@ -33,22 +33,22 @@ Fixpoint fin_to_nat {n} : Fin n -> nat
          end
      end.
 
-Global Instance decidable_fin (n : nat)
+Instance decidable_fin (n : nat)
 : Decidable (Fin n).
 Proof.
   destruct n as [|n]; try exact _.
   exact (inl (inr tt)).
 Defined.
 
-Global Instance decidablepaths_fin@{} (n : nat)
+Instance decidablepaths_fin@{} (n : nat)
 : DecidablePaths (Fin n).
 Proof.
   simple_induction n n IHn; simpl; exact _.
 Defined.
 
-Global Instance contr_fin1 : Contr (Fin 1).
+Instance contr_fin1 : Contr (Fin 1).
 Proof.
-  refine (contr_equiv' Unit (sum_empty_l Unit)^-1).
+  exact (contr_equiv' Unit (sum_empty_l Unit)^-1).
 Defined.
 
 Definition fin_empty (n : nat) (f : Fin n -> Empty) : n = 0.
@@ -57,7 +57,7 @@ Proof.
   elim (f (inr tt)).
 Defined.
 
-(** The zeroth element of a non-empty finite set is the left most element. It also happens to be the biggest by termsize. *)
+(** The zeroth element of a non-empty finite set is the left most element. It also happens to be the biggest by term size. *)
 Fixpoint fin_zero {n : nat} : Fin n.+1 :=
   match n with
   | O => inr tt
@@ -162,7 +162,7 @@ Proof.
       * refine ((fin_transpose_last_two n)
                   oE _
                   oE (fin_transpose_last_two n)).
-        refine ((fin_transpose_last_with n (inl k)) +E 1).
+        exact ((fin_transpose_last_with n (inl k)) +E 1).
       * apply fin_transpose_last_two.
   - exact (equiv_idmap _).
 Defined.
@@ -284,7 +284,7 @@ Proof.
     destruct x as [x|[]]; simpl.
     * rewrite unfunctor_sum_l_beta.
       apply fin_transpose_last_with_invol.
-    * refine (fin_transpose_last_with_last _ _ @ p^).
+    * exact (fin_transpose_last_with_last _ _ @ p^).
   + simple refine (equiv_unfunctor_sum_l@{Set Set Set Set Set Set} e _ _ ; _).
     { intros a.
       destruct (is_inl_or_is_inr (e (inl a))) as [l|r].
@@ -300,7 +300,7 @@ Proof.
       apply unfunctor_sum_l_beta.
     * simpl.
       rewrite fin_transpose_last_with_last.
-      symmetry; apply p.
+      symmetry; exact p.
 Qed.
 
 Definition fin_equiv_inv (n m : nat) (e : Fin n.+1 <~> Fin m.+1)
@@ -333,7 +333,7 @@ Proof.
 Qed.
 
 (** Now it's time for funext. *)
-Global Instance isequiv_fin_equiv `{Funext} (n m : nat)
+Instance isequiv_fin_equiv `{Funext} (n m : nat)
   : IsEquiv (fin_equiv' n m).
 Proof.
   refine (isequiv_pathsplit 0 _); split.
@@ -345,9 +345,9 @@ Proof.
     apply (ap equiv_fun) in p.
     apply ap10 in p.
     apply path_prod'.
-    + refine (fin_equiv_inj_fst n m k l e f p).
+    + exact (fin_equiv_inj_fst n m k l e f p).
     + apply path_equiv, path_arrow.
-      refine (fin_equiv_inj_snd n m k l e f p).
+      exact (fin_equiv_inj_snd n m k l e f p).
 Defined.
 
 Definition equiv_fin_equiv `{Funext} (n m : nat)
@@ -413,7 +413,7 @@ Proof.
   - exact fin_zero.
 Defined.
 
-(** fsucc allows us to convert a natural number into an element of a finite set. This can be thought of as the modulo map. *)
+(** [fsucc] allows us to convert a natural number into an element of a finite set. This can be thought of as the modulo map. *)
 Fixpoint fin_nat {n : nat} (m : nat) : Fin n.+1
   := match m with
       | 0 => fin_zero

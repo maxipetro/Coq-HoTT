@@ -16,7 +16,7 @@ Local Open Scope path_scope.
 Generalizable Variables A B C f g.
 
 (** The identity map is an equivalence. *)
-Global Instance isequiv_idmap (A : Type) : IsEquiv idmap | 0 :=
+Instance isequiv_idmap (A : Type) : IsEquiv idmap | 0 :=
   Build_IsEquiv A A idmap idmap (fun _ => 1) (fun _ => 1) (fun _ => 1).
 
 Definition equiv_idmap (A : Type) : A <~> A := Build_Equiv A A idmap _.
@@ -25,34 +25,30 @@ Arguments equiv_idmap {A} , A.
 
 Notation "1" := equiv_idmap : equiv_scope.
 
-Global Instance reflexive_equiv : Reflexive Equiv | 0 := @equiv_idmap.
+Instance reflexive_equiv : Reflexive Equiv | 0 := @equiv_idmap.
 
 Arguments reflexive_equiv /.
 
 (** The composition of equivalences is an equivalence. *)
-Global Instance isequiv_compose `{IsEquiv A B f} `{IsEquiv B C g}
-  : IsEquiv (g o f) | 1000
-  := Build_IsEquiv A C (g o f)
-    (f^-1 o g^-1)
-    (fun c => ap g (eisretr f (g^-1 c)) @ eisretr g c)
-    (fun a => ap (f^-1) (eissect g (f a)) @ eissect f a)
-    (fun a =>
-      (whiskerL _ (eisadj g (f a))) @
-      (ap_pp g _ _)^ @
-      ap02 g
-      ( (concat_A1p (eisretr f) (eissect g (f a)))^ @
-        (ap_compose f^-1 f _ @@ eisadj f a) @
-        (ap_pp f _ _)^
-      ) @
-      (ap_compose f g _)^
-    ).
-
-(* An alias of [isequiv_compose], with some arguments explicit; often convenient when type class search fails. *)
-Definition isequiv_compose'
-  {A B : Type} (f : A -> B) (_ : IsEquiv f)
-  {C : Type} (g : B -> C) (_ : IsEquiv g)
-  : IsEquiv (g o f)
-  := isequiv_compose.
+Instance isequiv_compose {A B C : Type}
+  (f : A -> B) `{IsEquiv A B f}
+  (g : B -> C) `{IsEquiv B C g}
+  : IsEquiv (g o f) | 1000.
+Proof.
+  snapply Build_IsEquiv.
+  - exact (f^-1 o g^-1).
+  - intro c. exact (ap g (eisretr f (g^-1 c)) @ eisretr g c).
+  - intro a. exact (ap (f^-1) (eissect g (f a)) @ eissect f a).
+  - intro a; cbn.
+    lhs napply (1 @@ eisadj g _).
+    symmetry.
+    lhs napply (ap_compose f).
+    rhs_V napply ap_pp.
+    apply ap02.
+    lhs napply ap_pp.
+    rhs_V napply (concat_A1p (eisretr f) (eissect g (f a))).
+    exact (ap_compose f^-1 f _ @@ eisadj f a)^.
+Defined.
 
 Definition equiv_compose {A B C : Type} (g : B -> C) (f : A -> B)
   `{IsEquiv B C g} `{IsEquiv A B f}
@@ -66,8 +62,8 @@ Definition equiv_compose' {A B C : Type} (g : B <~> C) (f : A <~> B)
 (** We put [g] and [f] in [equiv_scope] explicitly.  This is a partial work-around for https://github.com/coq/coq/issues/3990, which is that implicitly bound scopes don't nest well. *)
 Notation "g 'oE' f" := (equiv_compose' g%equiv f%equiv) : equiv_scope.
 
-(* The TypeClass [Transitive] has a different order of parameters than [equiv_compose].  Thus in declaring the instance we have to switch the order of arguments. *)
-Global Instance transitive_equiv : Transitive Equiv | 0 :=
+(* The typeclass [Transitive] has a different order of parameters than [equiv_compose].  Thus in declaring the instance we have to switch the order of arguments. *)
+Instance transitive_equiv : Transitive Equiv | 0 :=
   fun _ _ _ f g => equiv_compose g f.
 
 Arguments transitive_equiv /.
@@ -85,7 +81,7 @@ Section EquivTransport.
   Context {A : Type} (P : A -> Type) {x y : A} (p : x = y).
 
   (** The inverse and the homotopies of transport are defined explicitly.  This allows us to reason about the inverse when the input is not [idpath]. *)
-  Global Instance isequiv_transport : IsEquiv (transport P p) | 0
+  #[export] Instance isequiv_transport : IsEquiv (transport P p) | 0
     := Build_IsEquiv (P x) (P y) (transport P p) (transport P p^)
     (transport_pV P p) (transport_Vp P p) (transport_pVp P p).
 
@@ -100,10 +96,10 @@ Section EquivTransportD.
     Context {A : Type} (P : A -> Type) (Q : forall a : A, P a -> Type)
       {x y : A} (p : x = y) {px : P x}.
 
-    (** The inverse of transportD is defined explicitly.  This allows us to reason about the inverse when the input is not [idpath]. *)
-    Global Instance isequiv_transportD : IsEquiv (transportD P Q p px).
+    (** The inverse of [transportD] is defined explicitly.  This allows us to reason about the inverse when the input is not [idpath]. *)
+    #[export] Instance isequiv_transportD : IsEquiv (transportD P Q p px).
     Proof.
-      snrapply Build_IsEquiv.
+      snapply Build_IsEquiv.
       { refine (_ o transportD P Q p^ (transport P p px)).
         exact (transport (Q x) (transport_Vp _ p px)). }
       all: by destruct p.
@@ -162,7 +158,7 @@ Definition isequiv_homotopic {A B : Type} (f : A -> B) {g : A -> B}
   `{IsEquiv A B f} (h : f == g)
   : IsEquiv g.
 Proof.
-  snrapply isequiv_adjointify.
+  snapply isequiv_adjointify.
   - exact f^-1.
   - intro b.  exact ((h _)^ @ eisretr f b).
   - intro a.  exact (ap f^-1 (h a)^ @ eissect f a).
@@ -182,7 +178,7 @@ Definition equiv_homotopic_inverse {A B} (e : A <~> B)
   {f : A -> B} {g : B -> A} (h : f == e) (k : g == e^-1)
   : A <~> B.
 Proof.
-  snrapply equiv_adjointify.
+  snapply equiv_adjointify.
   - exact f.
   - exact g.
   - intro a.  exact (ap f (k a) @ h _ @ eisretr e a).
@@ -246,7 +242,7 @@ Definition contr_equiv' A {B} `(f : A <~> B) `{Contr A}
   := contr_equiv A f.
 
 (** Any two contractible types are equivalent. *)
-Global Instance isequiv_contr_contr {A B : Type}
+Instance isequiv_contr_contr {A B : Type}
        `{Contr A} `{Contr B} (f : A -> B)
   : IsEquiv f
   := Build_IsEquiv _ _ f (fun _ => (center A))
@@ -259,7 +255,7 @@ Definition equiv_contr_contr {A B : Type} `{Contr A} `{Contr B}
   := Build_Equiv _ _ (fun _ => center B) _.
 
 (** The projection from the sum of a family of contractible types is an equivalence. *)
-Global Instance isequiv_pr1 {A : Type} (P : A -> Type) `{forall x, Contr (P x)}
+Instance isequiv_pr1 {A : Type} (P : A -> Type) `{forall x, Contr (P x)}
   : IsEquiv (@pr1 A P).
 Proof.
   apply (Build_IsEquiv
@@ -281,7 +277,7 @@ Definition equiv_pr1 {A : Type} (P : A -> Type) `{forall x, Contr (P x)}
 (** Equivalences between path spaces *)
 
 (** If [f] is an equivalence, then so is [ap f].  We are lazy and use [adjointify]. *)
-Global Instance isequiv_ap `{IsEquiv A B f} (x y : A)
+Instance isequiv_ap `{IsEquiv A B f} (x y : A)
   : IsEquiv (@ap A B f x y) | 1000
   := isequiv_adjointify (ap f)
   (fun q => (eissect f x)^  @  ap f^-1 q  @  eissect f y)
@@ -316,7 +312,7 @@ Definition equiv_inj `(f : A -> B) `{IsEquiv A B f} {x y : A}
 
 (** Assuming function extensionality, composing with an equivalence is itself an equivalence *)
 
-Global Instance isequiv_precompose `{Funext} {A B C : Type}
+Instance isequiv_precompose `{Funext} {A B C : Type}
   (f : A -> B) `{IsEquiv A B f}
   : IsEquiv (fun (g:B->C) => g o f) | 1000
   := isequiv_adjointify (fun (g:B->C) => g o f)
@@ -333,7 +329,7 @@ Definition equiv_precompose' `{Funext} {A B C : Type} (f : A <~> B)
   : (B -> C) <~> (A -> C)
   := Build_Equiv _ _ (fun (g:B->C) => g o f) _.
 
-Global Instance isequiv_postcompose `{Funext} {A B C : Type}
+Instance isequiv_postcompose `{Funext} {A B C : Type}
   (f : B -> C) `{IsEquiv B C f}
   : IsEquiv (fun (g:A->B) => f o g) | 1000
   := isequiv_adjointify (fun (g:A->B) => f o g)
@@ -379,20 +375,18 @@ Proof.
 Defined.
 
 (** The inverse of an equivalence is an equivalence. *)
-Global Instance isequiv_inverse {A B : Type} (f : A -> B) {feq : IsEquiv f}
+Instance isequiv_inverse {A B : Type} (f : A -> B) {feq : IsEquiv f}
   : IsEquiv f^-1 | 10000.
 Proof.
-  refine (Build_IsEquiv B A f^-1 f (eissect f) (eisretr f) _).
+  nrefine (Build_IsEquiv B A f^-1 f (eissect f) (eisretr f) _).
   intro b.
   apply (equiv_inj (ap f)).
-(* We will prove the equality as a composite of four paths, working right to left.
-  The LHS remains [ap f (eissect f (f^-1 b))] throughout the process.
-  Both sides of the equation are paths of type [f (f^-1 (f (f^-1 b))) = f (f^-1 b)]. *)
-  refine (_ @ _ @ _ @ _); revgoals.
-  1: apply ap_compose.
-  1: symmetry; apply (ap_homotopic_id (eisretr f)).
-  1: symmetry; apply concat_pp_V.
-  1: symmetry; apply eisadj.
+  (* Both sides of the equation are paths of type [f (f^-1 (f (f^-1 b))) = f (f^-1 b)]. *)
+  rhs_V napply ap_compose.
+  symmetry.
+  lhs napply (ap_homotopic_id (eisretr f)).
+  lhs napply concat_pp_V.
+  apply eisadj.
 Defined.
 
 (** If the goal is [IsEquiv _^-1], then use [isequiv_inverse]; otherwise, don't pretend worry about if the goal is an evar and we want to add a [^-1]. *)
@@ -409,7 +403,7 @@ Defined.
 
 Notation "e ^-1" := (@equiv_inverse _ _ e) : equiv_scope.
 
-Global Instance symmetric_equiv : Symmetric Equiv | 0 := @equiv_inverse.
+Instance symmetric_equiv : Symmetric Equiv | 0 := @equiv_inverse.
 
 Arguments symmetric_equiv /.
 
@@ -470,7 +464,7 @@ Definition isequiv_commsq {A B C D}
 : IsEquiv g.
 Proof.
   refine (@cancelR_isequiv _ _ _ h g _ _).
-  refine (isequiv_homotopic _ p).
+  exact (isequiv_homotopic _ p).
 Defined.
 
 Definition isequiv_commsq' {A B C D}
@@ -480,12 +474,12 @@ Definition isequiv_commsq' {A B C D}
 : IsEquiv f.
 Proof.
   refine (@cancelL_isequiv _ _ _ k f _ _).
-  refine (isequiv_homotopic _ p).
+  exact (isequiv_homotopic _ p).
 Defined.
 
 (** Based homotopy spaces *)
 
-Global Instance contr_basedhomotopy `{Funext}
+Instance contr_basedhomotopy `{Funext}
        {A:Type} {B : A -> Type} (f : forall x, B x)
 : Contr {g : forall x, B x & f == g }.
 Proof.
@@ -497,7 +491,7 @@ Proof.
   - apply ap, eissect.
 Defined.
 
-Global Instance contr_basedhomotopy' `{Funext}
+Instance contr_basedhomotopy' `{Funext}
        {A:Type} {B : A -> Type} (f : forall x, B x)
 : Contr {g : forall x, B x & g == f }.
 Proof.
@@ -532,7 +526,7 @@ Defined.
 
 (** Using [equiv_ind], we define a handy little tactic which introduces a variable [x] and simultaneously substitutes it along an equivalence [E]. *)
 Ltac equiv_intro E x :=
-  match goal with
+  hnf; match goal with
     | |- forall y, @?Q y =>
       refine (equiv_ind E Q _); intros x
   end.
@@ -592,7 +586,7 @@ Ltac ev_equiv :=
 
 (** ** Building equivalences between nested sigma and record types *)
 
-(** The following tactic [make_equiv] builds an equivalence between two types built out of arbitrarily nested sigma and record types, not necessarily right-associated, as long as they have all the same underyling components.  This is more general than [issig] in that it doesn't just prove equivalences between a single record type and a single right-nested tower of sigma types, but less powerful in that it can't deduce the latter nested tower of sigmas automatically: you have to have both sides of the equivalence known. *)
+(** The following tactic [make_equiv] builds an equivalence between two types built out of arbitrarily nested sigma and record types, not necessarily right-associated, as long as they have all the same underlying components.  This is more general than [issig] in that it doesn't just prove equivalences between a single record type and a single right-nested tower of sigma types, but less powerful in that it can't deduce the latter nested tower of sigmas automatically: you have to have both sides of the equivalence known. *)
 
 (* Perform [intros] repeatedly, recursively destructing all possibly-nested record types. We use a custom induction principle for [Contr], since [elim] produces two goals. The [hnf] is important, for example to unfold [IsUnitPreserving] to an equality, which the [lazymatch] then ignores. *)
 Ltac decomposing_intros :=

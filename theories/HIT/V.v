@@ -25,7 +25,7 @@ Axiom setext : forall {A B : Type} (R : A -> B -> HProp)
 set (h o (spushl R)) = set (h o (spushr R)).
 
 Axiom ishset_V : IsHSet V.
-Global Existing Instance ishset_V.
+Existing Instance ishset_V.
 
 (** The induction principle.  Annotating the universes here greatly reduces the number of universe variables later in the file.  For example, [function] below went from 279 to 3.  If [V_ind] needs to be generalized in the future, check [function] to make sure things haven't exploded again. *)
 Fixpoint V_ind@{U' U u | U < U'} (P : V@{U' U} -> Type@{u})
@@ -162,7 +162,7 @@ Proof.
     intros [b Rab]. exists b.
     apply tr.
     exists (ap h (spglue R Rab)).
-    apply (concatR (apD H_h (spglue R Rab))).
+    rhs_V napply (apD H_h (spglue R Rab)).
     apply inverse. unfold f, g. apply transport_compose.
   - intros b.
     set (trunca := snd bitot_R b). generalize trunca.
@@ -170,7 +170,7 @@ Proof.
     intros [a Rab]. exists a.
     apply tr.
     exists (ap h (spglue R Rab)).
-    apply (concatR (apD H_h (spglue R Rab))).
+    rhs_V napply (apD H_h (spglue R Rab)).
     apply inverse. unfold f, g. apply transport_compose.
 Defined.
 
@@ -221,9 +221,9 @@ Notation "x ⊆ y" := (subset x y) : set_scope.
 
 
 (** ** Bisimulation relation *)
-(** The equality in V lives in Type@{U'}. We define the bisimulation relation which is a U-small resizing of the equality in V: it must live in HProp_U : Type{U'}, hence the codomain is HProp@{U}. We then prove that bisimulation is equality (bisim_equals_id), then use it to prove the key lemma monic_set_present. *)
+(** The equality in [V] lives in [Type@{U'}]. We define the bisimulation relation which is a [U]-small resizing of the equality in [V]: it must live in [HProp_U : Type{U'}], hence the codomain is [HProp@{U}]. We then prove that bisimulation is equality ([bisim_equals_id]), then use it to prove the key lemma [monic_set_present]. *)
 
-(* We define bisimulation by double induction on V. We first fix the first argument as set(A,f) and define bisim_aux : V -> HProp, by induction. This is the inner of the two inductions. *)
+(* We define [bisimulation] by double induction on [V]. We first fix the first argument as set(A,f) and define [bisim_aux : V -> HProp], by induction. This is the inner of the two inductions. *)
 Local Definition bisim_aux (A : Type) (f : A -> V) (H_f : A -> V -> HProp) : V -> HProp.
 Proof.
   apply V_rec' with
@@ -250,7 +250,7 @@ Proof.
         intros [a H3]. exists a. exact (transport (fun x => H_f a x) p^ H3).
 Defined.
 
-(* Then we define bisim : V -> (V -> HProp) by induction again *)
+(* Then we define [bisimulation : V -> (V -> HProp)] by induction again *)
 Definition bisimulation : V@{U' U} -> V@{U' U} -> HProp@{U}.
 Proof.
   refine (V_rec' (V -> HProp) _ bisim_aux _).
@@ -277,10 +277,10 @@ Defined.
 
 Notation "u ~~ v" := (bisimulation u v) : set_scope.
 
-Global Instance reflexive_bisimulation : Reflexive bisimulation.
+#[export] Instance reflexive_bisimulation : Reflexive bisimulation.
 Proof.
   refine (V_ind_hprop _ _ _).
-  intros A f H_f; simpl. split.
+  intros A f H_f. split.
   - intro a; apply tr; exists a; auto.
   - intro a; apply tr; exists a; auto.
 Defined.
@@ -293,7 +293,7 @@ Proof.
   - generalize u v.
     refine (V_ind_hprop _ _ _); intros A f H_f.
     refine (V_ind_hprop _ _ _); intros B g _.
-    simpl; intros [H1 H2].
+    intros [H1 H2].
     apply setext'. split.
     + intro a. generalize (H1 a). apply (Trunc_functor (-1)).
       intros [b h]. exists b; exact (H_f a (g b) h).
@@ -304,7 +304,7 @@ Defined.
 
 (** ** Canonical presentation of V-sets (Lemma 10.5.6) *)
 
-(** Using the regular kernel would lead to a universe inconsistency in the monic_set_present lemma later. *)
+(** Using the regular kernel would lead to a universe inconsistency in the [monic_set_present] lemma later. *)
 Definition ker_bisim {A} (f : A -> V) (x y : A) := (f x ~~ f y).
 
 Definition ker_bisim_is_ker {A} (f : A -> V)
@@ -314,7 +314,7 @@ Proof.
 Defined.
 
 Section MonicSetPresent_Uniqueness.
-(** Given u : V, we want to show that the representation u = @set Au mu, where Au is an hSet and mu is monic, is unique. *)
+(** Given [u : V], we want to show that the representation [u = @set Au mu], where [Au] is an hSet and [mu] is monic, is unique. *)
 
 Context {u : V} {Au Au': Type} {h : IsHSet Au} {h' : IsHSet Au'} {mu : Au -> V} {mono : IsEmbedding mu}
   {mu' : Au' -> V} {mono' : IsEmbedding mu'} {p : u = set mu} {p' : u = set mu'}.
@@ -351,18 +351,18 @@ Defined.
 Let path : Au' = Au.
 Proof.
   apply path_universe_uncurried.
-  apply (equiv_adjointify inv_e e hom2 hom1).
+  exact (equiv_adjointify inv_e e hom2 hom1).
 Defined.
 
 Lemma mu_eq_mu' : transport (fun A : Type => A -> V) path^ mu = mu'.
 Proof.
   apply path_forall. intro a'.
   transitivity (transport (fun X => V) path^ (mu (transport (fun X : Type => X) path^^ a'))).
-  - apply (@transport_arrow Type (fun X : Type => X) (fun X => V) Au Au' path^ mu a').
+  - exact (@transport_arrow Type (fun X : Type => X) (fun X => V) Au Au' path^ mu a').
   - transitivity (mu (transport idmap path^^ a')).
     + apply transport_const.
     + transitivity (mu (inv_e a')).
-      2: apply (pr2 (snd eq_img_untrunc a')).
+      2: exact (pr2 (snd eq_img_untrunc a')).
       refine (ap mu _).
       transitivity (transport idmap path a').
       * exact (ap (fun x => transport idmap x a') (inv_V path)).
@@ -374,7 +374,7 @@ Proof.
   apply path_sigma_uncurried; simpl.
   exists path^.
   transitivity (path^ # mu; transportD (fun A => A -> V) (fun A m => IsHSet A * IsEmbedding m * (u = set m)) path^ mu (h, mono, p)).
-  - apply (@transport_sigma Type (fun A => A -> V) (fun A m => IsHSet A * IsEmbedding m * (u = set m)) Au Au' path^ (mu; (h, mono, p))).
+  - exact (@transport_sigma Type (fun A => A -> V) (fun A m => IsHSet A * IsEmbedding m * (u = set m)) Au Au' path^ (mu; (h, mono, p))).
   - apply path_sigma_hprop; simpl.
     exact mu_eq_mu'.
 Defined.
@@ -400,7 +400,7 @@ Proof.
   - intro v. apply hprop_allpath.
     intros [Au [mu ((hset, mono), p)]].
     intros [Au' [mu' ((hset', mono'), p')]].
-    apply monic_set_present_uniqueness.
+    exact monic_set_present_uniqueness.
 Defined.
 
 Definition type_of_members (u : V) : Type := pr1 (monic_set_present u).
@@ -427,8 +427,8 @@ Proof.
       intros [b p]. apply tr. exists b. exact p^.
     + intro. apply (H2 (g b)). apply tr; exists b; reflexivity.
   - intro p; split.
-    + intros z Hz. apply (transport (fun x => z ∈ x) p Hz).
-    + intros z Hz. apply (transport (fun x => z ∈ x) p^ Hz).
+    + intros z Hz. exact (transport (fun x => z ∈ x) p Hz).
+    + intros z Hz. exact (transport (fun x => z ∈ x) p^ Hz).
 Qed.
 
 Lemma mem_induction (C : V -> HProp)
@@ -443,7 +443,7 @@ Defined.
 
 (** ** Two useful lemmas *)
 
-Global Instance irreflexive_mem : Irreflexive mem.
+#[export] Instance irreflexive_mem : Irreflexive mem.
 Proof.
   assert (forall v, IsHProp (complement (fun x x0 : V => x ∈ x0) v v)). (* https://coq.inria.fr/bugs/show_bug.cgi?id=3854 *)
   { intro.
@@ -478,7 +478,7 @@ Definition V_empty : V := set (Empty_ind (fun _ => V)).
 (** The singleton {u} *)
 Definition V_singleton (u : V) : V@{U' U} := set (Unit_ind u).
 
-Global Instance isequiv_ap_V_singleton {u v : V}
+#[export] Instance isequiv_ap_V_singleton {u v : V}
 : IsEquiv (@ap _ _ V_singleton u v).
 Proof.
   simple refine (Build_IsEquiv _ _ _ _ _ _ _); try solve [ intro; apply path_ishprop ].
@@ -525,7 +525,7 @@ Proof.
       { apply (snd extensionality p). simpl.
         apply tr; exists true; reflexivity. }
       refine (Trunc_rec _ H). intros [t p']; destruct t.
-      * apply ((ap V_singleton)^-1 p'^).
+      * exact ((ap V_singleton)^-1 p'^).
       * symmetry; apply (fst pair_eq_singleton p').
     + split.
       * exact p1.
@@ -665,7 +665,7 @@ Proof.
       destruct (fst path_pair_ord p) as (px, py). destruct (fst path_pair_ord p') as (px', py').
       transitivity (func_of_members (h a)); auto with path_hints. transitivity (func_of_members (h a'));auto with path_hints.
       refine (ap func_of_members _). refine (ap h _).
-      apply (isinj_embedding func_of_members IsEmbedding_funcofmembers a a' (px @ px'^)).
+      exact (isinj_embedding func_of_members IsEmbedding_funcofmembers a a' (px @ px'^)).
   - intros ((H1, H2), H3). simpl.
     assert (h : forall a : [u], {b : [v] & [func_of_members a, func_of_members b] ∈ phi}).
     { intro a. pose (x := func_of_members a).

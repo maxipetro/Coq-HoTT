@@ -1,4 +1,4 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Spaces.Pos.Core.
 
 Local Set Universe Minimization ToSet.
@@ -25,7 +25,7 @@ Local Open Scope binint_scope.
 Delimit Scope binint_scope with binint.
 
 (** The integers are a pointed type *)
-Global Instance ispointed_BinInt : IsPointed BinInt := zero.
+Instance ispointed_BinInt : IsPointed BinInt := zero.
 
 (** Properties of constructors *)
 
@@ -126,7 +126,7 @@ Definition binint_pred_double x :=
     | pos p => pos (pos_pred_double p)
   end.
 
-(** ** Subtraction of positive into BinInt *)
+(** ** Subtraction of positive into [BinInt] *)
 
 Fixpoint binint_pos_sub (x y : Pos) {struct y} : BinInt :=
   match x, y with
@@ -228,7 +228,7 @@ Definition binint_sgn z :=
 
 (* ** Decidable paths and truncation. *)
 
-Global Instance decpaths_binint : DecidablePaths BinInt.
+Instance decpaths_binint : DecidablePaths BinInt.
 Proof.
   intros [n | | n] [m | | m].
   + destruct (dec (n = m)) as [p | q].
@@ -247,4 +247,4 @@ Proof.
 Defined.
 
 (** Since integers have decidable paths they are a hset *)
-Global Instance hset_binint : IsHSet BinInt | 0 := _.
+Instance hset_binint : IsHSet BinInt | 0 := _.

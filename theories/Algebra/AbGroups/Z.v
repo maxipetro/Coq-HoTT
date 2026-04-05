@@ -1,20 +1,21 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Spaces.Pos.Core Spaces.Int.
 Require Import Algebra.AbGroups.AbelianGroup.
 
 Local Set Universe Minimization ToSet.
 
+Local Open Scope int_scope.
+Local Open Scope mc_add_scope.
+
 (** * The group of integers *)
 
 (** See also Cyclic.v for a definition of the integers as the free group on one generator. *)
 
-Local Open Scope int_scope.
-
 Definition abgroup_Z@{} : AbGroup@{Set}.
 Proof.
-  snrapply Build_AbGroup'.
+  snapply Build_AbGroup'.
   - exact Int.
-  - exact 0.
+  - exact 0%int.
   - exact int_neg.
   - exact int_add.
   - exact _.
@@ -28,12 +29,10 @@ Defined.
 Definition grp_pow_homo {G : Group} (g : G)
   : GroupHomomorphism abgroup_Z G.
 Proof.
-  snrapply Build_GroupHomomorphism.
+  snapply Build_GroupHomomorphism.
   1: exact (grp_pow g).
   intros m n; apply grp_pow_add.
 Defined.
-
-Local Open Scope mc_add_scope.
 
 (** [ab_mul] (and [grp_pow]) give multiplication in [abgroup_Z]. *)
 Definition abgroup_Z_ab_mul (z z' : Int)
@@ -42,11 +41,11 @@ Proof.
   induction z.
   - reflexivity.
   - cbn.
-    lhs nrapply (grp_pow_succ (G:=abgroup_Z)).
-    rhs nrapply int_mul_succ_l.
+    lhs napply (grp_pow_succ (G:=abgroup_Z)).
+    rhs napply int_mul_succ_l.
     f_ap.
   - cbn.
-    lhs nrapply (grp_pow_pred (G:=abgroup_Z)).
-    rhs nrapply int_mul_pred_l.
+    lhs napply (grp_pow_pred (G:=abgroup_Z)).
+    rhs napply int_mul_pred_l.
     f_ap.
 Defined.

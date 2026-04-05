@@ -1,4 +1,4 @@
-Require Import Basics Types.
+From HoTT Require Import Basics Types.
 Require Import Pointed.Core Pointed.Loops Pointed.pEquiv.
 Require Import HSet.
 Require Import Spaces.Int.
@@ -59,7 +59,7 @@ Arguments base : simpl never.
 Arguments loop : simpl never.
 Arguments Circle_ind_beta_loop : simpl never.
 
-(** The recursion princple or non-dependent eliminator. *)
+(** The recursion principle or non-dependent eliminator. *)
 Definition Circle_rec (P : Type) (b : P) (l : b = b)
   : Circle -> P
   := Circle_ind (fun _ => P) b (transport_const _ _ @ l).
@@ -71,11 +71,11 @@ Proof.
   unfold Circle_rec.
   refine (cancelL (transport_const loop b) _ _ _).
   refine ((apD_const (Circle_ind (fun _ => P) b _) loop)^ @ _).
-  refine (Circle_ind_beta_loop (fun _ => P) _ _).
+  exact (Circle_ind_beta_loop (fun _ => P) _ _).
 Defined.
 
 (** The [Circle] is pointed by [base]. *)
-Global Instance ispointed_Circle : IsPointed Circle := base.
+#[export] Instance ispointed_Circle : IsPointed Circle := base.
 
 Definition pCircle : pType := [Circle, base].
 
@@ -168,7 +168,7 @@ End EncodeDecode.
 (** ** Connectedness and truncatedness of the [Circle] *)
 
 (** The circle is 0-connected. *)
-Global Instance isconnected_Circle `{Univalence} : IsConnected 0 Circle.
+Instance isconnected_Circle `{Univalence} : IsConnected 0 Circle.
 Proof.
   apply is0connected_merely_allpath.
   1: exact (tr base).
@@ -180,7 +180,7 @@ Proof.
 Defined.
 
 (** It follows that the circle is a 1-type. *)
-Global Instance istrunc_Circle `{Univalence} : IsTrunc 1 Circle.
+Instance istrunc_Circle `{Univalence} : IsTrunc 1 Circle.
 Proof.
   apply istrunc_S.
   intros x y.
@@ -188,12 +188,12 @@ Proof.
   assert (q := merely_path_is0connected Circle base y).
   strip_truncations.
   destruct p, q.
-  refine (istrunc_equiv_istrunc (n := 0) Int equiv_loopCircle_int^-1).
+  exact (istrunc_equiv_istrunc (n := 0) Int equiv_loopCircle_int^-1).
 Defined.
 
 (** ** Iteration of equivalences *)
 
-(** If [P : Circle -> Type] is defined by a type [X] and an autoequivalence [f], then the image of [n : Int] regarded as in [base = base] is [iter_int f n]. *)
+(** If [P : Circle -> Type] is defined by a type [X] and an auto-equivalence [f], then the image of [n : Int] regarded as in [base = base] is [iter_int f n]. *)
 Definition Circle_action_is_iter `{Univalence} X (f : X <~> X) (n : Int) (x : X)
 : transport (Circle_rec Type X (path_universe f)) (equiv_loopCircle_int^-1 n) x
   = int_iter f n x.
@@ -213,7 +213,7 @@ Definition Circle_rec_uncurried (P : Type)
   : {b : P & b = b} -> (Circle -> P)
   := fun x => Circle_rec P (pr1 x) (pr2 x).
 
-Global Instance isequiv_Circle_rec_uncurried `{Funext} (P : Type) : IsEquiv (Circle_rec_uncurried P).
+Instance isequiv_Circle_rec_uncurried `{Funext} (P : Type) : IsEquiv (Circle_rec_uncurried P).
 Proof.
   srapply isequiv_adjointify.
   - exact (fun g => (g base ; ap g loop)).
@@ -221,8 +221,7 @@ Proof.
     apply path_arrow.
     srapply Circle_ind.
     + reflexivity.
-    + unfold Circle_rec_uncurried; cbn.
-      apply transport_paths_FlFr'.
+    + transport_paths FlFr.
       apply equiv_p1_1q.
       apply Circle_rec_beta_loop.
   - intros [b p]; apply ap.
@@ -237,7 +236,7 @@ Definition equiv_Circle_rec `{Funext} (P : Type)
 Definition pmap_from_circle_loops `{Funext} (X : pType)
   : (pCircle ->** X) <~>* loops X.
 Proof.
-  snrapply Build_pEquiv'.
+  snapply Build_pEquiv'.
   - refine (_ oE (issig_pmap _ _)^-1%equiv).
     equiv_via { xp : { x : X & x = x } & xp.1 = pt }.
     2: make_equiv_contr_basedpaths.

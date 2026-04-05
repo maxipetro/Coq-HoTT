@@ -1,4 +1,4 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Types.
 Require Import Diagrams.Graph.
 Require Import Diagrams.Diagram.
@@ -83,11 +83,8 @@ Section Cocone.
   (** A cocone [C] over [D] to [X] is said universal when for all [Y] the map [cocone_postcompose] is an equivalence. In particular, given another cocone [C'] over [D] to [X'] the inverse of the map allows to recover a map [h] : [X] -> [X'] such that [C'] is [C] postcomposed with [h]. The fact that [cocone_postcompose] is an equivalence is an elegant way of stating the usual "unique existence" of category theory. *)
 
   Class UniversalCocone (C : Cocone D X) := {
-    is_universal : forall Y, IsEquiv (@cocone_postcompose C Y);
+    is_universal :: forall Y, IsEquiv (@cocone_postcompose C Y);
   }.
-  (* Use :> and remove the two following lines,
-     once Coq 8.16 is the minimum required version. *)
-  #[export] Existing Instance is_universal.
   Coercion is_universal : UniversalCocone >-> Funclass.
 
 End Cocone.
@@ -193,11 +190,11 @@ Section FunctorialityCocone.
 
   (** The precomposition with a diagram equivalence is an equivalence. *)
 
-  Global Instance cocone_precompose_equiv {D1 D2 : Diagram G}
+  #[export] Instance cocone_precompose_equiv {D1 D2 : Diagram G}
     (m : D1 ~d~ D2) (X : Type) : IsEquiv (cocone_precompose (X:=X) m).
   Proof.
     srapply isequiv_adjointify.
-    1: apply (cocone_precompose (diagram_equiv_inv m)).
+    1: exact (cocone_precompose (diagram_equiv_inv m)).
     + intros C.
       etransitivity.
       - apply cocone_precompose_comp.
@@ -212,7 +209,7 @@ Section FunctorialityCocone.
 
   (** The postcomposition with an equivalence is an equivalence. *)
 
-  Global Instance cocone_postcompose_equiv {D : Diagram G} `(f : X <~> Y)
+  #[export] Instance cocone_postcompose_equiv {D : Diagram G} `(f : X <~> Y)
     : IsEquiv (fun C : Cocone D X => cocone_postcompose C f).
   Proof.
     srapply isequiv_adjointify.
@@ -239,22 +236,22 @@ Section FunctorialityCocone.
 
   (** Universality of a cocone is preserved by composition with a (diagram) equivalence. *)
 
-  Global Instance cocone_precompose_equiv_universality {D1 D2 : Diagram G}
+  #[export] Instance cocone_precompose_equiv_universality {D1 D2 : Diagram G}
     (m: D1 ~d~ D2) {X} (C : Cocone D2 X) (_ : UniversalCocone C)
     : UniversalCocone (cocone_precompose (X:=X) m C).
   Proof.
     srapply Build_UniversalCocone; intro.
     rewrite (path_forall _ _ (fun f => cocone_precompose_postcompose m f C)).
-    srapply isequiv_compose.
+    rapply isequiv_compose.
   Defined.
 
-  Global Instance cocone_postcompose_equiv_universality {D: Diagram G} `(f: X <~> Y)
+  #[export] Instance cocone_postcompose_equiv_universality {D: Diagram G} `(f: X <~> Y)
     (C : Cocone D X) (_ : UniversalCocone C)
     : UniversalCocone (cocone_postcompose C f).
   Proof.
-    snrapply Build_UniversalCocone; intro.
+    snapply Build_UniversalCocone; intro.
     rewrite <- (path_forall _ _ (fun g => cocone_postcompose_comp f g C)).
-    srapply isequiv_compose.
+    rapply isequiv_compose.
   Defined.
 
 End FunctorialityCocone.

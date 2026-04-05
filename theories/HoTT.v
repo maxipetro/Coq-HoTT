@@ -25,11 +25,9 @@ Require Export HoTT.Equiv.PathSplit.
 Require Export HoTT.Equiv.Relational.
 
 Require Export HoTT.Extensions.
-Require Export HoTT.Misc.
 
 Require Export HoTT.Functorish.
 Require Export HoTT.Factorization.
-Require Export HoTT.Constant.
 
 Require Export HoTT.Universes.Smallness.
 Require Export HoTT.Universes.TruncType.
@@ -41,10 +39,8 @@ Require Export HoTT.Universes.Automorphisms.
 Require Export HoTT.Universes.BAut.
 Require Export HoTT.Universes.Rigid.
 
-Require Export HoTT.NullHomotopy.
 Require Export HoTT.Idempotents.
 Require Export HoTT.ExcludedMiddle.
-Require Export HoTT.BoundedSearch.
 
 Require Export HoTT.HIT.Interval.
 Require Export HoTT.HIT.Flattening.
@@ -54,7 +50,6 @@ Require Export HoTT.HIT.epi.
 Require Export HoTT.HIT.unique_choice.
 Require Export HoTT.HIT.iso.
 Require Export HoTT.HIT.quotient.
-Require Export HoTT.HIT.surjective_factor.
 Require Export HoTT.HIT.V.
 
 Require Export HoTT.Diagrams.Graph.
@@ -107,12 +102,17 @@ Require Export HoTT.Modalities.Meet.
 Require Export HoTT.Modalities.CoreflectiveSubuniverse.
 
 Require Export HoTT.Spaces.Nat.
-Require Export HoTT.Spaces.BinInt.
+Require Export HoTT.Spaces.Int.
+Require Export HoTT.Spaces.FreeInt.
 Require Export HoTT.Spaces.Pos.
+Require Export HoTT.Spaces.BinInt.
 
 Require Export HoTT.Spaces.List.Core.
 Require Export HoTT.Spaces.List.Theory.
 Require Export HoTT.Spaces.List.Paths.
+
+Require Export HoTT.Spaces.NatSeq.Core.
+Require Export HoTT.Spaces.NatSeq.UStructure.
 
 Require Export HoTT.Spaces.Cantor.
 
@@ -153,7 +153,6 @@ Require Export HoTT.Homotopy.HomotopyGroup.
 Require Export HoTT.Homotopy.PinSn.
 Require Export HoTT.Homotopy.WhiteheadsPrinciple.
 Require Export HoTT.Homotopy.BlakersMassey.
-Require Export HoTT.Homotopy.Freudenthal.
 Require Export HoTT.Homotopy.Suspension.
 Require Export HoTT.Homotopy.Smash.
 Require Export HoTT.Homotopy.Wedge.
@@ -162,12 +161,15 @@ Require Export HoTT.Homotopy.HSpace.
 Require Export HoTT.Homotopy.ClassifyingSpace.
 Require Export HoTT.Homotopy.CayleyDickson.
 Require Export HoTT.Homotopy.EMSpace.
+Require Export HoTT.Homotopy.ExactSequence.
 Require Export HoTT.Homotopy.HSpaceS1.
 Require Export HoTT.Homotopy.Bouquet.
 Require Export HoTT.Homotopy.EncodeDecode.
+Require Export HoTT.Homotopy.SuccessorStructure.
 Require Export HoTT.Homotopy.Syllepsis.
 Require Export HoTT.Homotopy.Hopf.
 Require Export HoTT.Homotopy.IdentitySystems.
+Require Export HoTT.Homotopy.NullHomotopy.
 
 Require Export HoTT.Spectra.Spectrum.
 
@@ -185,8 +187,11 @@ Require Export HoTT.Sets.Hartogs.
 Require Export HoTT.Sets.Ordinals.
 Require Export HoTT.Sets.Powers.
 
+Require Export HoTT.Misc.BoundedSearch.
+Require Export HoTT.Misc.UStructures.
+
 (** We do _not_ export [UnivalenceAxiom], [FunextAxiom], or any of the files in [Metatheory] from this file.  Thus, importing this file does not prevent you from tracking usage of [Univalence] and [Funext] theorem-by-theorem in the same way that the library does.  If you want any of those files, you should import them separately. *)
 
-(** We check that UnivalenceAxiom, FunextAxiom aren't being leaked. This is so that these can be imported seperately. *)
+(** We check that [UnivalenceAxiom], [FunextAxiom] aren't being leaked. This is so that these can be imported separately. *)
 Fail Check HoTT.UnivalenceAxiom.univalence_axiom.
 Fail Check HoTT.FunextAxiom.funext_axiom.

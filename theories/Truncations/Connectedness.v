@@ -1,6 +1,7 @@
 (** * Connectedness *)
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Types.
+Require Import HFiber.
 
 Require Import Extensions.
 Require Import Factorization.
@@ -14,7 +15,7 @@ Local Set Universe Minimization ToSet.
 Local Open Scope path_scope.
 Local Open Scope trunc_scope.
 
-(** There is a slight controversy of indexing for connectedness — in particular, how the indexing for maps shoud relate to the indexing for types.  One may reasonably take the connectedness of a map to correspond either to that of its *fibers*, or of its *cofiber*; these differ by 1.  The traditional topological indexing uses the cofiber.  We use the fiber, as does Lurie in [HTT]; but we choose to agree with the traditional indexing on types, while Lurie agrees with it on maps.
+(** There is a slight controversy of indexing for connectedness — in particular, how the indexing for maps should relate to the indexing for types.  One may reasonably take the connectedness of a map to correspond either to that of its *fibers*, or of its *cofiber*; these differ by 1.  The traditional topological indexing uses the cofiber.  We use the fiber, as does Lurie in [HTT]; but we choose to agree with the traditional indexing on types, while Lurie agrees with it on maps.
 
 Currently, the translation is therefore as follows:
 
@@ -47,31 +48,62 @@ Proof.
     intros y. apply (allpath_extension_conn_map n); assumption.
     (* m = S m' *)
   - apply istrunc_S.
-    intros e e'. refine (istrunc_isequiv_istrunc _ (path_extension e e')).
-  (* magically infers: paths in extensions = extensions into paths, which by induction is m'-truncated. *)
+    intros e e'. exact (istrunc_isequiv_istrunc _ (path_extension e e')).
+    (* Magically infers: paths in extensions = extensions into paths, which by induction is [m']-truncated. *)
 Defined.
 
 (** ** Connectedness of path spaces *)
 
-Global Instance isconnected_paths `{Univalence} {n A}
+Instance isconnected_paths `{Univalence} {n A}
        `{IsConnected n.+1 A} (x y : A)
   : IsConnected n (x = y).
 Proof.
-  refine (contr_equiv' _ (equiv_path_Tr x y)^-1).
+  exact (contr_equiv' _ (equiv_path_Tr x y)^-1).
+Defined.
+
+(** As a consequence, we have that [ap f] is n-connected when [f] is (n+1)-connected.  See HFiber.v and Loops.v for similar results about truncated maps. *)
+Instance isconnmap_ap_isconnmap `{Univalence} (n : trunc_index) {A B : Type}
+  (f : A -> B) `{!IsConnMap n.+1 f} (x y : A)
+  : IsConnMap n (@ap _ _ f x y)
+  := fun p => isconnected_equiv (Tr n) _ (hfiber_ap p)^-1 _.
+
+(** The converse to [isconnected_paths] holds when [A] is merely inhabited. *)
+Definition isconnected_isconnected_allpath `{Univalence} (n : trunc_index)
+  (A : Type) `{mA : merely A}
+  (isc : forall x y : A, IsConnected n (x = y))
+  : IsConnected n.+1 A.
+Proof.
+  strip_truncations; hnf.
+  apply (Build_Contr _ (tr mA)); intro a.
+  strip_truncations.
+  apply equiv_path_Tr, center, isc.
+Defined.
+
+(** As a consequence, we get a converse to [isconnmap_ap_isconnmap] for (-1)-connected maps. *)
+Definition isconnmap_isconnmap_ap_surj `{Univalence} (n : trunc_index) {A B : Type}
+  (f : A -> B) {surj : IsConnMap (-1) f}
+  (isc : forall x y : A, IsConnMap n (@ap _ _ f x y))
+  : IsConnMap n.+1 f.
+Proof.
+  intro b.
+  apply isconnected_isconnected_allpath.
+  1: apply center, surj.
+  intros [x p] [y q]; destruct q.
+  exact (isconnected_equiv _ _ (hfiber_ap p) _).
 Defined.
 
 (** ** Connectivity of pointed types *)
 
 (** The connectivity of a pointed type and (the inclusion of) its point are intimately connected. *)
 
-(** We can't make both of these [Instance]s, as that would result in infinite loops. *)
+(** We can't make both of these [Instance]s, as that would result in infinite loops. And the first one is not likely to be useful as an instance, as it requires guessing the point [a0]. *)
 
-Global Instance conn_pointed_type@{u} {n : trunc_index} {A : Type@{u}} (a0:A)
-  `{IsConnMap n _ _ (unit_name a0)}
-  : IsConnected n.+1 A | 1000.
+Definition conn_pointed_type@{u} {n : trunc_index} {A : Type@{u}} (a0:A)
+  `{IsConnMap@{u} n _ _ (unit_name a0)}
+  : IsConnected n.+1 A.
 Proof.
   apply isconnected_conn_map_to_unit.
-  apply (OO_cancelR_conn_map (Tr n.+1) (Tr n) (unit_name a0) (const_tt A)).
+  exact (OO_cancelR_conn_map (Tr n.+1) (Tr n) (unit_name a0) (const_tt A)).
 Defined.
 
 Definition conn_point_incl `{Univalence} {n : trunc_index} {A : Type} (a0:A)
@@ -82,6 +114,7 @@ Proof.
   apply O_lex_leq_Tr.
 Defined.
 
+(** [conn_point_incl] can be made an instance, but at the time of writing, this doesn't cause any additional goals to be solved compared to making it an immediate hint, so we do the latter. *)
 #[export] Hint Immediate conn_point_incl : typeclass_instances.
 
 (** Note that [OO_cancelR_conn_map] and [OO_cancelL_conn_map] (Proposition 2.31 of CORS) generalize the above statements to 2/3 of a 2-out-of-3 property for connected maps, for any reflective subuniverse and its subuniverse of separated types.  If useful, we could specialize that more general form explicitly to truncations. *)
@@ -91,22 +124,44 @@ Definition conn_point_elim `{Univalence} (n : trunc_index) {A : pType@{u}} `{IsC
            (P : A -> Type@{u}) `{forall a, IsTrunc n (P a)} (p0 : P (point A))
   : forall a, P a.
 Proof.
-  (** This follows from [conn_point_incl] and [conn_map_elim], but we give a direct proof. *)
+  (* This follows from [conn_point_incl] and [conn_map_elim], but we give a direct proof. *)
   intro a.
-  (** Since [A] is [n+1]-connected, [a0 = a] is [n]-connected, which means that [Tr n (a0 = a)] has an element. *)
+  (* Since [A] is [n+1]-connected, [a0 = a] is [n]-connected, which means that [Tr n (a0 = a)] has an element. *)
   pose proof (p := center (Tr n ((point A) = a))).
   strip_truncations.
   exact (p # p0).
 Defined.
 
+(** A computation rule for [conn_point_elim_comp]. *)
+Definition conn_point_elim_comp `{Univalence} (n : trunc_index) {A : pType@{u}} `{IsConnected n.+1 A}
+  (P : A -> Type@{u}) `{forall a, IsTrunc n (P a)} (p0 : P (point A))
+  : conn_point_elim n P p0 (point A) = p0.
+Proof.
+  unfold conn_point_elim.
+  (* The center of truncation isn't definitionally [tr 1], but is equal to it: *)
+  exact (ap (Trunc_ind _ _) (contr (tr idpath))).
+Defined.
+
 (** ** Decreasing connectedness *)
 
-(** An [n.+1]-connected type is also [n]-connected.  This obviously can't be an [Instance]! *)
+(** An [n.+1]-connected type is also [n]-connected. *)
 Definition isconnected_pred n A `{IsConnected n.+1 A}
   : IsConnected n A.
 Proof.
   apply isconnected_from_elim; intros C ? f.
-  refine (isconnected_elim n.+1 C f).
+  exact (isconnected_elim n.+1 C f).
+Defined.
+
+(* As an instance, this would cause loops, but it can be added as an immediate hint. *)
+Hint Immediate isconnected_pred : typeclass_instances.
+
+(** A version explicitly using the predecessor function. *)
+Definition isconnected_pred' (n : trunc_index) (A : Type) `{IsConnected n A}
+  : IsConnected n.-1 A.
+Proof.
+  destruct n.
+  1: unfold IsConnected; simpl; apply istrunc_truncation.
+  by apply isconnected_pred.
 Defined.
 
 (** A [k]-connected type is [n]-connected, when [k >= n].  We constrain [k] by making it of the form [n +2+ m], which makes the induction go through smoothly. *)
@@ -115,9 +170,7 @@ Definition isconnected_pred_add n m A `{H : IsConnected (n +2+ m) A}
 Proof.
   induction n.
   1: assumption.
-  apply IHn.
-  apply isconnected_pred.
-  assumption.
+  rapply IHn.
 Defined.
 
 (** A version with the order of summands swapped, which is sometimes handy, e.g. in the next two results. *)
@@ -138,12 +191,31 @@ Definition is0connected_isconnected (n : trunc_index) A `{IsConnected n.+2 A}
   : IsConnected 0 A
   := isconnected_pred_add' n 0 A.
 
+Definition isconnmap_pred' (n : trunc_index) {A B : Type} (f : A -> B)
+  `{IsConnMap n _ _ f}
+  : IsConnMap n.-1 f
+  := fun b => isconnected_pred' n _.
+
 Definition isconnmap_pred_add n m A B (f : A -> B) `{IsConnMap (n +2+ m) _ _ f}
   : IsConnMap m f.
 Proof.
   intro b.
   exact (isconnected_pred_add n m _).
 Defined.
+
+(** ** (-2)-connectedness *)
+
+(** Every type is (-2)-connected. *)
+Definition isconnected_minus_two A : IsConnected (-2) A
+  := istrunc_truncation (-2) A.
+
+(** Every map is (-2)-connected. *)
+Definition isconnmap_minus_two {A B : Type} (f : A -> B)
+  : IsConnMap (-2) f
+  := fun b => isconnected_minus_two _.
+
+Hint Immediate isconnected_minus_two : typeclass_instances.
+Hint Immediate isconnmap_minus_two : typeclass_instances.
 
 (** ** 0-connectedness *)
 
@@ -156,21 +228,19 @@ Proof.
   rapply center.
 Defined.
 
+(** The converse holds when [A] is merely inhabited. *)
 Definition is0connected_merely_allpath `{Univalence}
-           (A : Type) `{merely A}
+           (A : Type) `{mA : merely A}
            (p : forall (x y:A), merely (x = y))
   : IsConnected 0 A.
 Proof.
-  strip_truncations.
-  apply contr_inhabited_hprop.
-  - apply hprop_allpath; intros z w.
-    strip_truncations.
-    exact (equiv_path_Tr z w (p z w)).
-  - apply tr; assumption.
+  apply (isconnected_isconnected_allpath _ _ (mA:=mA)).
+  intros x y; hnf.
+  exact (contr_inhabited_hprop _ (p x y)).
 Defined.
 
 (** The path component of a point [x : X] is connected. *)
-Global Instance is0connected_component {X : Type} (x : X)
+Instance is0connected_component {X : Type} (x : X)
   : IsConnected 0 { z : X & merely (z = x) }.
 Proof.
   apply (Build_Contr _ (tr (x; tr idpath))).
@@ -205,11 +275,11 @@ Proof.
 Defined.
 
 (** 0-connected types are indecomposable *)
-Global Instance indecomposable_0connected `{Univalence}
+Instance indecomposable_0connected `{Univalence}
        (X : Type) `{IsConnected 0 X}
   : Indecomposable X.
 Proof.
-  assert (IsConnected (-1) X) by refine (isconnected_pred (-1) X).
+  assert (IsConnected (-1) X) by exact (isconnected_pred (-1) X).
   constructor.
   - intros A B f.
     assert (z := center (merely X) : merely X); generalize z.
@@ -230,18 +300,18 @@ Proof.
 Defined.
 
 (* Truncation preserves connectedness. Note that this is for different levels. *)
-Global Instance isconnected_trunc {X : Type} (n m : trunc_index) `{IsConnected n X}
+Instance isconnected_trunc {X : Type} (n m : trunc_index) `{IsConnected n X}
   : IsConnected n (Tr m X).
 Proof.
   unfold IsConnected.
-  srapply (contr_equiv' _ (Trunc_swap n m X)^-1).
+  exact (contr_equiv' _ (Trunc_swap n m X)^-1).
 Defined.
 
 Section Wedge_Incl_Conn.
 
-(** ** Connectivity of the wedge into the product.
+(** ** Connectivity of the wedge into the product *)
 
-A very useful form of the key lemma [istrunc_extension_along_conn] is the connectivity of the wedge into the product, for a pair of pointed spaces.  In fact this can be formulated without mentioning the wedge per se (so, without requiring HIT’s), since the statement only needs to talk about maps out of the wedge.
+(** A very useful form of the key lemma [istrunc_extension_along_conn] is the connectivity of the wedge into the product, for a pair of pointed spaces.  In fact this can be formulated without mentioning the wedge per se (so, without requiring HIT’s), since the statement only needs to talk about maps out of the wedge.  The version involving the wedge itself is deduced in Homotopy/Wedge.v.
 
 Once again, we believe that the type of the conclusion is an hprop (though we do not prove it) — essentially because it is wrapping up an elimination principle and its corresponding computation rule — and so we make the proof of this result opaque. *)
 
@@ -265,10 +335,10 @@ Proof.
       (fun a => ExtensionAlong (unit_name b0) (P a) (unit_name (f_b0 a)))
       (unit_name (f_a0 ; (unit_name f_a0b0)))).
   - apply (extension_conn_map_elim m).
-    + apply (conn_point_incl a0).
+    + exact (conn_point_incl a0).
     + intros a.
       apply (istrunc_extension_along_conn (n := n)).
-      * apply (conn_point_incl b0).
+      * exact (conn_point_incl b0).
       * apply HP.
   - destruct goal_as_extension as [f_eb name_ea_eab].
     assert (ea_eab := name_ea_eab tt); clear name_ea_eab.
@@ -277,7 +347,7 @@ Proof.
     exists (fun a => pr2 (f_eb a) tt).
     (* The last component is essentially (g' ..2), wrapped in a bit of path-algebra. *)
     apply moveL_Mp.
-    apply (concatR (apD10 (ea_eab ..2) tt)).
+    rhs_V napply (apD10 (ea_eab ..2) tt).
     set (ea := ea_eab ..1). generalize ea; simpl. clear ea_eab ea. intros.
     rewrite transport_arrow. rewrite transport_const. rewrite transport_paths_Fl.
     exact 1%path.
@@ -310,5 +380,5 @@ Definition wedge_incl_elim_uncurried `{Univalence}
   : forall (a : A) (b : B), P a b.
 Proof.
   destruct fs as [f_a0 [f_b0 f_a0b0]].
-  refine (wedge_incl_elim _ _ _ _ _ f_a0b0).
+  exact (wedge_incl_elim _ _ _ _ _ f_a0b0).
 Defined.

@@ -38,7 +38,7 @@ Definition trunc_index_inc'_succ@{} (n : nat) (k : trunc_index)
 Proof.
   revert k; simple_induction n n IHn; intro k.
   - reflexivity.
-  - apply (IHn k.+1).
+  - exact (IHn k.+1).
 Defined.
 
 Definition trunc_index_inc_agree@{} (k : trunc_index) (n : nat)
@@ -56,13 +56,13 @@ Definition nat_to_trunc_index@{} (n : nat) : trunc_index
 
 Coercion nat_to_trunc_index : nat >-> trunc_index.
 
-Definition trunc_index_inc'_0n (n : nat)
+Definition trunc_index_inc'_0n@{} (n : nat)
   : trunc_index_inc' 0%nat n = n.
 Proof.
-  induction n as [|n p].
+  simple_induction n n IHn.
   1: reflexivity.
   refine (trunc_index_inc'_succ _ _ @ _).
-  exact (ap _ p).
+  exact (ap _ IHn).
 Defined.
 
 Definition int_to_trunc_index@{} (v : Decimal.int) : option trunc_index
@@ -104,7 +104,7 @@ Definition trunc_index_to_num_int@{} n :=
 Number Notation trunc_index num_int_to_trunc_index trunc_index_to_num_int
   : trunc_scope.
 
-(** Sends a trunc_index [n] to the natural number [n+2]. *)
+(** Sends a [trunc_index] [n] to the natural number [n+2]. *)
 Fixpoint trunc_index_to_nat (n : trunc_index) : nat
   := match n with
     | minus_two => 0%nat
@@ -132,10 +132,9 @@ Defined.
 Definition trunc_index_add_succ@{} m n
   : m +2+ n.+1 = (m +2+ n).+1.
 Proof.
-  revert m; simple_induction n n IHn; intro m; simple_induction m m IHm.
-  1,3: reflexivity.
-  all: cbn; apply ap.
-  all: assumption.
+  simple_induction m m IHm.
+  1: reflexivity.
+  cbn; apply ap; assumption.
 Defined.
 
 Definition trunc_index_add_comm@{} m n
@@ -157,9 +156,9 @@ Existing Class trunc_index_leq.
 
 Notation "m <= n" := (trunc_index_leq m n) : trunc_scope.
 
-Global Instance trunc_index_leq_minus_two_n@{} n : -2 <= n := tt.
+Instance trunc_index_leq_minus_two_n@{} n : -2 <= n := tt.
 
-Global Instance trunc_index_leq_succ@{} n : n <= n.+1.
+Instance trunc_index_leq_succ@{} n : n <= n.+1.
 Proof.
   by induction n as [|n IHn] using trunc_index_ind.
 Defined.
@@ -175,12 +174,36 @@ Notation "n '.-1'" := (trunc_index_pred n) : trunc_scope.
 Notation "n '.-2'" := (n.-1.-1) : trunc_scope.
 
 Definition trunc_index_succ_pred@{} (n : nat)
-  : (n.-1).+1 = n.
+  : (n.-1).+1 = n
+  := idpath.
+
+Definition trunc_index_succ_pred'@{} (n : trunc_index)
+  : -1 <= n -> (n.-1).+1 = n.
 Proof.
-  simple_induction n n IHn.
+  destruct n.
+  1: contradiction.
+  reflexivity.
+Defined.
+
+Definition trunc_index_add_pred@{} (m : trunc_index) (n : nat)
+  : m +2+ n.-1 = (m +2+ n).-1.
+Proof.
+  destruct m.
   1: reflexivity.
-  unfold nat_to_trunc_index in *; cbn in *.
-  refine (ap trunc_S IHn).
+  (* The RHS is definitionally [m +2+ n], which is definitionally [m +2+ n.-1.+1], so this finishes it off: *)
+  symmetry; napply trunc_index_add_succ.
+Defined.
+
+Definition trunc_index_add_pred'@{} (m n : trunc_index)
+  : -1 <= n -> m +2+ n.-1 = (m +2+ n).-1.
+Proof.
+  destruct m.
+  1: reflexivity.
+  destruct n.
+  1: contradiction.
+  intros _.
+  (* The RHS is definitionally [m +2+ n], which is definitionally [m +2+ n.-1.+1], so this finishes it off: *)
+  symmetry; napply trunc_index_add_succ.
 Defined.
 
 Definition trunc_index_leq_minus_two@{} {n}
@@ -203,14 +226,14 @@ Proof.
   apply IHn, p.
 Defined.
 
-Global Instance trunc_index_leq_refl@{}
+Instance trunc_index_leq_refl@{}
   : Reflexive trunc_index_leq.
 Proof.
   intro n.
   by induction n as [|n IHn] using trunc_index_ind.
 Defined.
 
-Global Instance trunc_index_leq_transitive@{}
+Instance trunc_index_leq_transitive@{}
   : Transitive trunc_index_leq.
 Proof.
   intros a b c p q.
@@ -310,7 +333,7 @@ Definition contr_istrunc_minus_two `{H : IsTrunc (-2) A} : Contr A
   := H.
 
 (** Truncation levels are cumulative. *)
-Global Instance istrunc_paths' {n : trunc_index} {A : Type} `{IsTrunc n A}
+Instance istrunc_paths' {n : trunc_index} {A : Type} `{IsTrunc n A}
   : forall x y : A, IsTrunc n (x = y) | 1000.
 Proof.
   generalize dependent A.
@@ -319,11 +342,11 @@ Proof.
   - apply istrunc_S.  rapply IH.
 Defined.
 
-Global Instance istrunc_succ {n : trunc_index} {A : Type} `{IsTrunc n A}
+Instance istrunc_succ {n : trunc_index} {A : Type} `{IsTrunc n A}
   : IsTrunc n.+1 A | 1000.
 Proof.
   apply istrunc_S.
-  apply istrunc_paths'.
+  exact istrunc_paths'.
 Defined.
 
 (** This could be an [Instance] (with very high priority, so it doesn't get applied trivially).  However, we haven't given typeclass search any hints allowing it to solve goals like [m <= n], so it would only ever be used trivially.  *)
@@ -368,7 +391,7 @@ Proof.
   - exact (contr_equiv _ f).
   - apply istrunc_S.
     intros x y.
-    refine (IH _ _ _ (ap (f^-1))^-1 _).
+    exact (IH _ _ _ (ap (f^-1))^-1 _).
 Defined.
 
 Definition istrunc_equiv_istrunc A {B} (f : A <~> B) `{IsTrunc n A}
@@ -378,9 +401,7 @@ Definition istrunc_equiv_istrunc A {B} (f : A <~> B) `{IsTrunc n A}
 (** ** Truncated morphisms *)
 
 Class IsTruncMap (n : trunc_index) {X Y : Type} (f : X -> Y)
-  := istruncmap_fiber : forall y:Y, IsTrunc n (hfiber f y).
-
-Global Existing Instance istruncmap_fiber.
+  := istruncmap_fiber :: forall y:Y, IsTrunc n (hfiber f y).
 
 Notation IsEmbedding := (IsTruncMap (-1)).
 
@@ -390,7 +411,7 @@ Notation IsEmbedding := (IsTruncMap (-1)).
 
 Record TruncType (n : trunc_index) := {
   trunctype_type : Type ;
-  trunctype_istrunc : IsTrunc n trunctype_type
+  trunctype_istrunc :: IsTrunc n trunctype_type
 }.
 
 Arguments Build_TruncType _ _ {_}.
@@ -398,7 +419,6 @@ Arguments trunctype_type {_} _.
 Arguments trunctype_istrunc [_] _.
 
 Coercion trunctype_type : TruncType >-> Sortclass.
-Global Existing Instance trunctype_istrunc.
 
 Notation "n -Type" := (TruncType n) : type_scope.
 Notation HProp := (-1)-Type.
@@ -409,6 +429,16 @@ Notation Build_HSet := (Build_TruncType 0).
 
 (** This is (as of October 2014) the only [Canonical Structure] in the library.  It would be nice to do without it, in the interests of minimizing the number of fancy Coq features that the reader needs to know about. *)
 Canonical Structure default_TruncType := fun n T P => (@Build_TruncType n T P).
+
+(** Version of [smalltype] for n-Types. *)
+Definition smallntype@{i j} (n : trunc_index) (P : TruncType@{j} n) {smallP : IsSmall@{i j} P}
+  : TruncType@{i} n.
+Proof.
+  napply (Build_TruncType n (smalltype P)).
+  apply (@istrunc_equiv_istrunc _ _ (equiv_smalltype P)^-1 n _).
+Defined.
+
+Notation smallhprop := (smallntype (-1)).
 
 (** ** Facts about hprops *)
 
@@ -422,7 +452,7 @@ Proof.
 Defined.
 
 (** If inhabitation implies contractibility, then we have an h-proposition.  We probably won't often have a hypothesis of the form [A -> Contr A], so we make sure we give priority to other instances. *)
-Global Instance hprop_inhabited_contr (A : Type)
+Instance hprop_inhabited_contr (A : Type)
   : (A -> Contr A) -> IsHProp A | 10000.
 Proof.
   intros H; apply istrunc_S; intros x y.
@@ -443,7 +473,7 @@ Theorem hprop_allpath (A : Type)
   : (forall (x y : A), x = y) -> IsHProp A.
 Proof.
   intros H; apply istrunc_S; intros x y.
-  nrapply contr_paths_contr.
+  napply contr_paths_contr.
   exact (Build_Contr _ x (H x)).
 Defined.
 
@@ -485,38 +515,38 @@ Proof.
   intro f.  apply path_forall.  intro a.  apply contr.
 Defined.
 
-Global Instance istrunc_forall `{Funext} `{P : A -> Type} `{forall a, IsTrunc n (P a)}
+Instance istrunc_forall `{Funext} `{P : A -> Type} `{forall a, IsTrunc n (P a)}
   : IsTrunc n (forall a, P a) | 100.
 Proof.
   generalize dependent P.
   simple_induction n n IH; simpl; intros P ?.
   (* case [n = -2], i.e. contractibility *)
-  - apply contr_forall.
+  - exact contr_forall.
   (* case n = n'.+1 *)
   - apply istrunc_S.
-    intros f g; apply (istrunc_isequiv_istrunc@{u1 u1} _ (apD10@{_ _ u1} ^-1)).
+    intros f g; exact (istrunc_isequiv_istrunc@{u1 u1} _ (apD10@{_ _ u1} ^-1)).
 Defined.
 
 (** Truncatedness is an hprop. *)
-Global Instance ishprop_istrunc `{Funext} (n : trunc_index) (A : Type)
+Instance ishprop_istrunc `{Funext} (n : trunc_index) (A : Type)
   : IsHProp (IsTrunc n A) | 0.
 Proof.
   revert A; simple_induction n n IH; cbn; intro A.
-  - nrapply (istrunc_equiv_istrunc _ (equiv_istrunc_unfold (-2) A)^-1%equiv).
+  - napply (istrunc_equiv_istrunc _ (equiv_istrunc_unfold (-2) A)^-1%equiv).
     apply hprop_allpath.
     intros [a1 c1] [a2 c2].
     destruct (c1 a2).
     apply (ap (exist _ a1)).
     funext x.
     pose (Build_Contr _ a1 c1); apply path2_contr.
-  - rapply (istrunc_equiv_istrunc _ (equiv_istrunc_unfold n.+1 A)^-1%equiv).
+  - exact (istrunc_equiv_istrunc _ (equiv_istrunc_unfold n.+1 A)^-1%equiv).
     (* This case follows from [istrunc_forall]. *)
 Defined.
 
 (** By [trunc_hprop], it follows that [IsTrunc n A] is also [m]-truncated for any [m >= -1]. *)
 
 (** Similarly, a map being truncated is also a proposition. *)
-Global Instance ishprop_istruncmap `{Funext} (n : trunc_index) {X Y : Type} (f : X -> Y)
+Instance ishprop_istruncmap `{Funext} (n : trunc_index) {X Y : Type} (f : X -> Y)
 : IsHProp (IsTruncMap n f).
 Proof.
   apply hprop_allpath; intros s t.
@@ -525,7 +555,7 @@ Proof.
 Defined.
 
 (** If a type [A] is [n]-truncated, then [IsTrunc n A] is contractible. *)
-Global Instance contr_istrunc `{Funext} (n : trunc_index) (A : Type) `{istruncA : IsTrunc n A}
+Instance contr_istrunc `{Funext} (n : trunc_index) (A : Type) `{istruncA : IsTrunc n A}
   : Contr (IsTrunc n A) | 100
   := contr_inhabited_hprop _ _.
 

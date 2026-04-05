@@ -1,6 +1,6 @@
-Require Import Basics Types.
+From HoTT Require Import Basics Types.
 Require Import Join.Core Join.JoinAssoc Suspension Spaces.Spheres.
-Require Import WildCat.
+From HoTT.WildCat Require Import Core Universe Equiv.
 Require Import Spaces.Nat.Core.
 
 (** * [Join Bool A] is equivalent to [Susp A]
@@ -20,35 +20,31 @@ Defined.
 Definition susp_to_join (A : Type) : Susp A -> Join Bool A.
 Proof.
   srapply (Susp_rec (joinl true) (joinl false)).
-  intros a.
-  exact (jglue _ a @ (jglue _ a)^).
+  exact (zigzag true false).
 Defined.
 
-Global Instance isequiv_join_to_susp (A : Type) : IsEquiv (join_to_susp A).
+Instance isequiv_join_to_susp (A : Type) : IsEquiv (join_to_susp A).
 Proof.
-  snrapply (isequiv_adjointify _ (susp_to_join A)).
-  - snrapply Susp_ind.
+  snapply (isequiv_adjointify _ (susp_to_join A)).
+  - snapply Susp_ind.
     1,2: reflexivity.
-    intros a.
-    apply (transport_paths_FFlr' (f:=susp_to_join A)).
+    intros a; cbn beta.
+    transport_paths FFlr.
     apply equiv_p1_1q.
-    lhs nrapply (ap _ _); [nrapply Susp_rec_beta_merid | ].
-    lhs nrapply (ap_pp _ _ (jglue false a)^).
-    lhs nrefine (_ @@ _).
-    1: lhs nrapply ap_V; nrapply (ap inverse).
-    1,2: nrapply Join_rec_beta_jglue.
+    lhs napply (ap _ _); [napply Susp_rec_beta_merid | ].
+    lhs napply (Join_rec_beta_zigzag _ _ _ true false a).
     apply concat_p1.
   - srapply (Join_ind_FFlr (join_to_susp A)); cbn beta.
     1: intros [|]; reflexivity.
     1: intros a; apply jglue.
     intros b a; cbn beta.
     lhs nrefine (ap _ _ @@ 1).
-    1: nrapply Join_rec_beta_jglue.
+    1: napply Join_rec_beta_jglue.
     destruct b.
-    all: rhs nrapply concat_1p.
-    + lhs nrefine (_ @@ 1); [nrapply Susp_rec_beta_merid | ].
+    + rhs napply concat_1p.
+      lhs nrefine (_ @@ 1); [napply Susp_rec_beta_merid | ].
       apply concat_pV_p.
-    + apply concat_1p.
+    + reflexivity.
 Defined.
 
 Definition equiv_join_susp (A : Type) : Join Bool A <~> Susp A

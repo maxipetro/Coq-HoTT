@@ -1,8 +1,9 @@
-Require Import Basics Types Limits.Pullback Cubical.PathSquare.
+From HoTT Require Import Basics Types Limits.Pullback Cubical.PathSquare.
+Require Import Truncations.Core ReflectiveSubuniverse HIT.epi.
 Require Import Algebra.Groups.Group.
-Require Import WildCat.Core.
+Require Import WildCat.Core WildCat.Pullbacks WildCat.EpiStable.
 
-(** Pullbacks of groups are formalized by equipping the set-pullback with the desired group structure. The universal property in the category of groups is proved by saying that the corecursion principle (grp_pullback_corec) is an equivalence. *) 
+(** Pullbacks of groups are formalized by equipping the set-pullback with the desired group structure. The universal property in the category of groups is proved by saying that the corecursion principle [grp_pullback_corec] is an equivalence. *) 
 
 Local Open Scope mc_scope.
 Local Open Scope mc_mult_scope.
@@ -56,15 +57,14 @@ Section GrpPullback.
 
   Local Instance ismonoid_grp_pullback : IsMonoid (Pullback f g) := {}.
 
-  Local Instance grp_pullback_negate : Negate (Pullback f g).
+  Local Instance grp_pullback_inverse : Inverse (Pullback f g).
   Proof.
     intros [b [c p]].
-    refine (-b; -c; grp_homo_inv f b @ _ @ (grp_homo_inv g c)^).
-    exact (ap (fun a => -a) p).
+    refine (b^; c^; grp_homo_inv f b @ _ @ (grp_homo_inv g c)^).
+    exact (ap (^) p).
   Defined.
 
-  Local Instance grp_pullback_leftinverse
-    : LeftInverse grp_pullback_sgop grp_pullback_negate grp_pullback_mon_unit.
+  Local Instance grp_pullback_leftinverse : LeftInverse (.*.) (^) mon_unit.
   Proof.
     unfold LeftInverse.
     intros [b [c p]].
@@ -75,8 +75,7 @@ Section GrpPullback.
     apply path_ishprop.
   Defined.
 
-  Local Instance grp_pullback_rightinverse
-    : RightInverse grp_pullback_sgop grp_pullback_negate grp_pullback_mon_unit.
+  Local Instance grp_pullback_rightinverse : RightInverse (.*.) (^) mon_unit.
   Proof.
     intros [b [c p]].
     unfold grp_pullback_sgop; simpl.
@@ -86,22 +85,22 @@ Section GrpPullback.
     apply path_ishprop.
   Defined.
 
-  Global Instance isgroup_grp_pullback : IsGroup (Pullback f g) := {}.
+  #[export] Instance isgroup_grp_pullback : IsGroup (Pullback f g) := {}.
 
   Definition grp_pullback : Group
     := Build_Group (Pullback f g) _ _ _ _.
 
   Definition grp_pullback_pr1 : grp_pullback $-> B.
   Proof.
-    snrapply Build_GroupHomomorphism.
-    - apply pullback_pr1.
+    snapply Build_GroupHomomorphism.
+    - exact pullback_pr1.
     - intros x y. reflexivity.
   Defined.
 
   Definition grp_pullback_pr2 : grp_pullback $-> C.
   Proof.
-    snrapply Build_GroupHomomorphism.
-    - apply pullback_pr2.
+    snapply Build_GroupHomomorphism.
+    - exact pullback_pr2.
     - intros x y. reflexivity.
   Defined.
 
@@ -110,7 +109,7 @@ Section GrpPullback.
               (p : f o b == g o c)
     : X $-> grp_pullback.
   Proof.
-    snrapply Build_GroupHomomorphism.
+    snapply Build_GroupHomomorphism.
     - exact (fun x => (b x; c x; p x)).
     - intros x y.
       srapply path_sigma.
@@ -201,7 +200,7 @@ Proof.
       2: reflexivity.
       srapply equiv_path_pullback_hset; split; cbn.
       1: reflexivity.
-      exact z1^.
+      symmetry; exact z1.
 Defined.
 
 Section IsEquivGrpPullbackCorec.
@@ -228,7 +227,7 @@ Section IsEquivGrpPullbackCorec.
   Theorem isequiv_grp_pullback_corec (X : Group)
     : IsEquiv (grp_pullback_corec' f g X).
   Proof.
-    snrapply isequiv_adjointify.
+    snapply isequiv_adjointify.
     - intro phi.
       refine (grp_pullback_pr1 f g $o phi; grp_pullback_pr2 f g $o phi; _).
       intro x; exact (pullback_commsq f g (phi x)).
@@ -243,3 +242,21 @@ Section IsEquivGrpPullbackCorec.
   Defined.
 
 End IsEquivGrpPullbackCorec.
+
+(** The category of groups of 1-pullbacks in the wild sense.  Note that we do not need [Funext] for this. *)
+Instance haspullbacks_group : HasPullbacks Group.
+Proof.
+  intros A B C f g.
+  snapply Build_CatPullback.
+  - exact (grp_pullback f g).
+  - apply grp_pullback_pr1.
+  - apply grp_pullback_pr2.
+  - apply pullback_commsq.
+  - apply grp_pullback_corec'.
+  - simpl. reflexivity.
+  - cbn. reflexivity.
+  - intros Z k h p1 p2.
+    srapply (pullback_homotopic k h p1 p2).
+    intro z.
+    apply path_ishprop. (* Here we use that [C] is 0-truncated. *)
+Defined.

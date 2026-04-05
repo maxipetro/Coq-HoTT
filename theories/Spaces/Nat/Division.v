@@ -15,71 +15,71 @@ Class NatDivides (n m : nat) : Type0 := nat_divides : {k : nat & k * n = m}.
 Notation "( n | m )" := (NatDivides n m) : nat_scope.
 
 (** Any number divides [0]. *)
-Global Instance nat_divides_zero_r n : (n | 0)
+Instance nat_divides_zero_r n : (n | 0)
   := (0; idpath).
 
 (** [1] divides any number. *)
-Global Instance nat_divides_one_l n : (1 | n)
+Instance nat_divides_one_l n : (1 | n)
   := (n; nat_mul_one_r _).
 
 (** Any number divides itself. Divisibility is a reflexive relation. *)
-Global Instance nat_divides_refl n : (n | n)
+Instance nat_divides_refl n : (n | n)
   := (1; nat_mul_one_l _).
 
-Global Instance reflexive_nat_divides : Reflexive NatDivides := nat_divides_refl.
+Instance reflexive_nat_divides : Reflexive NatDivides := nat_divides_refl.
 
 (** Divisibility is transitive. *)
 Definition nat_divides_trans {n m l} : (n | m) -> (m | l) -> (n | l).
 Proof.
   intros [x p] [y q].
   exists (y * x).
-  lhs_V nrapply nat_mul_assoc.
-  lhs nrapply (ap _ p).
+  lhs_V napply nat_mul_assoc.
+  lhs napply (ap _ p).
   exact q.
 Defined.
 Hint Immediate nat_divides_trans : typeclass_instances.
 
-Global Instance transitive_nat_divides : Transitive NatDivides := @nat_divides_trans.
+Instance transitive_nat_divides : Transitive NatDivides := @nat_divides_trans.
 
 (** A left factor divides a product. *)
-Global Instance nat_divides_mul_l' n m : (n | n * m)
+Instance nat_divides_mul_l' n m : (n | n * m)
   := (m; nat_mul_comm _ _).
 
 (** A right factor divides a product. *)
-Global Instance nat_divides_mul_r' n m : (m | n * m)
+Instance nat_divides_mul_r' n m : (m | n * m)
   := (n; idpath).
 
 (** Divisibility of the product is implied by divisibility of the left factor. *)
-Global Instance nat_divides_mul_l {n m} l : (n | m) -> (n | m * l)
+Instance nat_divides_mul_l {n m} l : (n | m) -> (n | m * l)
   := fun H => nat_divides_trans _ _.
 
 (** Divisibility of the product is implied by divisibility of the right factor. *)
-Global Instance nat_divides_mul_r {n m} l : (n | m) -> (n | l * m)
+Instance nat_divides_mul_r {n m} l : (n | m) -> (n | l * m)
   := fun H => nat_divides_trans _ _.
 
 (** Multiplication is monotone with respect to divisibility. *)
-Global Instance nat_divides_mul_monotone n m l p
+Instance nat_divides_mul_monotone n m l p
   : (n | m) -> (l | p) -> (n * l | m * p).
 Proof.
   intros [x r] [y q].
   exists (x * y).
   destruct r, q.
-  lhs nrapply nat_mul_assoc.
-  rhs nrapply nat_mul_assoc.
-  nrapply (ap (fun x => nat_mul x _)).
-  lhs_V nrapply nat_mul_assoc.
-  rhs_V nrapply nat_mul_assoc.
-  nrapply ap.
+  lhs napply nat_mul_assoc.
+  rhs napply nat_mul_assoc.
+  napply (ap (fun x => nat_mul x _)).
+  lhs_V napply nat_mul_assoc.
+  rhs_V napply nat_mul_assoc.
+  napply ap.
   apply nat_mul_comm.
 Defined.
 
 (** Divisibility of the sum is implied by divisibility of the summands. *)
-Global Instance nat_divides_add n m l : (n | m) -> (n | l) -> (n | m + l).
+Instance nat_divides_add n m l : (n | m) -> (n | l) -> (n | m + l).
 Proof.
   intros [x p] [y q].
   exists (x + y).
   destruct p, q.
-  nrapply nat_dist_r.
+  napply nat_dist_r.
 Defined.
 
 (** If [n] divides a sum and the left summand, then [n] divides the right summand. *)
@@ -87,10 +87,10 @@ Definition nat_divides_add_r n m l : (n | m) -> (n | m + l) -> (n | l).
 Proof.
   intros [x p] [y q].
   exists (y - x).
-  lhs nrapply nat_dist_sub_r.
+  lhs napply nat_dist_sub_r.
   apply nat_moveR_nV.
-  lhs nrapply q.
-  lhs nrapply nat_add_comm.
+  lhs exact q.
+  lhs napply nat_add_comm.
   exact (ap _ p^).
 Defined.
 
@@ -101,15 +101,15 @@ Proof.
 Defined.
 
 (** Divisibility of the difference is implied by divisibility of the minuend and subtrahend. *)
-Global Instance nat_divides_sub n m l : (n | m) -> (n | l) -> (n | m - l).
+Instance nat_divides_sub n m l : (n | m) -> (n | l) -> (n | m - l).
 Proof.
   intros [x p] [y q].
   exists (x - y).
   destruct p, q.
-  nrapply nat_dist_sub_r.
+  napply nat_dist_sub_r.
 Defined.
 
-(** The divisor is greater than zero when the divident is greater than zero. *)
+(** The divisor is greater than zero when the number being divided is greater than zero. *)
 Definition gt_zero_divides n m (d : (n | m)) (gt0 : 0 < m)
   : 0 < n.
 Proof.
@@ -137,7 +137,7 @@ Definition lt_divides n m (d : (n | m)) (gt0 : 0 < m) (gt1 : 1 < d.1)
   : n < m.
 Proof.
   rewrite <- d.2.
-  snrapply (lt_leq_lt_trans (m:=1*n)).
+  snapply (lt_leq_lt_trans (m:=1*n)).
   1: rapply (leq_mul_l _ _ 0).
   srapply (nat_mul_r_strictly_monotone (l:=0)).
   rapply (gt_zero_divides n m).
@@ -149,17 +149,17 @@ Proof.
   intros H1 H2.
   destruct m; only 1: exact (H2.2^ @ nat_mul_zero_r _).
   destruct n; only 1: exact ((nat_mul_zero_r _)^ @ H1.2).
-  snrapply leq_antisym; nrapply leq_divides; exact _.
+  snapply leq_antisym; napply leq_divides; exact _.
 Defined.
 
-Global Instance antisymmetric_divides : AntiSymmetric NatDivides
+Instance antisymmetric_divides : AntiSymmetric NatDivides
   := nat_divides_antisym.
 
 (** If [n] divides [m], then the other factor also divides [m]. *)
-Global Instance divides_divisor n m (H : (n | m)) : (H.1 | m).
+Instance divides_divisor n m (H : (n | m)) : (H.1 | m).
 Proof.
   exists n.
-  lhs nrapply nat_mul_comm.
+  lhs napply nat_mul_comm.
   exact H.2.
 Defined.
 
@@ -175,10 +175,10 @@ Proof.
   rewrite <- nat_dist_sub_l in p.
   rewrite nat_add_comm in p.
   apply nat_moveR_nV in p.
-  nrapply (snd (@leq_iff_not_gt b (r1 - r2))).
+  napply (snd (@leq_iff_not_gt b (r1 - r2))).
   2: exact (lt_leq_lt_trans _ H1).
   rewrite p.
-  snrapply (leq_mul_r _ _ 0).
+  snapply (leq_mul_r _ _ 0).
   by apply equiv_lt_lt_sub.
 Defined.
 
@@ -197,7 +197,7 @@ Proof.
 Defined.
 
 (** Divisibility by a positive natural number is a hprop. *)
-Global Instance ishprop_nat_divides n m : 0 < n -> IsHProp (n | m).
+Instance ishprop_nat_divides n m : 0 < n -> IsHProp (n | m).
 Proof.
   intros H.
   apply hprop_allpath.
@@ -206,8 +206,8 @@ Proof.
   destruct H as [|n]; simpl.
   1: exact ((nat_mul_one_r _)^ @ p @ q^ @ nat_mul_one_r _).
   refine (fst (nat_div_mod_unique n.+1 x y 0 0 _ _ _)).
-  lhs nrapply nat_add_zero_r.
-  rhs nrapply nat_add_zero_r.
+  lhs napply nat_add_zero_r.
+  rhs napply nat_add_zero_r.
   rewrite 2 (nat_mul_comm n.+1).
   exact (p @ q^).
 Defined.
@@ -228,7 +228,7 @@ Proof.
   - destruct (IHx y q u _) as [p H'].
     split; trivial.
     rewrite <- p, 2 nat_add_succ_l, <- nat_add_succ_r.
-    snrapply ap.
+    snapply ap.
     rewrite nat_sub_succ_r.
     apply nat_succ_pred.
     rapply lt_moveL_nV.
@@ -245,7 +245,7 @@ Defined.
 Definition nat_div_mod_spec' x y : x - y * (x / y) = x mod y.
 Proof.
   apply nat_moveR_nV.
-  rhs nrapply nat_add_comm.
+  rhs napply nat_add_comm.
   apply nat_div_mod_spec.
 Defined.
 
@@ -263,11 +263,11 @@ Defined.
 Hint Immediate nat_mod_lt_r' : typeclass_instances.
 
 (** [n] modulo [m] is less than [m]. *)
-Global Instance nat_mod_lt_r n m : 0 < m -> n mod m < m
+Instance nat_mod_lt_r n m : 0 < m -> n mod m < m
   := nat_mod_lt_r' n m 0.
 
 (** [n] modulo [m] is less than or equal to [m]. *)
-Global Instance nat_mod_leq_l n m : n mod m <= n.
+Instance nat_mod_leq_l n m : n mod m <= n.
 Proof.
   rewrite <- nat_div_mod_spec'.
   rapply leq_moveR_nV.
@@ -293,8 +293,8 @@ Definition nat_div_zero_r n : n / 0 = 0 := idpath.
 (** [n] divided by [1] is [n]. *)
 Definition nat_div_one_r n : n / 1 = n.
 Proof.
-  lhs_V nrapply nat_mul_one_l.
-  lhs_V nrapply nat_add_zero_r.
+  lhs_V napply nat_mul_one_l.
+  lhs_V napply nat_add_zero_r.
   symmetry; apply nat_div_mod_spec.
 Defined.
 
@@ -302,16 +302,16 @@ Defined.
 Definition nat_div_cancel n : 0 < n -> n / n = 1.
 Proof.
   intros [|m _]; trivial.
-  nrapply (nat_div_unique _ _ _ 0); only 1: exact _.
-  lhs nrapply nat_add_zero_r.
-  nrapply nat_mul_one_r.
+  napply (nat_div_unique _ _ _ 0); only 1: exact _.
+  lhs napply nat_add_zero_r.
+  napply nat_mul_one_r.
 Defined.
 
 (** A number divided by a larger number is 0. *)
 Definition nat_div_lt n m : n < m -> n / m = 0.
 Proof.
   intros H.
-  snrapply (nat_div_unique _ _ _ _ H).
+  snapply (nat_div_unique _ _ _ _ H).
   by rewrite nat_mul_zero_r, nat_add_zero_l.
 Defined.
 
@@ -319,7 +319,7 @@ Defined.
 Definition nat_div_mul_cancel_l n m : 0 < n -> (n * m) / n = m.
 Proof.
   intros H.
-  nrapply (nat_div_unique _ _ _ _ H).
+  napply (nat_div_unique _ _ _ _ H).
   apply nat_add_zero_r.
 Defined.
 
@@ -336,7 +336,7 @@ Proof.
   intros H.
   rapply (nat_div_unique _ _ _ (k mod n) _).
   rewrite nat_dist_l.
-  lhs_V nrapply nat_add_assoc.
+  lhs_V napply nat_add_assoc.
   f_ap.
   symmetry; apply nat_div_mod_spec.
 Defined.
@@ -381,7 +381,7 @@ Definition nat_div_dist' n m d
 Proof.
   intros H.
   rewrite (nat_add_comm n m).
-  rhs_V nrapply nat_add_comm.
+  rhs_V napply nat_add_comm.
   rapply nat_div_dist.
 Defined.
 
@@ -420,9 +420,9 @@ Proof.
   intros lk nm km.
   apply gt_iff_not_leq.
   intro mknk.
-  apply (@gt_iff_not_leq m n); only 1: apply nm.
+  apply (@gt_iff_not_leq m n); only 1: exact nm.
   rewrite <- (nat_mul_div_cancel_l k m km).
-  nrapply (leq_trans (y:=k * (n / k))).
+  napply (leq_trans (y:=k * (n / k))).
   - rapply nat_mul_l_monotone.
   - apply nat_leq_mul_div_l.
 Defined.
@@ -440,7 +440,7 @@ Definition nat_mod_zero_r n : n mod 0 = n := idpath.
 Definition nat_mod_lt n k : k < n -> k mod n = k.
 Proof.
   intros H.
-  lhs_V nrapply nat_div_mod_spec'.
+  lhs_V napply nat_div_mod_spec'.
   rewrite nat_div_lt.
   - rewrite nat_mul_zero_r.
     apply nat_sub_zero_r.
@@ -460,7 +460,7 @@ Proof.
   destruct p.
   destruct m.
   { simpl. apply nat_mul_zero_r. }
-  lhs_V nrapply nat_div_mod_spec'.
+  lhs_V napply nat_div_mod_spec'.
   rewrite nat_div_mul_cancel_r; only 2: exact _.
   apply nat_moveR_nV, nat_mul_comm.
 Defined.
@@ -473,16 +473,16 @@ Proof.
   intros p.
   exists (n / m).
   rewrite nat_mul_comm.
-  lhs_V nrapply nat_add_zero_r.
+  lhs_V napply nat_add_zero_r.
   rewrite <- p.
   symmetry.
-  nrapply nat_div_mod_spec.
+  napply nat_div_mod_spec.
 Defined.
 
 (** Divisibility is therefore decidable. *)
-Global Instance decidable_nat_divides n m : Decidable (n | m).
+Instance decidable_nat_divides n m : Decidable (n | m).
 Proof.
-  nrapply decidable_iff.
+  napply decidable_iff.
   1: apply nat_mod_iff_divides.
   exact _.
 Defined.
@@ -491,13 +491,13 @@ Defined.
 Definition nat_mod_cancel n : n mod n = 0.
 Proof.
   destruct n; trivial.
-  snrapply (nat_mod_unique _ _ 1); only 1: exact _.
-  lhs nrapply nat_add_zero_r.
-  nrapply nat_mul_one_r.
+  snapply (nat_mod_unique _ _ 1); only 1: exact _.
+  lhs napply nat_add_zero_r.
+  napply nat_mul_one_r.
 Defined.
 
 (** A number can be corrected so that it is divisible by subtracting the modulo. *)
-Global Instance nat_divides_sub_mod n m : (n | m - m mod n).
+Instance nat_divides_sub_mod n m : (n | m - m mod n).
 Proof.
   rewrite nat_div_mod_spec''.
   exact _.
@@ -512,7 +512,7 @@ Proof.
   intro kp.
   destruct (nat_zero_or_gt_zero m) as [[] | mp].
   1: by rewrite nat_mul_zero_r.
-  nrapply (nat_div_unique _ _ _ (k * (n mod m))).
+  napply (nat_div_unique _ _ _ (k * (n mod m))).
   1: rapply nat_mul_l_strictly_monotone.
   rewrite <- nat_mul_assoc.
   rewrite <- nat_dist_l.
@@ -525,7 +525,7 @@ Definition nat_div_cancel_mul_r n m k
   : 0 < k -> (n * k) / (m * k) = n / m.
 Proof.
   rewrite 2 (nat_mul_comm _ k).
-  nrapply nat_div_cancel_mul_l.
+  napply nat_div_cancel_mul_l.
 Defined.
 
 (** We can swap the order of division and multiplication on the left under certain conditions. *)
@@ -533,17 +533,17 @@ Definition nat_div_mul_l n m k : (m | n) -> k * (n / m) = (k * n) / m.
 Proof.
   intros H.
   destruct (nat_zero_or_gt_zero m) as [[] | mp].
-  1: snrapply nat_mul_zero_r.
+  1: snapply nat_mul_zero_r.
   rapply (nat_div_unique _ _ _ 0 _ _)^.
-  lhs nrapply nat_add_zero_r.
-  lhs nrapply nat_mul_assoc.
-  lhs nrapply (ap (fun x => x * _)).
-  1: nrapply nat_mul_comm.
-  lhs_V nrapply nat_mul_assoc.
-  snrapply ap.
-  lhs_V nrapply nat_add_zero_r.
-  rhs nrapply (nat_div_mod_spec n m).
-  snrapply ap.
+  lhs napply nat_add_zero_r.
+  lhs napply nat_mul_assoc.
+  lhs napply (ap (fun x => x * _)).
+  1: napply nat_mul_comm.
+  lhs_V napply nat_mul_assoc.
+  snapply ap.
+  lhs_V napply nat_add_zero_r.
+  rhs napply (nat_div_mod_spec n m).
+  snapply ap.
   symmetry.
   rapply nat_mod_divides.
 Defined.
@@ -552,7 +552,7 @@ Defined.
 Definition nat_div_mul_r n m k : (m | n) -> (n / m) * k = (n * k) / m.
 Proof.
   rewrite 2 (nat_mul_comm _ k).
-  snrapply nat_div_mul_l.
+  snapply nat_div_mul_l.
 Defined.
 
 Definition nat_div_sub_mod n m : n / m = (n - n mod m) / m.
@@ -570,18 +570,18 @@ Proof.
   destruct (nat_zero_or_gt_zero k) as [[] | kp].
   1: by rewrite nat_mul_zero_r.
   destruct (nat_zero_or_gt_zero m) as [[] | mp].
-  1: snrapply nat_div_zero_l.
+  1: snapply nat_div_zero_l.
   apply nat_div_unique with (r := (n mod (m * k)) / m).
   { apply (lt_lt_leq_trans (m:=(m * k)/m)).
     - rapply nat_div_strictly_monotone_r.
-      nrapply (nat_mod_lt_r' _ _ 0 _).
+      napply (nat_mod_lt_r' _ _ 0 _).
       exact (nat_mul_strictly_monotone mp kp).
     - by rewrite nat_div_mul_cancel_l. }
   transitivity ((m * (k * (n / (m * k)))) / m + (n mod (m * k)) / m).
   - f_ap.
     symmetry; rapply nat_div_mul_cancel_l.
   - rewrite nat_mul_assoc.
-    lhs_V nrapply nat_div_dist.
+    lhs_V napply nat_div_dist.
     1: exact _.
     apply (ap (fun x => x / m)).
     symmetry; apply nat_div_mod_spec.
@@ -589,12 +589,12 @@ Defined.
 
 (** Dividing a number by a quotient is the same as dividing the product of the number with the denominator of the quotient by the numerator of the quotient. *)
 Definition nat_div_div_r n m k : (k | m) -> n / (m / k) = (n * k) / m.
-Proof. 
+Proof.
   intros [d r].
   destruct (nat_zero_or_gt_zero k) as [[] | kp].
   1: by rewrite nat_mul_zero_r, nat_div_zero_l.
   destruct r.
-  rhs nrapply nat_div_cancel_mul_r.
+  rhs napply nat_div_cancel_mul_r.
   2: exact _.
   apply ap.
   rapply nat_div_mul_cancel_r.
@@ -628,7 +628,51 @@ Definition nat_mod_mul_r n m k
   : (n * k) mod (m * k) = (n mod m) * k.
 Proof.
   rewrite 3 (nat_mul_comm _ k).
-  nrapply nat_mod_mul_l.
+  napply nat_mod_mul_l.
+Defined.
+
+(** We can move a divisor from the right to become a factor on the left of an equation. *)
+Definition nat_div_moveL_nV n m k : 0 < k -> n * k = m -> n = m / k.
+Proof.
+  intros H p.
+  destruct p.
+  symmetry; rapply nat_div_mul_cancel_r.
+Defined.
+
+Definition nat_div_moveR_nV n m k : 0 < k -> n = m * k -> n / k = m.
+Proof.
+  intros H p.
+  destruct p^.
+  rapply nat_div_mul_cancel_r.
+Defined.
+
+Definition nat_divides_l_div n m l
+  : 0 < m -> (m | n) -> (n | l * m) -> (n / m | l).
+Proof.
+  intros H1 H2 [y q].
+  exists y.
+  rewrite nat_div_mul_l; only 2: exact _.
+  by rapply nat_div_moveR_nV.
+Defined.
+
+Definition nat_divides_r_div n m l
+  : (n * l | m) -> (n | m / l).
+Proof.
+  destruct l; only 1: exact _.
+  intros [k p].
+  exists k.
+  rapply nat_div_moveL_nV.
+  by lhs_V napply nat_mul_assoc.
+Defined.
+
+Definition nat_divides_l_mul n m l
+  : (l | m) -> (n | m / l) -> (n * l | m).
+Proof.
+  intros H [k p].
+  exists k.
+  rewrite nat_mul_assoc.
+  rewrite p.
+  rapply nat_mul_div_cancel_r.  
 Defined.
 
 (** ** Greatest Common Divisor *)
@@ -668,7 +712,7 @@ Defined.
 (** We can prove that the greatest common divisor of [n] and [m] divides both [n] and [m]. This proof requires strong induction. *)
 Definition nat_divides_l_gcd n m : (nat_gcd n m | n) /\ (nat_gcd n m | m).
 Proof.
-  revert n m; snrapply nat_ind_strong; intros n IHn m.
+  revert n m; snapply nat_ind_strong; intros n IHn m.
   destruct n.
   1: split; exact _.
   destruct (IHn (m mod n.+1) _ n.+1) as [H1 H2].
@@ -680,17 +724,17 @@ Proof.
 Defined.
 
 (** The greatest common divisor of [n] and [m] divides [n]. *)
-Global Instance nat_divides_l_gcd_l n m : (nat_gcd n m | n)
+Instance nat_divides_l_gcd_l n m : (nat_gcd n m | n)
   := fst (nat_divides_l_gcd n m).
 
 (** The greatest common divisor of [n] and [m] divides [m]. *)
-Global Instance divides_l_nat_gcd_r n m : (nat_gcd n m | m)
+Instance divides_l_nat_gcd_r n m : (nat_gcd n m | m)
   := snd (nat_divides_l_gcd n m).
 
 (** We can prove that any common divisor of [n] and [m] divides the greatest common divisor of [n] and [m]. It is in that sense the greatest. *)
-Global Instance nat_divides_r_gcd n m p : (p | n) -> (p | m) -> (p | nat_gcd n m).
+Instance nat_divides_r_gcd n m p : (p | n) -> (p | m) -> (p | nat_gcd n m).
 Proof.
-  revert n m p; snrapply nat_ind_strong; intros n IHn m p H1 H2.
+  revert n m p; snapply nat_ind_strong; intros n IHn m p H1 H2.
   destruct n; only 1: exact _.
   unfold nat_gcd; fold nat_gcd.
   apply IHn; only 1,3: exact _.
@@ -704,7 +748,7 @@ Proof.
   split; [intros [H1 H2] | intros H; split]; exact _.
 Defined.
 
-(** If [p] is divisible by all common divisors of [n] and [m], and [p] is also a common divisor, then it must necesserily be equal to the greatest common divisor. *)
+(** If [p] is divisible by all common divisors of [n] and [m], and [p] is also a common divisor, then it must necessarily be equal to the greatest common divisor. *)
 Definition nat_gcd_unique n m p
   (H : forall q, (q | n) -> (q | m) -> (q | p))
   : (p | n) -> (p | m) -> nat_gcd n m = p.
@@ -713,7 +757,7 @@ Proof.
   rapply nat_divides_antisym.
 Defined.
 
-(** As a corollary of uniquness, we get that the greatest common divisor operation is commutative. *)
+(** As a corollary of uniqueness, we get that the greatest common divisor operation is commutative. *)
 Definition nat_gcd_comm n m : nat_gcd n m = nat_gcd m n.
 Proof.
   rapply nat_gcd_unique.
@@ -722,9 +766,7 @@ Defined.
 (** [nat_gcd] is associative. *)
 Definition nat_gcd_assoc n m k : nat_gcd n (nat_gcd m k) = nat_gcd (nat_gcd n m) k.
 Proof.
-  nrapply nat_gcd_unique.
-  - intros q H1 H2.
-    rapply nat_divides_r_gcd.
+  rapply nat_gcd_unique.
   - rapply (nat_divides_trans (nat_divides_l_gcd_l _ _)).
   - apply nat_divides_r_gcd; rapply nat_divides_trans.
 Defined.
@@ -758,7 +800,7 @@ Proof.
 Defined.
 
 (** [nat_gcd] is positive for positive inputs. *)
-Global Instance nat_gcd_pos n m : 0 < n -> 0 < m -> 0 < nat_gcd n m.
+Instance nat_gcd_pos n m : 0 < n -> 0 < m -> 0 < nat_gcd n m.
 Proof.
   intros H1 H2.
   apply lt_iff_not_geq.
@@ -779,36 +821,36 @@ Defined.
 
 Definition nat_gcd_r_add_r_mul n m k : nat_gcd n (m + k * n) = nat_gcd n m.
 Proof.
-  lhs nrapply nat_gcd_comm.
-  rhs nrapply nat_gcd_comm.
-  nrapply nat_gcd_l_add_r_mul.
+  lhs napply nat_gcd_comm.
+  rhs napply nat_gcd_comm.
+  napply nat_gcd_l_add_r_mul.
 Defined.
 
 Definition nat_gcd_l_add_r n m : nat_gcd (n + m) m = nat_gcd n m.
 Proof.
-  rhs_V nrapply (nat_gcd_l_add_r_mul n m 1).
+  rhs_V exact (nat_gcd_l_add_r_mul n m 1).
   by rewrite nat_mul_one_l.
 Defined.
 
 Definition nat_gcd_r_add_r n m : nat_gcd n (m + n) = nat_gcd n m.
 Proof.
-  lhs nrapply nat_gcd_comm.
-  rhs nrapply nat_gcd_comm.
-  nrapply nat_gcd_l_add_r.
+  lhs napply nat_gcd_comm.
+  rhs napply nat_gcd_comm.
+  napply nat_gcd_l_add_r.
 Defined.
 
 Definition nat_gcd_l_sub n m : m <= n -> nat_gcd (n - m) m = nat_gcd n m.
 Proof.
   intros H.
-  lhs_V nrapply nat_gcd_l_add_r.
+  lhs_V napply nat_gcd_l_add_r.
   by rewrite (nat_add_sub_l_cancel H).
 Defined.
 
 Definition nat_gcd_r_sub n m : n <= m -> nat_gcd n (m - n) = nat_gcd n m.
 Proof.
   intros H.
-  lhs nrapply nat_gcd_comm.
-  rhs nrapply nat_gcd_comm.
+  lhs napply nat_gcd_comm.
+  rhs napply nat_gcd_comm.
   rapply nat_gcd_l_sub.
 Defined.
 
@@ -821,7 +863,7 @@ Definition NatBezout n m d : Type0
   := exists a b, a * n = d + b * m.
 Existing Class NatBezout.
 
-Global Instance nat_bezout_refl_l n k : NatBezout n k n.
+Instance nat_bezout_refl_l n k : NatBezout n k n.
 Proof.
   by exists 1, 0.
 Defined.
@@ -848,17 +890,17 @@ Proof.
     rewrite <- nat_sub_l_add_r.
     2: { apply nat_mul_r_monotone.
       rewrite 2 nat_mul_succ_r.
-      nrapply (leq_trans _ (leq_add_l _ _)).
-      rapply (leq_trans _ (leq_add_r _ _)). }
+      napply (leq_trans _ (leq_add_l _ _)).
+      exact (leq_trans _ (leq_add_r _ _)). }
     apply nat_moveL_nV.
     rewrite nat_add_comm.
-    snrapply (ap011 nat_add p).
-    lhs nrapply nat_mul_comm.
-    rhs_V nrapply nat_mul_assoc.
-    rhs_V nrapply nat_mul_assoc.
-    snrapply ap.
-    lhs_V nrapply nat_mul_assoc.
-    rhs nrapply nat_mul_assoc.
+    snapply (ap011 nat_add p).
+    lhs napply nat_mul_comm.
+    rhs_V napply nat_mul_assoc.
+    rhs_V napply nat_mul_assoc.
+    snapply ap.
+    lhs_V napply nat_mul_assoc.
+    rhs napply nat_mul_assoc.
     apply nat_mul_comm.
   - destruct q.
     exists 0, 0.
@@ -869,10 +911,10 @@ Proof.
 Defined.
 Hint Immediate nat_bezout_comm : typeclass_instances.
 
-Global Instance nat_bezout_pos_l n m : 0 < n -> NatBezout n m (nat_gcd n m).
+Instance nat_bezout_pos_l n m : 0 < n -> NatBezout n m (nat_gcd n m).
 Proof.
   pose (k := n + m); assert (p : n + m = k) by reflexivity; clearbody k.
-  revert k n m p; snrapply nat_ind_strong; hnf; intros k IHk n m q H.
+  revert k n m p; snapply nat_ind_strong; hnf; intros k IHk n m q H.
   (** Given a sum [n + m], we can always find another pair [n' + m'] equal to that sum such that [n' < m']. This extra hypothesis lets us prove the statement more directly. *)
   assert (H' : forall n' m', n + m = n' + m' -> 0 < n' -> n' < m'
     -> NatBezout n' m' (nat_gcd n' m')).
@@ -882,7 +924,7 @@ Proof.
     exists (a + b), b.
     rewrite nat_dist_r, r, nat_dist_sub_l, <- nat_add_assoc.
     rewrite nat_add_sub_l_cancel; only 2: rapply nat_mul_l_monotone.
-    snrapply (ap (fun x => x + _)).
+    snapply (ap (fun x => x + _)).
     rapply nat_gcd_r_sub. }
   destruct (nat_trichotomy n m) as [[l | p] | r].
   - by apply H'.
@@ -912,6 +954,109 @@ Proof.
   destruct n; [ right | left ]; exact _.
 Defined.
 
+(** ** Least common multiple *)
+
+(** The least common multiple [nat_lcm n m] is the smallest natural number divisibile by both [n] and [m]. *)
+Definition nat_lcm (n m : nat) : nat := n * (m / nat_gcd n m).
+
+(** The least common multiple of [0] and [n] is [0]. *)
+Definition nat_lcm_zero_l n : nat_lcm 0 n = 0 := idpath.
+
+(** The least common multiple of [n] and [0] is [0]. *)
+Definition nat_lcm_zero_r n : nat_lcm n 0 = 0.
+Proof.
+  unfold nat_lcm.
+  by rewrite nat_div_zero_l, nat_mul_zero_r.
+Defined.
+
+(** The least common multiple of [1] and [n] is [n]. *)
+Definition nat_lcm_one_l n : nat_lcm 1 n = n.
+Proof.
+  unfold nat_lcm.
+  by rewrite nat_gcd_one_l, nat_div_one_r, nat_mul_one_l.
+Defined.
+
+(** The least common multiple of [n] and [1] is [n]. *)
+Definition nat_lcm_one_r n : nat_lcm n 1 = n.
+Proof.
+  unfold nat_lcm.
+  by rewrite nat_gcd_one_r, nat_div_one_r, nat_mul_one_r.
+Defined.
+
+(** Idempotency. *)
+Definition nat_lcm_idem n : nat_lcm n n = n.
+Proof.
+  unfold nat_lcm.
+  by rewrite nat_gcd_idem, nat_mul_div_cancel_l.
+Defined.
+
+(** [n] divides the least common multiple of [n] and [m]. *) 
+Instance nat_divides_r_lcm_l n m : (n | nat_lcm n m) := _.
+
+(** [m] divides the least common multiple of [n] and [m]. *)
+Instance nat_divides_r_lcm_r n m : (m | nat_lcm n m).
+Proof.
+  unfold nat_lcm.
+  rewrite nat_div_mul_l; only 2: exact _.
+  rewrite <- nat_div_mul_r; exact _.
+Defined.
+
+(** The least common multiple of [n] and [m] divides any multiple of [n] and [m]. *)
+Instance nat_divides_l_lcm n m k : (n | k) -> (m | k) -> (nat_lcm n m | k).
+Proof.
+  intros H1 H2.
+  destruct (equiv_leq_lt_or_eq (n:=0) (m:=n) _) as [lt_n | p];
+    only 2: by destruct p.
+  destruct (equiv_leq_lt_or_eq (n:=0) (m:=m) _) as [lt_m | q];
+    only 2: (destruct q; by rewrite nat_lcm_zero_r).
+  unfold nat_lcm.
+  destruct (nat_bezout_pos_l n m _) as [a [b p]].
+  apply nat_moveR_nV in p.
+  rewrite nat_div_mul_l.
+  2: exact _.
+  rapply nat_divides_l_div.
+  destruct p.
+  rewrite nat_dist_sub_l.
+  napply nat_divides_sub.
+  1: rewrite nat_mul_comm.
+  1,2: exact _.
+Defined.
+
+Definition nat_divides_l_iff_divides_l_lcm n m k
+  : (n | k) * (m | k) <-> (nat_lcm n m | k).
+Proof.
+  split.
+  - intros [H1 H2]; exact _.
+  - intros H; split.
+    + rapply (nat_divides_trans _ H).
+    + exact _.
+Defined.
+
+(** If [k] divides all common multiples of [n] and [m], and [k] is also a common multiple, then it must necessarily be equal to the least common multiple. *)
+Definition nat_lcm_unique n m k
+  (H : forall q, (n | q) -> (m | q) -> (k | q))
+  : (n | k) -> (m | k) -> nat_lcm n m = k.
+Proof.
+  intros H1 H2.
+  rapply nat_divides_antisym.
+Defined.
+
+(** As a corollary of uniqueness, we get that the least common multiple operation is commutative. *)
+Definition nat_lcm_comm n m : nat_lcm n m = nat_lcm m n.
+Proof.
+  rapply nat_lcm_unique.
+Defined.
+
+(** [nat_lcm] is associative. *)
+Definition nat_lcm_assoc n m k : nat_lcm n (nat_lcm m k) = nat_lcm (nat_lcm n m) k.
+Proof.
+  rapply nat_lcm_unique.
+  intros q H1 H2.
+  rapply nat_divides_l_lcm.
+  rapply nat_divides_l_lcm.
+  rapply (nat_divides_trans _ H2).
+Defined.
+
 (** ** Prime Numbers *)
 
 (** A prime number is a number greater than [1] that is only divisible by [1] and itself. *)
@@ -922,19 +1067,19 @@ Class IsPrime (n : nat) : Type0 := {
 
 Definition issig_IsPrime n : _ <~> IsPrime n := ltac:(issig).
 
-Global Instance ishprop_isprime `{Funext} n : IsHProp (IsPrime n).
+Instance ishprop_isprime `{Funext} n : IsHProp (IsPrime n).
 Proof.
-  nrapply istrunc_equiv_istrunc.
+  napply istrunc_equiv_istrunc.
   1: apply issig_IsPrime.
   rapply istrunc_sigma.
   intros H1.
-  snrapply istrunc_forall.
+  snapply istrunc_forall.
   intros m.
-  snrapply istrunc_forall.
+  snapply istrunc_forall.
   intros d.
   rapply ishprop_sum.
   intros p q.
-  nrapply (snd neq_iff_lt_or_gt _ (p^ @ q)).
+  napply (snd neq_iff_lt_or_gt _ (p^ @ q)).
   by left.
 Defined.
 
@@ -953,18 +1098,18 @@ Proof.
 Defined.
 
 (** Being prime is a decidable property. We give an inefficient procedure for determining primality. More efficient procedures can be given, but for proofs this suffices. *)
-Global Instance decidable_isprime@{} n : Decidable (IsPrime n).
+Instance decidable_isprime@{} n : Decidable (IsPrime n).
 Proof.
   (** First we begin by discarding the [n = 0] case as we can easily prove that [0] is not prime. *)
   destruct n.
-  1: right; apply not_isprime_zero.
+  1: right; exact not_isprime_zero.
   (** Next, we rewrite [IsPrime n.+1] as the equivalent sigma type. *)
-  nrapply decidable_equiv'.
-  1: nrapply issig_IsPrime.
+  napply decidable_equiv'.
+  1: napply issig_IsPrime.
   (** The condition in the first component in [IsPrime] is clearly decidable, so we can proceed to the second component. *)
-  nrapply decidable_equiv'.
+  napply decidable_equiv'.
   1: exact (equiv_sigma_prod0 _ _)^-1%equiv.
-  snrapply decidable_prod.
+  snapply decidable_prod.
   1: exact _.
   (** In order to show that this [forall] is decidable, we will exhibit it as a [for_all] statement over a given list. The predicate will be the conclusion we wish to reach here, and the list will consist of all numbers with a condition equivalent to the divisibility condition. *)
   pose (P := fun m => ((m = 1) + (m = n.+1))%type : Type0).
@@ -989,14 +1134,14 @@ Proof.
 Defined.
 
 (** We can show that the first 8 primes are prime as expected. *)
-Global Instance isprime_2 : IsPrime 2 := ltac:(decide).
-Global Instance isprime_3 : IsPrime 3 := ltac:(decide).
-Global Instance isprime_5 : IsPrime 5 := ltac:(decide).
-Global Instance isprime_7 : IsPrime 7 := ltac:(decide).
-Global Instance isprime_11 : IsPrime 11 := ltac:(decide).
-Global Instance isprime_13 : IsPrime 13 := ltac:(decide).
-Global Instance isprime_17 : IsPrime 17 := ltac:(decide).
-Global Instance isprime_19 : IsPrime 19 := ltac:(decide).
+Instance isprime_2 : IsPrime 2 := ltac:(decide).
+Instance isprime_3 : IsPrime 3 := ltac:(decide).
+Instance isprime_5 : IsPrime 5 := ltac:(decide).
+Instance isprime_7 : IsPrime 7 := ltac:(decide).
+Instance isprime_11 : IsPrime 11 := ltac:(decide).
+Instance isprime_13 : IsPrime 13 := ltac:(decide).
+Instance isprime_17 : IsPrime 17 := ltac:(decide).
+Instance isprime_19 : IsPrime 19 := ltac:(decide).
 
 (** Similarly, we can see that other natural numbers are not prime. *)
 Definition not_isprime_0 : not (IsPrime 0) := ltac:(decide).
@@ -1007,9 +1152,9 @@ Definition not_isprime_4 : not (IsPrime 4) := ltac:(decide).
 Definition Prime : Type0 := {n : nat & IsPrime n}.
 
 Coercion nat_of_prime (p : Prime) : nat := p.1.
-Global Instance isprime_prime (p : Prime) : IsPrime p := p.2.
+Instance isprime_prime (p : Prime) : IsPrime p := p.2.
 
-Global Instance lt_zero_prime (p : Prime) : 0 < p
+Instance lt_zero_prime (p : Prime) : 0 < p
   := lt_trans _ gt_one_isprime.
 
 (** A prime [p] is coprime to a natural number [n] iff [p] does not divide [n]. *)
@@ -1046,13 +1191,13 @@ Proof.
   destruct H^; clear H.
   destruct d as [d r].
   exists (x * m - y * d).
-  lhs nrapply nat_dist_sub_r.
+  lhs napply nat_dist_sub_r.
   rewrite <- 2 nat_mul_assoc.
   rewrite <- (nat_mul_comm p).
   destruct r^; clear r.
   rewrite 2 nat_mul_assoc.
-  lhs_V nrapply nat_dist_sub_r.
-  rhs_V nrapply nat_mul_one_l.
+  lhs_V napply nat_dist_sub_r.
+  rhs_V napply nat_mul_one_l.
   apply (ap (fun x => nat_mul x m)).
   apply nat_moveR_nV.
   exact q.
@@ -1072,7 +1217,7 @@ Defined.
 Hint Immediate gt_1_iscomposite : typeclass_instances.
 
 (** Being composite is a decidable property. *)
-Global Instance decidable_iscomposite@{} n : Decidable (IsComposite n).
+Instance decidable_iscomposite@{} n : Decidable (IsComposite n).
 Proof.
   unfold IsComposite.
   rapply (decidable_exists_nat n).
@@ -1131,22 +1276,22 @@ Defined.
 Definition not_isprime_iff_iscomposite@{} n
   : 1 < n /\ ~ IsPrime n <-> IsComposite n.
 Proof.
-  nrapply iff_compose.
-  - nrapply iff_functor_prod.
-    1: nrapply iff_refl.
-    nrapply iff_compose.
+  napply iff_compose.
+  - napply iff_functor_prod.
+    1: exact iff_refl.
+    napply iff_compose.
     + apply iff_not.
       rapply isprime_iff_not_iscomposite.
     + rapply iff_not_prod.
-  - nrapply iff_compose.
-    1: nrapply sum_distrib_l.
-    nrapply iff_compose.
-    + nrapply iff_functor_sum.
+  - napply iff_compose.
+    1: napply sum_distrib_l.
+    napply iff_compose.
+    + napply iff_functor_sum.
       1: apply iff_contradiction.
-      nrapply iff_functor_prod.
-      1: nrapply iff_refl.
+      napply iff_functor_prod.
+      1: exact iff_refl.
       rapply iff_stable.
-    + nrapply iff_compose.
+    + napply iff_compose.
       1: rapply sum_empty_l.
       split; only 1: exact snd.
       intros H; split; only 2: exact H.
@@ -1159,7 +1304,7 @@ Defined.
 Definition exists_prime_divisor@{} n
   : 1 < n -> exists (p : Prime), (p | n).
 Proof.
-  revert n; snrapply nat_ind_strong; hnf; intros n IHn H.
+  revert n; snapply nat_ind_strong; hnf; intros n IHn H.
   destruct (dec (IsPrime n)) as [x|x].
   1: exists (_; x); exact _.
   pose (r := (H, x)).
@@ -1176,7 +1321,7 @@ Definition prime_factorization@{} n
     -> exists (l : list Prime),
       n = fold_right (fun (p : Prime) n => nat_mul p n) 1 l.
 Proof.
-  revert n; snrapply nat_ind_strong; hnf; intros n IHn H.
+  revert n; snapply nat_ind_strong; hnf; intros n IHn H.
   destruct H as [|n IH].
   1: exists nil; reflexivity.
   destruct (exists_prime_divisor n.+1 _) as [p d].
@@ -1189,7 +1334,7 @@ Proof.
   exists (p :: f)%list.
   simpl; destruct r.
   symmetry.
-  lhs nrapply nat_mul_comm.
+  lhs napply nat_mul_comm.
   exact H.
 Defined.
 

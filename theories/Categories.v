@@ -70,11 +70,11 @@ Require HoTT.Categories.Yoneda.
 Require HoTT.Categories.Structure.
 (** ** Fundamental Pregroupoids *)
 Require HoTT.Categories.FundamentalPreGroupoidCategory.
-(** ** Homotopy PreCategory *)
+(** ** Homotopy precategory *)
 Require HoTT.Categories.HomotopyPreCategory.
 
 (* We bind the record structures for [PreCategory], [IsCategory], [IsStrictCategory], [Functor], and eventually [NaturalTransformation] at top level. *)
-Local Set Warnings Append "-notation-overridden".
+Local Set Warnings "-notation-overridden".
 Include HoTT.Categories.Category.Core.
 Include HoTT.Categories.Category.Strict.
 Include HoTT.Categories.Category.Univalent.

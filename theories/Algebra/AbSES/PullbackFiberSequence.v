@@ -1,12 +1,12 @@
-Require Import Basics Types HSet HFiber Limits.Pullback.
-Require Import WildCat Pointed.Core Homotopy.ExactSequence.
+From HoTT Require Import Basics Types HSet HFiber Limits.Pullback.
+From HoTT.WildCat Require Import Core NatTrans.
+Require Import Pointed.Core Homotopy.ExactSequence.
 Require Import Groups.QuotientGroup.
 Require Import AbGroups.AbelianGroup AbGroups.AbPullback AbGroups.Biproduct.
 Require Import AbSES.Core AbSES.Pullback. 
 Require Import Modalities.Identity Modalities.Modality Truncations.Core.
 
 Local Open Scope pointed_scope.
-Local Open Scope mc_scope.
 Local Open Scope mc_add_scope.
 
 (** * The fiber sequence induced by pulling back along a short exact sequence *)
@@ -15,7 +15,7 @@ Local Open Scope mc_add_scope.
 
 We will prove the analog of exactness in terms of path data, and deduce the usual notion. *)
 
-(** If a short exact sequence [A -> F -> E] becomes trivial after pulling back along an inclusion [i : B -> E], then there is a "transpose" short exact sequence [B -> F -> F/B]. We begin by constructing the the map [B -> F]. *)
+(** If a short exact sequence [A -> F -> E] becomes trivial after pulling back along an inclusion [i : B -> E], then there is a "transpose" short exact sequence [B -> F -> F/B]. We begin by constructing the map [B -> F]. *)
 Definition abses_pullback_inclusion_transpose_map {A B E : AbGroup}
       (i : B $-> E) `{IsEmbedding i}
       (F : AbSES E A) (p : abses_pullback i F $== pt)
@@ -28,7 +28,7 @@ Local Instance abses_pullback_inclusion_lemma {A B E : AbGroup}
       (F : AbSES E A) (p : abses_pullback i F $== pt)
   : IsEmbedding (grp_pullback_pr1 _ _ $o p^$.1).
 Proof.
-  nrapply (istruncmap_compose (-1) p^$.1 (grp_pullback_pr1 (projection F) i)).
+  napply (istruncmap_compose (-1) p^$.1 (grp_pullback_pr1 (projection F) i)).
   all: rapply istruncmap_mapinO_tr.
 Defined.
 
@@ -65,14 +65,14 @@ Definition abses_pullback_trivial_preimage `{Univalence} {A B C : AbGroup} (E : 
            (F : AbSES (middle E) A) (p : abses_pullback (inclusion E) F $== pt)
   : AbSES C A.
 Proof.
-  snrapply Build_AbSES.
+  snapply Build_AbSES.
   - exact (abses_pullback_inclusion_transpose_endpoint' (inclusion E) F p).
   - exact (grp_quotient_map $o inclusion F).
   - srapply (ab_cokernel_embedding_rec _ (projection E $o projection F)).
     intro b.
     refine (ap (projection E) (abses_pullback_inclusion_transpose_beta (inclusion E) F p b) @ _).
     apply iscomplex_abses.
-  - apply isembedding_grouphomomorphism.
+  - apply isembedding_istrivial_kernel.
     intros a q0.
     (* Since [inclusion F a] is killed by [grp_quotient_map], its in the image of [B]. *)
     pose proof (in_coset := related_quotient_paths _ _ _ q0).
@@ -86,13 +86,13 @@ Proof.
            refine (ap (grp_pullback_pr1 _ _) (fst p^$.2 (-a)) @ _).
            exact (grp_homo_inv _ _). }
     (* Using [q2], we conclude. *)
-    pose proof (q3 := ap negate (fst ((equiv_path_prod _ _)^-1 q2))); cbn in q3.
-    exact ((negate_involutive _)^ @ q3^ @ negate_mon_unit).
+    pose proof (q3 := ap (-) (fst ((equiv_path_prod _ _)^-1 q2))); cbn in q3.
+    exact ((inverse_involutive _)^ @ q3^ @ grp_inv_unit).
   - apply (cancelR_conn_map (Tr (-1)) grp_quotient_map).
     1: exact _.
     simpl.
     exact _.
-  - snrapply Build_IsExact.
+  - snapply Build_IsExact.
     + srapply phomotopy_homotopy_hset.
       intro a; simpl.
       refine (ap (projection E) _ @ _).
@@ -106,13 +106,13 @@ Proof.
       revert_opaque f; apply Trunc_rec; intros [f q0].
       (* Since [projection F f] is in the kernel of [projection E], we find a preimage in [B]. *)
       assert (b : merely (hfiber (inclusion E) (projection F f))).
-      1: { rapply isexact_preimage.
+      1: { tapply isexact_preimage.
            exact (ap _ q0 @ q). }
       revert_opaque b; apply Trunc_rec; intros [b q1].
       (* The difference [f - b] in [F] is in the kernel of [projection F], hence lies in [A]. *)
       assert (a : merely (hfiber (inclusion F)
                                  (sg_op f (-(grp_pullback_pr1 _ _ (p^$.1 (ab_biprod_inr b))))))).
-      1: { rapply isexact_preimage.
+      1: { tapply isexact_preimage.
            refine (grp_homo_op _ _ _ @ _).
            refine (ap (fun x => _ + x) (grp_homo_inv _ _) @ _).
            refine (ap (fun x => _ - x) (abses_pullback_inclusion_transpose_beta (inclusion E) F p b @ q1) @ _).
@@ -129,7 +129,7 @@ Proof.
       apply qglue.
       exists b.
       refine (_ @ (grp_unit_r _)^).
-      exact (negate_involutive _)^.
+      exact (inverse_involutive _)^.
 Defined.
 
 (** That [abses_pullback_trivial_preimage E F p] pulls back to [F] is immediate from [abses_pullback_component1_id] and the following map. As such, we've shown that sequences which become trivial after pulling back along [inclusion E] are in the image of pullback along [projection E]. *)
@@ -172,7 +172,7 @@ Proof.
   change (equiv_ptransformation_phomotopy (iscomplex_abses_pullback' _ _ (iscomplex_abses E)) U)
     with (equiv_path_abses_iso ((iscomplex_abses_pullback' _ _ (iscomplex_abses E)).1 U)).
   apply (ap equiv_path_abses_iso).
-  rapply path_hom.
+  tapply path_hom.
   refine (_ $@R abses_pullback_compose' (inclusion E) (projection E) U);
     unfold trans_comp.
   refine (_ $@R abses_pullback_homotopic' (projection E $o inclusion E) grp_homo_const (iscomplex_abses E) U).
@@ -249,7 +249,7 @@ Proof.
        apply eissect. }
   refine (equiv_concat_l _ _ oE _).
   1: { refine (ap (fun x => (x $@ _).1) _).
-       rapply gpd_strong_1functor_V. }
+       tapply gpd_strong_1functor_V. }
   apply equiv_path_groupisomorphism.
 Defined.
 
@@ -345,7 +345,7 @@ Proof.
   destruct Y as [Y Q].
   apply abses_path_data_to_iso;
     srefine (_; (_,_)).
-  - snrapply (ab_cokernel_embedding_rec _ (grp_pullback_pr1 _ _$o (Q.1^$).1)).
+  - snapply (ab_cokernel_embedding_rec _ (grp_pullback_pr1 _ _$o (Q.1^$).1)).
     1-3: exact _.
     intro f.
     nrefine (ap _ (induced_map_eq E F p (Y;Q) _) @ _); cbn.
@@ -353,7 +353,7 @@ Proof.
   - intro a.
     refine (_ @ ap (grp_pullback_pr1 _ _) (fst (Q.1^$).2 a)).
     exact (grp_quotient_rec_beta' _ F _ _ (inclusion F a)).
-  - nrapply (conn_map_elim _ grp_quotient_map).
+  - napply (conn_map_elim _ grp_quotient_map).
     1: apply issurj_class_of.
     1: intros ?; apply istrunc_paths; apply group_isgroup.
     intro f.
@@ -367,8 +367,8 @@ Lemma hfiber_cxfib'_induced_path' `{Univalence} {A B C : AbGroup} (E : AbSES C B
   : path_hfiber_cxfib' (hfiber_cxfib'_inhabited E F p) Y.
 Proof.
   exists (hfiber_cxfib'_induced_path'0 E F p Y).
-  rapply gpd_moveR_Vh.
-  rapply gpd_moveL_hM.
+  tapply gpd_moveR_Vh.
+  tapply gpd_moveL_hM.
   rapply gpd_moveR_Vh.
   intro x.
   srapply equiv_path_pullback_hset; split.
@@ -389,7 +389,7 @@ Proof.
 Defined.
 
 (** From this we deduce exactness. *)
-Global Instance isexact_abses_pullback `{Univalence} {A B C : AbGroup} {E : AbSES C B}
+Instance isexact_abses_pullback `{Univalence} {A B C : AbGroup} {E : AbSES C B}
   : IsExact purely (abses_pullback_pmap (A:=A) (projection E)) (abses_pullback_pmap (inclusion E)).
 Proof.
   srapply Build_IsExact.

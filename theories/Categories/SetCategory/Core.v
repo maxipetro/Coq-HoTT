@@ -1,4 +1,4 @@
-(** * PreCategories [set_cat] and [prop_cat] *)
+(** * Precategories [set_cat] and [prop_cat] *)
 Require Import Category.Strict.
 Require Import HoTT.Basics HoTT.Types TruncType.
 
@@ -24,7 +24,7 @@ Definition prop_cat `{Funext} : PreCategory := cat_of HProp.
 Definition set_cat `{Funext} : PreCategory := cat_of HSet.
 
 (** ** [Prop] is a strict category *)
-Global Instance isstrict_prop_cat `{Univalence}
+Instance isstrict_prop_cat `{Univalence}
 : IsStrictCategory prop_cat
   := _.
 

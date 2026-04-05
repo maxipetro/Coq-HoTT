@@ -83,7 +83,7 @@ Ltac clear_dup :=
 
 Ltac clear_dups := repeat clear_dup.
 
-(** Try to clear everything except some hyp *)
+(** Try to clear everything except some hypothesis *)
 
 Ltac clear_except hyp :=
   repeat match goal with [ H : _ |- _ ] =>
@@ -210,7 +210,7 @@ Ltac refine_hyp c :=
 
 (** TODO: From here comes from Overture.v *)
 
-(** Clear a hypothesis and also its dependencies.  Taken from Coq stdlib, with the performance-enhancing change to [lazymatch] suggested at [https://github.com/coq/coq/issues/11689]. *)
+(** Clear a hypothesis and also its dependencies.  Taken from Coq Stdlib, with the performance-enhancing change to [lazymatch] suggested at [https://github.com/coq/coq/issues/11689]. *)
 Tactic Notation "clear" "dependent" hyp(h) :=
   let rec depclear h :=
   clear h ||
@@ -221,7 +221,7 @@ Tactic Notation "clear" "dependent" hyp(h) :=
  in depclear h.
 
 
-(** A version of [generalize dependent] that applies only to a hypothesis.  Taken from Coq stdlib. *)
+(** A version of [generalize dependent] that applies only to a hypothesis.  Taken from Coq Stdlib. *)
 Tactic Notation "revert" "dependent" hyp(h) :=
   generalize dependent h.
 
@@ -300,10 +300,10 @@ Set Primitive Projections.
 Global Hint Mode IsGlobalAxiom + : typeclass_instances.
 
 (** We add [Funext] to the list here, and will later add [Univalence]. *)
-Global Instance is_global_axiom_funext : IsGlobalAxiom Funext := {}.
+Instance is_global_axiom_funext : IsGlobalAxiom Funext := {}.
 
 (** Add [PropResizing] to the list of global axioms. *)
-Global Instance is_global_axiom_propresizing : IsGlobalAxiom PropResizing := {}.
+Instance is_global_axiom_propresizing : IsGlobalAxiom PropResizing := {}.
 
 Ltac is_global_axiom A := let _ := constr:(_ : IsGlobalAxiom A) in idtac.
 
@@ -318,35 +318,65 @@ Tactic Notation "nrefine" uconstr(term) := notypeclasses refine term; global_axi
 (** A shorter name for [simple notypeclasses refine]; also handles global axioms. *)
 Tactic Notation "snrefine" uconstr(term) := simple notypeclasses refine term; global_axiom.
 
-(** Note that the Coq standard library has a [rapply], but it is like our [rapply'] with many-holes first.  We prefer fewer-holes first, for instance so that a theorem producing an equivalence will by preference be used to produce an equivalence rather than to apply the coercion of that equivalence to a function. *)
-Tactic Notation "rapply" uconstr(term)
-  := do_with_holes ltac:(fun x => refine x) term.
-Tactic Notation "rapply'" uconstr(term)
-  := do_with_holes' ltac:(fun x => refine x) term.
-
-Tactic Notation "srapply" uconstr(term)
-  := do_with_holes ltac:(fun x => srefine x) term.
-Tactic Notation "srapply'" uconstr(term)
-  := do_with_holes' ltac:(fun x => srefine x) term.
-
-Tactic Notation "nrapply" uconstr(term)
+(** The tactics [napply], [rapply] and [tapply] are similar but they differ in their reliance on typeclass search. [napply t] tries [nrefine t], [nrefine (t _)], [nrefine (t _ _)], so on until it succeeds in unifying with the goal. At each iteration, [nrefine] computes the type of the given term and tries to unify it with the goal; if it succeeds, all holes remaining in the term after unification are new goals. *)
+Tactic Notation "napply" uconstr(term)
   := do_with_holes ltac:(fun x => nrefine x) term.
-Tactic Notation "nrapply'" uconstr(term)
+Tactic Notation "napply'" uconstr(term)
   := do_with_holes' ltac:(fun x => nrefine x) term.
 
-Tactic Notation "snrapply" uconstr(term)
+(** TODO: remove when min Coq/Rocq version is 9.1 (~ end of 2026). *)
+#[deprecated(note="nrapply was renamed to napply and will be removed soon",
+  since="2025-03-11")]
+Tactic Notation "nrapply" uconstr(term) := napply term.
+
+(** [rapply] is equivalent in strength to [napply], i.e., it should succeed iff [napply] succeeds, but it solves all possible typeclasses after successful unification with the goal. The implementation is: try [nrefine t, t _, t _ _], ... until success; upon success, revert the last (successful) application of [nrefine] and call [refine (t _ _ _)]. *)
+Tactic Notation "rapply" uconstr(term)
+  := do_with_holes ltac:(fun x => assert_succeeds (nrefine x); refine x) term.
+Tactic Notation "rapply'" uconstr(term)
+  := do_with_holes' ltac:(fun x => assert_succeeds (nrefine x); refine x) term.
+
+(** The [tapply] tactic is strictly stronger than [rapply], because if the type of the argument term [t] (with holes) cannot be successfully computed or unified with the goal type, it calls typeclass search on all typeclass holes within [t] (independently of the goal) and then tries to unify with the goal again. Our implementation of [rapply] requires that the type (with holes) of the argument term unifies with the goal directly, without any help from typeclass search to fill in the holes in the type. The typeclass search after unification is more robust than the typeclass search before unification, because there is more information available to guide the typeclass search. If [rapply] succeeds, then [tapply] succeeds and their outcomes are equivalent. Note that the Coq standard library has a [rapply], of these six tactics it is closest to our [tapply'] with many-holes first. We prefer fewer-holes first, for instance so that a theorem producing an equivalence will by preference be used to produce an equivalence rather than to apply the coercion of that equivalence to a function. *)
+Tactic Notation "tapply" uconstr(term)
+  := do_with_holes ltac:(fun x => refine x) term.
+Tactic Notation "tapply'" uconstr(term)
+  := do_with_holes' ltac:(fun x => refine x) term.
+
+(** Each of the tactics [napply], [rapply], [tapply] has a "simple" variant prefixed with s. The simple variants do not perform beta reduction when unifying with the goal, and they do not shelve any of the holes created by unification with the goal. *)
+
+Tactic Notation "snapply" uconstr(term)
   := do_with_holes ltac:(fun x => snrefine x) term.
-Tactic Notation "snrapply'" uconstr(term)
+Tactic Notation "snapply'" uconstr(term)
   := do_with_holes' ltac:(fun x => snrefine x) term.
 
-(** Apply a tactic to one side of an equation.  For example, [lhs rapply lemma].  [tac] should produce a path. *)
+(** TODO: remove when min Coq/Rocq version is 9.1 (~ end of 2026). *)
+#[deprecated(note="snrapply was renamed to snapply and will be removed soon",
+  since="2025-03-11")]
+Tactic Notation "snrapply" uconstr(term) := snapply term.
 
+(** See comment for [rapply]. This cannot be simplified to [snrefine x] because we don't want the [global_axiom] tactic to run here. *)
+Tactic Notation "srapply" uconstr(term)
+  := do_with_holes ltac:(fun x => assert_succeeds (simple notypeclasses refine x); srefine x) term.
+Tactic Notation "srapply'" uconstr(term)
+:= do_with_holes' ltac:(fun x => assert_succeeds (simple notypeclasses refine x); srefine x) term.
+
+Tactic Notation "stapply" uconstr(term)
+  := do_with_holes ltac:(fun x => srefine x) term.
+Tactic Notation "stapply'" uconstr(term)
+  := do_with_holes' ltac:(fun x => srefine x) term.
+
+(** Apply a tactic to one side of an equation.  For example, [lhs rapply lemma].  [tac] should produce a path. *)
 Tactic Notation "lhs" tactic3(tac) := nrefine (ltac:(tac) @ _).
 Tactic Notation "lhs_V" tactic3(tac) := nrefine (ltac:(tac)^ @ _).
 Tactic Notation "rhs" tactic3(tac) := nrefine (_ @ ltac:(tac)^).
 Tactic Notation "rhs_V" tactic3(tac) := nrefine (_ @ ltac:(tac)).
 
-(** Ssreflect tactics, adapted by Robbert Krebbers *)
+(** Here are versions that work for a general relation.  The relation needs to be transitive and, in two cases, symmetric.  These versions also work for paths in most cases, but due to slightly different behaviours, don't work quite as well as the previous versions. *)
+Tactic Notation "lhs'" tactic3(tac) := etransitivity; [tac|].
+Tactic Notation "lhs_V'" tactic3(tac) := etransitivity; [symmetry; tac|].
+Tactic Notation "rhs'" tactic3(tac) := etransitivity; [|symmetry; tac].
+Tactic Notation "rhs_V'" tactic3(tac) := etransitivity; [|tac].
+
+(** SSReflect tactics, adapted by Robbert Krebbers *)
 Ltac done :=
   trivial; intros; solve
     [ repeat first
@@ -395,7 +425,7 @@ Tactic Notation "funext" simple_intropattern(a) simple_intropattern(b) simple_in
 Tactic Notation "funext" simple_intropattern(a) simple_intropattern(b) simple_intropattern(c) simple_intropattern(d) simple_intropattern(e) simple_intropattern(f)
   := funext a; funext b; funext c; funext d; funext e; funext f.
 
-(* Test whether a tactic fails or succeeds, without actually doing anything.  Taken from Coq stdlib. *)
+(* Test whether a tactic fails or succeeds, without actually doing anything.  Taken from Coq Stdlib. *)
 Ltac assert_fails tac :=
   tryif (once tac) then gfail 0 tac "succeeds" else idtac.
 Tactic Notation "assert_succeeds" tactic3(tac) :=
@@ -475,7 +505,7 @@ Ltac get_constructor_head T :=
 Ltac ntc_constructor :=
   lazymatch goal with
   | [ |- ?G ] => let build := get_constructor_head G in
-                 nrapply build
+                 napply build
   end.
 
 (** [case_path] is a HoTT replacement for [case_eq]; [case_path x] is like [destruct x], but it remembers the original value of [x] in an equation to be introduced. *)
@@ -604,7 +634,7 @@ Local Ltac unify_with_projections term u :=
   (unify_first_evar_with term u;
    tryif has_evar term then fail 0 term "has evars remaining" else idtac).
 
-(* Completely destroys v into its pieces and trys to put pieces in sigma. *)
+(* Completely destroys [v] into its pieces and tries to put pieces in a sigma type. *)
 Local Ltac refine_with_exist_as_much_as_needed_then_destruct v :=
   ((destruct v; shelve) +
    (snrefine (_ ; _);
@@ -635,11 +665,11 @@ Ltac issig :=
     refine built
   (** Going from a record to a sigma type *)
   | refine_with_exist_as_much_as_needed_then_destruct v
-  (** Proving eissect *)
+  (** Proving [eissect] *)
   | destruct v; cbn [pr1 pr2]; reflexivity
-  (** Proving eisretr *)
+  (** Proving [eisretr] *)
   | reflexivity
-  (** Proving eisadj *)
+  (** Proving [eisadj] *)
   | reflexivity ].
 
 (** We show how the tactic works in a couple of examples. *)
@@ -658,10 +688,10 @@ Proof.
   issig.
 Defined.
 
-(** The general reasoning behind the issig tactic is: if we know the type of the record, econstructor will give us the constructor applied to evars for each field. If we assume that there are no evars in the type, we can unify the first evar with u.1, the next evar with u.2.1, the next with u.2.2.1, etc, and if we run out of evars or projections, we backtrack and instead fill the final evar with u.2.2....2. (Note that if we strip the trailing evars from the constructor before unifying them, we get a term with a Pi type, and if we drop the final codomain and turn the Pi type into a Sigma, this lets us autogenerate the Sigma type we should be using; this is how the versions that don't need a hand-crafted Sigma type work: they unify the generated type with the term in the goal that should be the Sigma type.)
+(** The general reasoning behind the [issig] tactic is: if we know the type of the record, [econstructor] will give us the constructor applied to evars for each field. If we assume that there are no evars in the type, we can unify the first evar with [u.1], the next evar with [u.2.1], the next with [u.2.2.1], etc, and if we run out of evars or projections, we backtrack and instead fill the final evar with [u.2.2....2]. (Note that if we strip the trailing evars from the constructor before unifying them, we get a term with a Pi type, and if we drop the final codomain and turn the Pi type into a Sigma, this lets us autogenerate the Sigma type we should be using; this is how the versions that don't need a hand-crafted Sigma type work: they unify the generated type with the term in the goal that should be the Sigma type.)
 
-Generating the function the other way is a bit trickier, because there's no easy way to get our hands on all the projections of the record, and moreover we don't even know how many pairings we'll need. The thing we want to do is introduce the right number of pairings, destruct the variable of record type in the goal for each component, and then magically use the right projection. I'll get back to the magic in a moment; first we need to take care of the "right number" of pairings. We could pull a trick where we infer the number by looking at the term we get from econstructor in a goal whose type is the record. Instead, I chose the more concise route of coding a tactic that introduces the minimum number of pairings needed to make the magic work. How does it know the minimum number? It doesn't need to! The wonder of (recursive) multisuccess tactics is that you can say "try no pairings, and if that makes any future tactic fail, backtrack and try one pairing, and if that doesn't work, backtrack and try two pairings, etc". (The downside is that the error messages you get when you set things up wrong are truly incomprehensible, because if you make a typo in any of the fields of the Sigma type the error message you end up getting is something like "(_; _) is a Sigma type but it was expected to have the type of the final field" (and it's always about the final field, regardless of which field you made a typo in). So plausibly it's worth it to still do the small issig tactics by hand, and only use this tactic for >= 5 fields or something.)
+Generating the function the other way is a bit trickier, because there's no easy way to get our hands on all the projections of the record, and moreover we don't even know how many pairings we'll need. The thing we want to do is introduce the right number of pairings, destruct the variable of record type in the goal for each component, and then magically use the right projection. I'll get back to the magic in a moment; first we need to take care of the "right number" of pairings. We could pull a trick where we infer the number by looking at the term we get from [econstructor] in a goal whose type is the record. Instead, I chose the more concise route of coding a tactic that introduces the minimum number of pairings needed to make the magic work. How does it know the minimum number? It doesn't need to! The wonder of (recursive) multisuccess tactics is that you can say "try no pairings, and if that makes any future tactic fail, backtrack and try one pairing, and if that doesn't work, backtrack and try two pairings, etc". (The downside is that the error messages you get when you set things up wrong are truly incomprehensible, because if you make a typo in any of the fields of the Sigma type the error message you end up getting is something like "(_; _) is a Sigma type but it was expected to have the type of the final field" (and it's always about the final field, regardless of which field you made a typo in). So plausibly it's worth it to still do the small [issig] tactics by hand, and only use this tactic for >= 5 fields or something.)
 
-Okay, now onto the magic. How do we know which field is the right one? Well, there's only one answer that lets us prove the section and retraction by destruct+reflexivity, so we can let unification solve this problem for us. It's important to have destructed the record variable in each of the pair-component evars, because unification is not (yet) smart enough to invert records for us; this is what the destruct before shelve in the inverse function generation tactic is. We cbn pr1 and pr2 to make the unification problem be completely syntactic (no need to unfold anything during unification). This is probably not strictly necessary, but seems like good form to me.
+Okay, now onto the magic. How do we know which field is the right one? Well, there's only one answer that lets us prove the section and retraction by [destruct] + [reflexivity], so we can let unification solve this problem for us. It's important to have destructed the record variable in each of the pair-component evars, because unification is not (yet) smart enough to invert records for us; this is what the [destruct] before [shelve] in the inverse function generation tactic is. We [cbn] [pr1] and [pr2] to make the unification problem be completely syntactic (no need to unfold anything during unification). This is probably not strictly necessary, but seems like good form to me.
 
-Finally, we can prove the other one of the section/retraction pair (I can never recall which is which), and the adjoint, by reflexivity. (Perhaps it would be better to use exact idpath, if we want to not have to unfold reflexivity when using equivalences generated by these tactics.) *)
+Finally, we can prove the other one of the section/retraction pair (I can never recall which is which), and the adjoint, by [reflexivity]. (Perhaps it would be better to use [exact idpath], if we want to not have to unfold [reflexivity] when using equivalences generated by these tactics.) *)

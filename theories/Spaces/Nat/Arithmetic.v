@@ -1,4 +1,4 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Spaces.Nat.Core.
   
 Local Set Universe Minimization ToSet.
@@ -52,7 +52,7 @@ Proof.
   - intros m i l. simpl in l. contradiction (not_lt_zero_r _ _).
   - intros m i l. destruct m.
     + apply leq_zero_l.
-    + apply leq_succ. simpl in l. apply (IHn m i l).
+    + apply leq_succ. simpl in l. exact (IHn m i l).
 Defined.
 
 (** TODO: move, rename *)

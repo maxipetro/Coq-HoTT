@@ -1,10 +1,14 @@
-Require Import HoTT.Basics HoTT.Types.
+Require Import HoTT.Basics HoTT.Types HFiber.
 Require Import Colimits.Pushout.
 Require Import Colimits.SpanPushout.
+Require Import Homotopy.Suspension.
+Require Import Limits.Pullback.
 Require Import Homotopy.Join.Core.
 Require Import Truncations.
 
 (** * The Generalized Blakers-Massey Theorem *)
+
+(** This file follows the paper "A Generalized Blakers-Massey Theorem" (https://arxiv.org/abs/1703.09050) by Mathieu Anel, Georg Biedermann, Eric Finster, André Joyal, hereafter referred to as ABFJ. We also follow "A Mechanization of the Blakers-Massey Connectivity Theorem in Homotopy Type Theory" by Favonia, Eric Finster, Dan Licata, and Peter LeFanu Lumsdaine, hereafter referred to as HFLL. *)
 
 (** ** Path algebra helper lemma *)
 
@@ -41,7 +45,7 @@ Defined.
 Section GBM.
     Context {X Y : Type} (Q : X -> Y -> Type).
 
-    (** Here's the hypothesis of ABFJ generalized Blakers-Massey.  It works for any reflective subuniverse, not only modalities! *)
+    (** Here's the hypothesis of ABFJ's generalized Blakers-Massey theorem.  It works for any reflective subuniverse, not only modalities!  In the application, [O] will be [Tr (n +2+ m)] and we'll use [isconnected_join] to verify [isconnected_cogap]. *)
     Context (O : ReflectiveSubuniverse).
     Context
       (isconnected_cogap :
@@ -151,7 +155,7 @@ Section GBM.
                        ((codeleft2_y0 yqqu; codeleft2_q10 yqqu) = (y1; q11)
                                            :> {y:Y & Q x1 y})}.
 
-        (** Since this connected type is itself a join, hence a pushout, the second step is to distribute this and reexpress the whole thing as another pushout of iterated Sigma-types (again mostly expressed as records for performance reasons). *)
+        (** Since this connected type is itself a join, hence a pushout, the second step is to distribute this and re-express the whole thing as another pushout of iterated Sigma-types (again mostly expressed as records for performance reasons). *)
 
         Record Ocodeleft2b
         := { Ocodeleft2b_s   : x0 = x1 ;
@@ -207,13 +211,10 @@ Section GBM.
         Definition equiv_Ocodeleft2
           : O (Pushout Ocodeleft2ab Ocodeleft2ac) <~> O codeleft2.
         Proof.
-          refine ((equiv_O_functor O (equiv_sigma_contr
-                  (fun yqqu : codeleft2 =>
-                     O (Join ((x0; codeleft2_q00 yqqu) = (x1; codeleft2_q10 yqqu))
-                             ((codeleft2_y0 yqqu ; codeleft2_q10 yqqu) = (y1; q11)))))) oE _).
-          refine ((equiv_O_sigma_O O _)^-1 oE _).
+          refine (_ oE equiv_O_functor O equiv_Ocodeleft2plus).
+          refine (_ oE (equiv_O_sigma_O O _)^-1).
           apply equiv_O_functor.
-          apply equiv_Ocodeleft2plus.
+          rapply equiv_sigma_contr.
         Defined.
 
         (** The next step is to reassociate the resulting double-pushout and "contract" both of them, one after the other, because they are pushouts along equivalences.  In order to do this, we need first of all to know that the resulting map from [codeleft0] to the above pushout factors through [Ocodeleft2b] via an equivalence.  Here's the equivalence: *)
@@ -413,7 +414,7 @@ Now we claim that the left-hand map of this span is also an equivalence.  Rather
       refine (_ oE equiv_transport codeleft (transport_paths_r _ _)).
       refine (_ oE codeglue _ q11).
       refine (equiv_transport coderight _).
-      refine (concat_pV_p z (glue q11)).
+      exact (concat_pV_p z (glue q11)).
     Defined.
 
     (** Here's the final definition of [code]. *)
@@ -441,7 +442,7 @@ Now we claim that the left-hand map of this span is also an equivalence.  Rather
                                   (@codeleft x0) (@coderight x0)
                                   ap_code_glue
                                   x1 y1 q11) @ _).
-      refine (ap10_path_arrow _ _ _ _).
+      exact (ap10_path_arrow _ _ _ _).
     Defined.
 
     (** ** Contractibility of codes *)
@@ -489,12 +490,10 @@ Now we claim that the left-hand map of this span is also an equivalence.  Rather
                                (fun r => to O (hfiber glue r)) _).
       apply ap; unfold hfiber; rewrite transport_sigma'.
       apply ap; rewrite transport_paths_r.
-      (** Finally, we have another terrible-looking thing involving [frobnicate].  However, there are enough identity paths that [frobnicate] evaluates to... something that's almost fully path-general!  So with just a little bit of further work, we can reduce it also to something we can prove with path-induction. *)
+      (** Finally, we have another terrible-looking thing involving [frobnicate].  However, there are enough identity paths that [frobnicate] evaluates to something we can prove with path-induction. *)
       Transparent frobnicate.
-      cbn.
+      simpl.
       Opaque frobnicate.
-      rewrite (transport_compose (fun q => glue q @ (glue q01)^ = 1%path) pr1).
-      unfold path_sigma'; rewrite ap_V, ap_pr1_path_sigma, transport_1.
       destruct (glue q01); reflexivity.
     Qed.
 
@@ -520,22 +519,116 @@ Now we claim that the left-hand map of this span is also an equivalence.  Rather
       exact (Build_Contr _ (center_code p r) (contraction_code q00 (p;r))).
     Defined.
 
-    (** This version is sufficient for the classical Blakers-Massey theorem, as we'll see below, since its leg-wise connectivity hypothesis implies the above surjectivity assumption.  ABFJ have a different method for eliminating the surjectivity assumption using a lemma about pushouts of monos also being pullbacks, though it seems to only work for coderight. *)
+    (** This version is sufficient for the classical Blakers-Massey theorem, as we'll see below, since its leg-wise connectivity hypothesis implies the above surjectivity assumption.  Anel-Biedermann-Finster-Joyal have a different method for eliminating the surjectivity assumption using a lemma about pushouts of monos also being pullbacks, though it seems to only work for coderight. *)
 
 End GBM.
 
 (** ** The classical Blakers-Massey Theorem *)
 
-Global Instance blakers_massey `{Univalence} (m n : trunc_index)
-           {X Y : Type} (Q : X -> Y -> Type)
-           `{forall y, IsConnected m.+1 { x : X & Q x y } }
-           `{forall x, IsConnected n.+1 { y : Y & Q x y } }
-           (x : X) (y : Y)
-  : IsConnMap (m +2+ n) (@spglue X Y Q x y).
+(** We first state a version that gracefully extends to the bottom by assuming that path types in [{ x : X & Q x y }] are connected rather than the types themselves. *)
+Definition blakers_massey_connected_paths `{Univalence}
+  (m n : trunc_index) {X Y : Type} (Q : X -> Y -> Type)
+  `{forall x, IsConnected m.+1 { y : Y & Q x y }}
+  `{forall y x1 qx1y x2 qx2y, IsConnected n ((x1; qx1y) = (x2; qx2y) :> { x : X & Q x y })}
+  (x : X) (y : Y)
+  : IsConnMap (n +2+ m) (@spglue X Y Q x y)
+  := contr_code_inhab Q (n +2+ m) _ x (merely_isconnected m _) (spushr Q y).
+  (* Typeclass search finds [isconnected_join]. *)
+
+(** Here is the classical statement where we instead assume that the types are connected.  [m] and [n] here match the usage in the previous result. *)
+Instance blakers_massey `{Univalence}
+  (m n : trunc_index) {X Y : Type} (Q : X -> Y -> Type)
+  `{forall x, IsConnected m.+1 { y : Y & Q x y }}
+  `{forall y, IsConnected n.+1 { x : X & Q x y }}
+  (x : X) (y : Y)
+  : IsConnMap (n +2+ m) (@spglue X Y Q x y)
+  := blakers_massey_connected_paths m n Q x y.
+
+(** We can in fact reduce [m] by one in both the statement and the conclusion.  When [m] is [-2], this is one step weaker than what [blakers_massey_connected_paths] gives, but it is convenient to have this uniform statement.  We'll use this convention for the later results as well. *)
+Instance blakers_massey' `{Univalence}
+  (m n : trunc_index) {X Y : Type} (Q : X -> Y -> Type)
+  `{forall x, IsConnected m.+1 { y : Y & Q x y }}
+  `{forall y, IsConnected n { x : X & Q x y }}
+  (x : X) (y : Y)
+  : IsConnMap (n +2+ m).-1 (@spglue X Y Q x y).
 Proof.
-  intros r.
-  snrefine (contr_code_inhab Q (m +2+ n) _ x
-                            (merely_isconnected n _) (spushr Q y) r).
-  1: intros; apply isconnected_join.
-  all: exact _.
+  destruct n.
+  - apply isconnmap_pred'.
+    rapply blakers_massey_connected_paths.
+  - rapply blakers_massey_connected_paths.
+Defined.
+
+(** A sigma functor is connected if its fibers are, so we have the following. *)
+Definition blakers_massey_total_map `{Univalence} (m n : trunc_index)
+  {X Y : Type} (Q : X -> Y -> Type)
+  `{forall x, IsConnected m.+1 { y : Y & Q x y } }
+  `{forall y, IsConnected n { x : X & Q x y } }
+  : IsConnMap (Tr (n +2+ m).-1) (spushout_sjoin_map Q)
+  := _.
+
+Definition blakers_massey_po `{Univalence} (m n : trunc_index)
+  {X Y Z : Type} (f : X -> Y) (g : X -> Z)
+  `{H1 : !IsConnMap m.+1 f} `{H2 : !IsConnMap n g}
+  : IsConnMap (n +2+ m).-1 (pullback_corec (pglue (f:=f) (g:=g))).
+Proof.
+  (** We postcompose our map with an equivalence from the pullback of the pushout of [f] and [g] to the pullback of an equivalent [SPushout] over a family [Q]. *)
+  pose (Q := fun y z => {x : X & f x = y /\ g x = z}).
+  snapply cancelL_equiv_conn_map.
+  1: exact (Pullback (spushl Q) (spushr Q)).
+  1: by snapply (equiv_pullback (equiv_pushout_spushout _ _)).
+  (** Next we precompose with the equivalence from the total space of [Q] to [X]. *)
+  rapply (cancelR_conn_map _ (equiv_double_fibration_replacement f g)^-1%equiv).
+  (** Next we prove that this composition is homotopic to [spushout_sjoin_map Q]. *)
+  snapply (conn_map_homotopic _ (spushout_sjoin_map Q)).
+  { intros [y [z [x [[] []]]]].
+    snapply (path_sigma' _ 1 (path_sigma' _ 1 _)); simpl; symmetry.
+    lhs napply concat_1p.
+    lhs napply concat_p1.
+    lhs napply functor_coeq_beta_cglue.
+    lhs napply concat_p1.
+    napply concat_1p. }
+  rapply blakers_massey_total_map.
+  (** What's left is to check that the partial total spaces of [Q] are connected, which we get since [f] and [g] are connected maps. We just have to strip off the irrelevant parts of [Q] to get the hfiber in each case. *)
+  - intros y.
+    nrefine (isconnected_equiv' _ _ _ (H1 y)).
+    make_equiv_contr_basedpaths.
+  - intros z.
+    nrefine (isconnected_equiv' _ _ _ (H2 z)).
+    make_equiv_contr_basedpaths.
+Defined.
+
+(** A version that requires [g] to be surjective instead of [f]. *)
+Definition blakers_massey_po' `{Univalence} (m n : trunc_index)
+  {X Y Z : Type} (f : X -> Y) (g : X -> Z)
+  `{H1 : !IsConnMap m f} `{H2 : !IsConnMap n.+1 g}
+  : IsConnMap (n +2+ m).-1 (pullback_corec (pglue (f:=f) (g:=g))).
+Proof.
+  rewrite trunc_index_add_comm.
+  (* We will postcompose with an equivalence to the symmetrical pullback. *)
+  snapply cancelL_equiv_conn_map.
+  (* And we'll show that the composite is homotopic to the symmetrical [pullback_corec] map, which we already know is connected. *)
+  3: rapply (conn_map_homotopic _ _ _ _ (blakers_massey_po n m g f)).
+  - (* We give the equivalence between the pullbacks. *)
+    refine (_ oE equiv_pullback_symm _ _).
+    snapply (equiv_pullback pushout_sym equiv_idmap equiv_idmap (fun _ => 1) (fun _ => 1)).
+  - (* We show that the composite is homotopic to the symmetrical [pullback_corec] map. *)
+    intro x; cbn; unfold pullback_corec, functor_sigma; cbn.
+    apply (ap (fun w => (g x; f x; w))).
+    symmetry; lhs napply concat_1p; lhs napply concat_p1.
+    lhs napply (ap_V pushout_sym_map (pglue x)).
+    rhs_V napply inv_V.
+    apply inverse2.
+    napply Pushout_rec_beta_pglue.
+Defined.
+
+(** ** The Freudenthal Suspension Theorem *)
+
+(** The Freudenthal suspension theorem is a fairly trivial corollary of the Blakers-Massey theorem.  It says that [merid : X -> North = South] is highly connected. *)
+Instance freudenthal `{Univalence} (n : trunc_index)
+           (X : Type@{u}) `{IsConnected n.+1 X}
+  : IsConnMap (n +2+ n) (@merid X).
+Proof.
+  (* If we post-compose [merid : X -> North = South] with an equivalence [North = South <~> P], where [P] is the pullback of the inclusions [Unit -> Susp X] hitting [North] and [South], we get the canonical comparison map [X -> P] whose connectivity follows from the Blakers-Massey theorem. *)
+  rapply (cancelL_equiv_conn_map _ _ (equiv_pullback_unit_unit_paths _ _)^-1%equiv).
+  rapply (blakers_massey_po n n.+1).
 Defined.

@@ -1,10 +1,10 @@
 (** * Lax Comma Categories *)
 (** Since there are only notations in [LaxComma.Notations], we can just export those. *)
-Local Set Warnings Append "-notation-overridden".
+Local Set Warnings "-notation-overridden".
 Require Export LaxComma.Notations.
 
 (** ** Definitions *)
 Require LaxComma.Core.
 
 Include LaxComma.Core.
-(** We don't want to make utf-8 notations the default, so we don't export them. *)
+(** We don't want to make UTF-8 notations the default, so we don't export them. *)

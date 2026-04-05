@@ -2,14 +2,12 @@
 
 (** This file contains all the tweaks and settings we make to Coq. *)
 
-(** ** Warnings *)
-
 (** ** Plugins *)
 
 (** Load the Ltac plugin. This is the tactic language we use for proofs. *)
-Declare ML Module "ltac_plugin:coq-core.plugins.ltac".
+Declare ML Module "rocq-runtime.plugins.ltac".
 (** Load the number string notation plugin. Allowing us to write numbers like [1234]. *)
-Declare ML Module "number_string_notation_plugin:coq-core.plugins.number_string_notation".
+Declare ML Module "rocq-runtime.plugins.number_string_notation".
 
 (** ** Proofs *)
 
@@ -40,7 +38,7 @@ Global Set Printing Primitive Projection Parameters.
 
 (** ** Pattern Matching *)
 
-(** This flag revoves parameters from constructors in patterns that appear in a match statement. *)
+(** This flag removes parameters from constructors in patterns that appear in a match statement. *)
 Global Set Asymmetric Patterns.
 
 (** ** Unification *)
@@ -61,9 +59,9 @@ Create HintDb typeclass_instances discriminated.
 
 (** Coercions in Coq since 8.16 have the ability to be reversible. These are coercions that are not regular functions but rely on some meta-procedure like typeclass resolution to fill in missing pieces. Examples include marking fields of a record with [:>] which allows Coq to elaborate the projected term to the original term.
 
-This behaviour can have some surprising effects in some places, where you might not expect a term to be elaborated. When inspecting proofs with [Set Printing All] you will not be able to see the reverisble coercion. In order to help with inspecting such situations, Coq exposes a register for a dummy term called [reverse_coercion] which gets inserted during an application of a reversible coercion. This way you can see the application clearly in a proof term.
+This behaviour can have some surprising effects in some places, where you might not expect a term to be elaborated. When inspecting proofs with [Set Printing All] you will not be able to see the reversible coercion. In order to help with inspecting such situations, Coq exposes a register for a dummy term called [reverse_coercion] which gets inserted during an application of a reversible coercion. This way you can see the application clearly in a proof term.
 
-We register this here. This is standard from the Coq stdlib prelude.*)
+We register this here. This is standard from the Coq Stdlib prelude.*)
 #[universes(polymorphic=yes)] Definition ReverseCoercionSource (T : Type) := T.
 #[universes(polymorphic=yes)] Definition ReverseCoercionTarget (T : Type) := T.
 #[warning="-uniform-inheritance", reversible=no, universes(polymorphic=yes)]

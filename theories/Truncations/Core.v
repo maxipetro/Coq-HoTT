@@ -1,4 +1,4 @@
-Require Import Basics Types WildCat.Core WildCat.Universe HFiber.
+From HoTT Require Import Basics Types Limits.Pullback WildCat.Core WildCat.Universe HFiber.
 Require Import Modalities.Modality.
 (** Users of this file almost always want to be able to write [Tr n] for both a [Modality] and a [ReflectiveSubuniverse], so they want the coercion [modality_to_reflective_subuniverse]: *)
 Require Export (coercions) Modalities.Modality.
@@ -28,9 +28,9 @@ Module Export Trunc.
     tr : A -> Trunc n A.
   Arguments tr {n A} a.
 
-  (** Without explicit universe parameters, this instance is insufficiently polymorphic. *)
-  Global Instance istrunc_truncation (n : trunc_index) (A : Type@{i})
-    : IsTrunc@{j} n (Trunc@{i} n A).
+  (** Because [IsTrunc] is cumulative, we can use only one universe variable here. *)
+  #[export] Instance istrunc_truncation@{i} (n : trunc_index) (A : Type@{i})
+    : IsTrunc@{i} n (Trunc@{i} n A).
   Admitted.
 
   Definition Trunc_ind {n A}
@@ -50,15 +50,30 @@ Definition Trunc_rec_tr n {A : Type}
   : Trunc_rec (A:=A) (tr (n:=n)) == idmap
   := Trunc_ind _ (fun a => idpath).
 
+(** ** Tactic to remove truncations in hypotheses if possible *)
+
+Ltac strip_truncations :=
+  progress repeat
+    match goal with
+    | [ T : _ |- _ ]
+      => revert_opaque T;
+        refine (@Trunc_ind _ _ _ _ _);
+        (* Ensure that we didn't generate more than one subgoal, i.e. that the goal was appropriately truncated: *)
+        [];
+        intro T
+    end.
+
+(** See [strip_reflections] and [strip_modalities] for generalizations to other reflective subuniverses and modalities.  We provide this version because it sometimes needs fewer universes (due to the cumulativity of [Trunc]).  However, that same cumulativity sometimes causes free universe variables.  For a hypothesis of type [Trunc@{i} X], we can use [Trunc_ind@{i j}], but sometimes Coq uses [Trunc_ind@{k j}] with [i <= k] and [k] otherwise free.  In these cases, [strip_reflections] and/or [strip_modalities] may generate fewer universe variables. *)
+
 (** ** [Trunc] is a modality *)
 
 Definition Tr (n : trunc_index) : Modality.
 Proof.
   srapply (Build_Modality (fun A => IsTrunc n A)); cbn.
-  - intros A B ? f ?; rapply (istrunc_isequiv_istrunc A f).
+  - intros A B ? f ?; exact (istrunc_isequiv_istrunc A f).
   - exact (Trunc n).
   - intros; apply istrunc_truncation.
-  - intros A; apply tr.
+  - intros A; exact tr.
   - intros A B ? f oa; cbn in *.
     exact (Trunc_ind B f oa).
   - intros; reflexivity.
@@ -77,7 +92,7 @@ Section TruncationModality.
     : IsTrunc n A <-> IsEquiv (@tr n A)
     := inO_iff_isequiv_to_O (Tr n) A.
 
-  Global Instance isequiv_tr A `{IsTrunc n A} : IsEquiv (@tr n A)
+  #[export] Instance isequiv_tr A `{IsTrunc n A} : IsEquiv (@tr n A)
     := fst (trunc_iff_isequiv_truncation A) _.
 
   Definition equiv_tr (A : Type) `{IsTrunc n A}
@@ -95,10 +110,10 @@ Section TruncationModality.
     : Tr@{i} n X -> Tr@{j} n Y
     := O_functor@{k k k} (Tr n) f.
 
-  Global Instance is0functor_Tr : Is0Functor (Tr n)
-    := Build_Is0Functor _ _ _ _ (Tr n) (@Trunc_functor).
+  #[export] Instance is0functor_Tr : Is0Functor (Tr n)
+    := Build_Is0Functor (Tr n) (@Trunc_functor).
 
-  Global Instance Trunc_functor_isequiv {X Y : Type}
+  #[export] Instance Trunc_functor_isequiv {X Y : Type}
     (f : X -> Y) `{IsEquiv _ _ f}
     : IsEquiv (Trunc_functor f)
     := isequiv_O_functor (Tr n) f.
@@ -119,18 +134,18 @@ Section TruncationModality.
     : Tr n (X * Y) <~> Tr n X * Tr n Y
     := equiv_O_prod_cmp (Tr n) X Y.
 
-  Global Instance is1functor_Tr : Is1Functor (Tr n).
+  #[export] Instance is1functor_Tr : Is1Functor (Tr n).
   Proof.
     apply Build_Is1Functor.
     - apply @O_functor_homotopy.
-    - apply @Trunc_functor_idmap.
-    - apply @Trunc_functor_compose.
+    - exact @Trunc_functor_idmap.
+    - exact @Trunc_functor_compose.
   Defined.
 
 End TruncationModality.
 
 (** We have to teach Coq to translate back and forth between [IsTrunc n] and [In (Tr n)]. *)
-Global Instance inO_tr_istrunc {n : trunc_index} (A : Type) `{IsTrunc n A}
+Instance inO_tr_istrunc {n : trunc_index} (A : Type) `{IsTrunc n A}
   : In (Tr n) A.
 Proof.
   assumption.
@@ -150,10 +165,10 @@ Defined.
 Hint Extern 1000 (IsTrunc _ _) => simple apply istrunc_inO_tr; solve [ trivial ] : typeclass_instances.
 (** This doesn't seem to be quite the same as [Hint Immediate] with a different cost either, though.  *)
 
-(** Unfortunately, this isn't perfect; Coq still can't always find [In n] hypotheses in the context when it wants [IsTrunc].  You can always apply [istrunc_inO_tr] explicitly, but sometimes it also works to just [pose] it into the context. *)
+(** Unfortunately, this isn't perfect; Coq still can't always find [In n] hypotheses in the context when it wants [IsTrunc].  You can always apply [istrunc_inO_tr] explicitly, but sometimes it also works to just [pose] it into the context (at the risk of causing loops in typeclass search). *)
 
 (** We do the same for [IsTruncMap n] and [MapIn (Tr n)]. *)
-Global Instance mapinO_tr_istruncmap {n : trunc_index} {A B : Type}
+Instance mapinO_tr_istruncmap {n : trunc_index} {A B : Type}
   (f : A -> B) `{IsTruncMap n A B f}
   : MapIn (Tr n) f.
 Proof.
@@ -169,6 +184,44 @@ Defined.
 
 #[export]
 Hint Immediate istruncmap_mapinO_tr : typeclass_instances.
+
+(** ** How stability and decidability interact with truncation *)
+
+(** For [n >= -1], a stable type is logically equivalent to its [n]-truncation. (It follows that this is true for decidable types as well.) *)
+Definition trunc_inhabited_iff_inhabited_stable (n : trunc_index) {A} {A_stable : Stable A}
+  : Tr n.+1 A <-> A.
+Proof.
+  nrefine (_, tr).
+  intro ma.
+  apply stable; intro na.
+  strip_truncations.
+  exact (na ma).
+Defined.
+
+(** The most common case involves [Tr (-1)], so we give it its own name. *)
+Definition merely_inhabited_iff_inhabited_stable {A} {A_stable : Stable A}
+  : Tr (-1) A <-> A
+  := trunc_inhabited_iff_inhabited_stable (-2).
+
+Instance decidable_trunc_decidable (n : trunc_index) {A} {A_decidable : Decidable A}
+  : Decidable (Tr n.+1 A).
+Proof.
+  rapply decidable_iff.
+  symmetry; rapply trunc_inhabited_iff_inhabited_stable.
+Defined.
+
+(** ** A few special things about the (-2)-truncation *)
+
+(** The type of contractible types is contractible. *)
+Definition contr_tr_minus_two@{u su | u < su} `{Univalence}
+  : Contr (Type_@{u su} (Tr (-2))).
+Proof.
+  apply (Build_Contr _ (exist@{su su} _ (Unit : Type@{u}) (inO_tr_istrunc _))).
+  intros [C ContrC].
+  apply equiv_path_sigma_hprop.
+  apply path_universe_uncurried.
+  symmetry; exact equiv_contr_unit.
+Defined.
 
 (** ** A few special things about the (-1)-truncation *)
 
@@ -186,22 +239,6 @@ Declare Scope hprop_scope.
 Notation "A \/ B" := (hor A B) : hprop_scope.
 
 Definition himage {X Y} (f : X -> Y) := image (Tr (-1)) f.
-
-Definition contr_inhab_prop {A} `{IsHProp A} (ma : merely A) : Contr A.
-Proof.
-  refine (@contr_trunc_conn (Tr (-1)) A _ _); try assumption.
-  refine (contr_inhabited_hprop _ ma).
-Defined.
-
-(** A stable type is logically equivalent to its (-1)-truncation. (It follows that this is true for decidable types as well.) *)
-Definition merely_inhabited_iff_inhabited_stable {A} {A_stable : Stable A}
-  : Tr (-1) A <-> A.
-Proof.
-  refine (_, tr).
-  intro ma.
-  apply stable; intro na.
-  revert ma; rapply Trunc_ind; exact na.
-Defined.
 
 (** ** Surjections *)
 
@@ -221,7 +258,7 @@ Lemma iff_merely_issurjection {X : Type} (P : X -> Type)
 Proof.
   refine (iff_compose _ (iff_forall_inO_mapinO_pr1 (Conn _) P)).
   apply iff_functor_forall; intro a.
-  symmetry; apply (iff_contr_hprop (Tr (-1) (P a))).
+  symmetry; exact (iff_contr_hprop (Tr (-1) (P a))).
 Defined.
 
 Lemma equiv_merely_issurjection `{Funext} {X : Type} (P : X -> Type)
@@ -252,7 +289,34 @@ Proof.
   exact (tr (s y; h y)).
 Defined.
 
+(** Surjections are preserved by pullback. *)
+Definition issurj_pullback_pr1 {A B C} (f : B -> A) (g : C -> A)
+  `{sg : IsSurjection g}
+  : IsSurjection (pullback_pr1 (f:=f) (g:=g)).
+Proof.
+  intro b.
+  specialize (sg (f b)).
+  exact (isconnected_equiv' _ _ (hfiber_pullback_along f g b)^-1%equiv _).
+Defined.
+
+Definition issurj_pullback_pr2 {A B C} (f : B -> A) (g : C -> A)
+  `{sg : IsSurjection f}
+  : IsSurjection (pullback_pr2 (f:=f) (g:=g)).
+Proof.
+  intro c.
+  specialize (sg (g c)).
+  exact (isconnected_equiv' _ _ (hfiber_pullback_along' g f c)^-1%equiv _).
+Defined.
+
 (** ** Embeddings *)
+
+(** For any point in the image of an embedding, the fibers are contractible. *)
+Instance contr_hfiber_emb {A B} (a : A) (f : A -> B)
+  `{IsEmbedding f}
+  : Contr (hfiber f (f a)).
+Proof.
+  srapply contr_inhabited_hprop. exact (a; idpath (f a)).
+Defined.
 
 (** Since embeddings are the (-1)-truncated maps, a map that is both a surjection and an embedding is an equivalence. *)
 Definition isequiv_surj_emb {A B} (f : A -> B)
@@ -286,7 +350,7 @@ Proof.
   exact (ap10 (g0.2 @ g1.2^) y).
 Defined.
 
-(** We next prove that [paths : X -> (X -> Type)] is an embedding. This was proved by Escardo as Lemma 15 in "Injective types in univalent mathematics", but we give an argument similar to the proof of Thm 2.25 of CORS. *)
+(** We next prove that [paths : X -> (X -> Type)] is an embedding. This was proved by Escardó as Lemma 15 in "Injective types in univalent mathematics", but we give an argument similar to the proof of Theorem 2.25 of CORS. *)
 
 (** This will be an inverse to [ap paths].  We'll want to show that it is an embedding, so we'll construct it out of pieces that are clearly equivalences, except for one step, [equiv_fun]. *)
 Definition ap_paths_inverse `{Univalence} {X : Type} (x1 x2 : X)
@@ -303,10 +367,10 @@ Defined.
 Definition isembedding_paths `{Univalence} {X : Type@{u}} : IsEmbedding (@paths X).
 Proof.
   (* To show that [paths] is an embedding, it suffices to show that [ap paths : x1 = x2 -> (paths x1) = (paths x2)] is an equivalence. *)
-  snrapply isembedding_isequiv_ap.
+  snapply isembedding_isequiv_ap.
   intros x1 x2.
   (* And for that, it suffices to show that [i o (ap paths)] is an equivalence for a well-chosen embedding [i]. *)
-  snrapply (isequiv_isequiv_compose_embedding (ap_paths_inverse x1 x2)).
+  snapply (isequiv_isequiv_compose_embedding (ap_paths_inverse x1 x2)).
   - (* [ap_paths_inverse x1 x2] is an embedding since it is a composite of four equivalences and one embedding.  We can group these into three parts. *)
     unfold ap_paths_inverse.
     nrefine (mapinO_compose (O:=Tr (-1)) _ (equiv_path_inverse x2 x1 oE _)).
@@ -315,29 +379,13 @@ Proof.
     1: exact _. (* The first part is an equivalence, so it's an embedding. *)
     rapply mapinO_functor_forall_id.
     intro y.
-    apply isembedding_equiv_fun.
+    exact isembedding_equiv_fun.
   - (* The composite is an equivalence because it is homotopic to the identity. *)
     simpl.
     srapply (isequiv_homotopic idmap).
     intros [].
     reflexivity.
 Defined.
-
-(** ** Tactic to remove truncations in hypotheses if possible *)
-
-Ltac strip_truncations :=
-  (** search for truncated hypotheses *)
-  progress repeat
-    match goal with
-    | [ T : _ |- _ ]
-      => revert_opaque T;
-        refine (@Trunc_ind _ _ _ _ _);
-        (** ensure that we didn't generate more than one subgoal, i.e. that the goal was appropriately truncated *)
-        [];
-        intro T
-  end.
-
-(** See [strip_reflections] and [strip_modalities] for generalizations to other reflective subuniverses and modalities.  We provide this version because it sometimes needs fewer universes (due to the cumulativity of [Trunc]).  However, that same cumulativity sometimes causes free universe variables.  For a hypothesis of type [Trunc@{i} X], we can use [Trunc_ind@{i j}], but sometimes Coq uses [Trunc_ind@{k j}] with [i <= k] and [k] otherwise free.  In these cases, [strip_reflections] and/or [strip_modalities] may generate fewer universe variables. *)
 
 (** ** Iterated truncations *)
 
@@ -353,8 +401,8 @@ Proof.
   destruct (trunc_index_min_path n m) as [p|q].
   + assert (l := trunc_index_min_leq_right n m).
     destruct p^; clear p.
-    snrapply (Build_Equiv _ _ (Trunc_functor _ tr)).
-    nrapply O_inverts_conn_map.
+    snapply (Build_Equiv _ _ (Trunc_functor _ tr)).
+    napply O_inverts_conn_map.
     rapply (conn_map_O_leq _ (Tr m)).
     rapply O_leq_Tr_leq.
   + assert (l := trunc_index_min_leq_left n m).

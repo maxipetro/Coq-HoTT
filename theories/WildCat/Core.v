@@ -23,6 +23,8 @@ Class Is01Cat (A : Type) `{IsGraph A} :=
   cat_comp : forall (a b c : A), (b $-> c) -> (a $-> b) -> (a $-> c);
 }.
 
+(** The [&] symbol here is a "bidirectionality hint". It directs Rocq to typecheck the application of [Build_Is01Cat] to the argument [A] before computing the type of the full term and trying to unify it with the goal, and only afterwards to typecheck the remaining arguments; it will be easier for Rocq to elaborate and typecheck the later arguments [Id] and [cat_comp] if [A] is already known. *)
+Arguments Build_Is01Cat A &.
 Arguments cat_comp {A _ _ a b c} _ _.
 Notation "g $o f" := (cat_comp g f).
 
@@ -41,11 +43,11 @@ Class Is0Gpd (A : Type) `{Is01Cat A} :=
 Definition GpdHom {A} `{Is0Gpd A} (a b : A) := a $-> b.
 Notation "a $== b" := (GpdHom a b).
 
-Global Instance reflexive_GpdHom {A} `{Is0Gpd A}
+Instance reflexive_GpdHom {A} `{Is0Gpd A}
   : Reflexive GpdHom
   := fun a => Id a.
 
-Global Instance reflexive_Hom {A} `{Is01Cat A}
+Instance reflexive_Hom {A} `{Is01Cat A}
   : Reflexive Hom
   := fun a => Id a.
 
@@ -54,21 +56,21 @@ Definition gpd_comp {A} `{Is0Gpd A} {a b c : A}
   := fun p q => q $o p.
 Infix "$@" := gpd_comp.
 
-Global Instance transitive_GpdHom {A} `{Is0Gpd A}
+Instance transitive_GpdHom {A} `{Is0Gpd A}
   : Transitive GpdHom
   := fun a b c f g => f $@ g.
 
-Global Instance transitive_Hom {A} `{Is01Cat A}
+Instance transitive_Hom {A} `{Is01Cat A}
   : Transitive Hom
   := fun a b c f g => g $o f.
 
 Notation "p ^$" := (gpd_rev p).
 
-Global Instance symmetric_GpdHom {A} `{Is0Gpd A}
+Instance symmetric_GpdHom {A} `{Is0Gpd A}
   : Symmetric GpdHom
   := fun a b f => f^$.
 
-Global Instance symmetric_GpdHom' {A} `{Is0Gpd A}
+Instance symmetric_Hom {A} `{Is0Gpd A}
   : Symmetric Hom
   := fun a b f => f^$.
 
@@ -84,20 +86,21 @@ Definition GpdHom_path {A} `{Is0Gpd A} {a b : A} (p : a = b) : a $== b
 Class Is0Functor {A B : Type} `{IsGraph A} `{IsGraph B} (F : A -> B)
   := { fmap : forall (a b : A) (f : a $-> b), F a $-> F b }.
 
+Arguments Build_Is0Functor {A B isgraph_A isgraph_B} F fmap : rename.
 Arguments fmap {A B isgraph_A isgraph_B} F {is0functor_F a b} f : rename.
 
 Class Is2Graph (A : Type) `{IsGraph A}
   := isgraph_hom : forall (a b : A), IsGraph (a $-> b).
-Global Existing Instance isgraph_hom | 20.
+Existing Instance isgraph_hom | 20.
 #[global] Typeclasses Transparent Is2Graph.
 
 (** ** Wild 1-categorical structures *)
 Class Is1Cat (A : Type) `{!IsGraph A, !Is2Graph A, !Is01Cat A} :=
 {
-  is01cat_hom : forall (a b : A), Is01Cat (a $-> b) ;
-  is0gpd_hom : forall (a b : A), Is0Gpd (a $-> b) ;
-  is0functor_postcomp : forall (a b c : A) (g : b $-> c), Is0Functor (cat_postcomp a g) ;
-  is0functor_precomp : forall (a b c : A) (f : a $-> b), Is0Functor (cat_precomp c f) ;
+  is01cat_hom :: forall (a b : A), Is01Cat (a $-> b) ;
+  is0gpd_hom :: forall (a b : A), Is0Gpd (a $-> b) ;
+  is0functor_postcomp :: forall (a b c : A) (g : b $-> c), Is0Functor (cat_postcomp a g) ;
+  is0functor_precomp :: forall (a b c : A) (f : a $-> b), Is0Functor (cat_precomp c f) ;
   cat_assoc : forall (a b c d : A) (f : a $-> b) (g : b $-> c) (h : c $-> d),
     (h $o g) $o f $== h $o (g $o f);
   cat_assoc_opp : forall (a b c d : A) (f : a $-> b) (g : b $-> c) (h : c $-> d),
@@ -106,10 +109,6 @@ Class Is1Cat (A : Type) `{!IsGraph A, !Is2Graph A, !Is01Cat A} :=
   cat_idr : forall (a b : A) (f : a $-> b), f $o Id a $== f;
 }.
 
-Global Existing Instance is01cat_hom.
-Global Existing Instance is0gpd_hom.
-Global Existing Instance is0functor_postcomp.
-Global Existing Instance is0functor_precomp.
 Arguments cat_assoc {_ _ _ _ _ _ _ _ _} f g h.
 Arguments cat_assoc_opp {_ _ _ _ _ _ _ _ _} f g h.
 Arguments cat_idl {_ _ _ _ _ _ _} f.
@@ -151,13 +150,125 @@ Definition cat_comp2 {A} `{Is1Cat A} {a b c : A}
 
 Notation "q $@@ p" := (cat_comp2 q p).
 
-(** Monomorphisms and epimorphisms. *)
+(** Epimorphisms and monomorphisms. *)
 
-Definition Monic {A} `{Is1Cat A} {b c: A} (f : b $-> c)
-  := forall a (g h : a $-> b), f $o g $== f $o h -> g $== h.
+Class Epic {A} `{Is1Cat A} {a b : A} (f : a $-> b)
+  := isepic : forall {c} (g h : b $-> c), g $o f $== h $o f -> g $== h.
 
-Definition Epic {A} `{Is1Cat A} {a b : A} (f : a $-> b)
-  := forall c (g h : b $-> c), g $o f $== h $o f -> g $== h.
+Arguments isepic {A}%_type_scope {IsGraph0 Is2Graph0 Is01Cat0 H a b} f {Epic c} g h _.
+
+Section Epimorphisms.
+
+  Context {A : Type} `{Is1Cat A}.
+
+  #[export]
+  Instance epic_id (P : A) : Epic (Id P).
+  Proof.
+    intros B b b' h.
+    exact ((cat_idr _)^$ $@ h $@ cat_idr _).
+  Defined.
+
+  Definition epic_homotopic {P P'} (f g : P $-> P') `{!Epic f} (h : f $== g)
+    : Epic g.
+  Proof.
+    intros Q x x' h'.
+    apply (isepic f).
+    exact ((x $@L h) $@ h' $@ (x' $@L h^$)).
+  Defined.
+
+  #[export]
+  Instance epic_compose {P P' P'' : A} (f : P $-> P') (g : P' $-> P'')
+    `{!Epic f} `{!Epic g}
+    : Epic (g $o f).
+  Proof.
+    intros Q x x' h.
+    apply (isepic g).
+    apply (isepic f).
+    exact ((cat_assoc f g x) $@ h $@ (cat_assoc_opp f g x')).
+  Defined.
+
+  Definition epic_cancel {P P' P'' : A} (f : P $-> P') (g : P' $-> P'')
+    `{!Epic (g $o f)}
+    : Epic g.
+  Proof.
+    intros Q x x' h.
+    rapply isepic.
+    exact ((cat_assoc_opp f g x) $@ (h $@R f) $@ (cat_assoc f g x')).
+  Defined.
+
+  Definition Epi (P' P : A) := { e : P' $-> P & Epic e }.
+
+  Definition hom_epi {P' P} (e : Epi P' P) := pr1 e : P' $-> P.
+  Coercion hom_epi : Epi >-> Hom.
+
+  #[export]
+  Instance epic_epi {P' P} (e : Epi P' P) : Epic e := pr2 e.
+
+  Definition id_epi P : Epi P P := (Id P; epic_id P).
+
+End Epimorphisms.
+
+Notation "P' $->> P" := (Epi P' P) (at level 99).
+
+(** Monomorphisms could be defined as epimorphisms in the opposite category, which would allow us to reuse the proofs below.  We'd have to move the material on epis and monos to a separate file. *)
+
+Class Monic {A} `{Is1Cat A} {b c: A} (f : b $-> c)
+  := ismonic : forall {a} (g h : a $-> b), f $o g $== f $o h -> g $== h.
+
+Arguments ismonic {A}%_type_scope {IsGraph0 Is2Graph0 Is01Cat0 H b c} f {Monic a} g h _.
+
+Section Monomorphisms.
+
+  Context {A : Type} `{Is1Cat A}.
+
+  #[export]
+  Instance monic_id (P : A) : Monic (Id P).
+  Proof.
+    intros B b b' h.
+    exact ((cat_idl _)^$ $@ h $@ cat_idl _).
+  Defined.
+
+  Definition monic_homotopic {P P'} (f g : P $-> P') `{!Monic f} (h : f $== g)
+    : Monic g.
+  Proof.
+    intros Q x x' h'.
+    apply (ismonic f).
+    exact ((h $@R x) $@ h' $@ (h^$ $@R x')).
+  Defined.
+
+  #[export]
+  Instance monic_compose {P P' P'' : A} (f : P $-> P') (g : P' $-> P'')
+    `{!Monic f} `{!Monic g}
+    : Monic (g $o f).
+  Proof.
+    intros Q x x' h.
+    apply (ismonic f).
+    apply (ismonic g).
+    exact ((cat_assoc_opp x f g) $@ h $@ (cat_assoc x' f g)).
+  Defined.
+
+  Definition monic_cancel {P P' P'' : A} (f : P $-> P') (g : P' $-> P'')
+    `{!Monic (g $o f)}
+    : Monic f.
+  Proof.
+    intros Q x x' h.
+    rapply ismonic.
+    exact ((cat_assoc x f g) $@ (g $@L h) $@ (cat_assoc_opp x' f g)).
+  Defined.
+
+  Definition Mono (P' P : A) := { e : P' $-> P & Monic e }.
+
+  Definition hom_mono {P' P} (m : Mono P' P) := pr1 m : P' $-> P.
+  Coercion hom_mono : Mono >-> Hom.
+
+  #[export]
+  Instance monic_mono {P' P} (e : Mono P' P) : Monic e := pr2 e.
+
+  Definition id_mono P : Mono P P := (Id P; monic_id P).
+
+End Monomorphisms.
+
+Notation "P' $>-> P" := (Mono P' P) (at level 99).
 
 (** Section might be a clearer name but it's better to avoid confusion with Coq keywords. *)
 
@@ -197,8 +308,8 @@ Arguments cat_assoc_opp_strong {_ _ _ _ _ _ _ _ _} f g h.
 Arguments cat_idl_strong {_ _ _ _ _ _ _} f.
 Arguments cat_idr_strong {_ _ _ _ _ _ _} f.
 
-Global Instance is1cat_is1cat_strong (A : Type) `{Is1Cat_Strong A}
-  : Is1Cat A | 1000.
+Definition is1cat_is1cat_strong (A : Type) `{Is1Cat_Strong A}
+  : Is1Cat A.
 Proof.
   srapply Build_Is1Cat.
   all: intros a b.
@@ -211,6 +322,8 @@ Proof.
   - intros; apply GpdHom_path, cat_idl_strong.
   - intros; apply GpdHom_path, cat_idr_strong.
 Defined.
+
+Hint Immediate is1cat_is1cat_strong : typeclass_instances.
 
 (** Initial objects *)
 Definition IsInitial {A : Type} `{Is1Cat A} (x : A)
@@ -241,18 +354,15 @@ Definition mor_terminal_unique {A : Type} `{Is1Cat A} (x y : A) {h : IsTerminal 
   := (h x).2 f.
 
 (** Generalizing function extensionality, "Morphism extensionality" states that homwise [GpdHom_path] is an equivalence. *)
-Class HasMorExt (A : Type) `{Is1Cat A} := {
-  isequiv_Htpy_path : forall a b f g, IsEquiv (@GpdHom_path (a $-> b) _ _ _ f g)
-}.
-
-Global Existing Instance isequiv_Htpy_path.
+Class HasMorExt (A : Type) `{Is1Cat A} :=
+  isequiv_Htpy_path :: forall (a b : A) f g, IsEquiv (@GpdHom_path (a $-> b) _ _ _ f g).
 
 Definition path_hom {A} `{HasMorExt A} {a b : A} {f g : a $-> b} (p : f $== g)
   : f = g
   := GpdHom_path^-1 p.
 
 (** A 1-category with morphism extensionality induces a strong 1-category *)
-Global Instance is1cat_strong_hasmorext {A : Type} `{HasMorExt A}
+Instance is1cat_strong_hasmorext {A : Type} `{HasMorExt A}
   : Is1Cat_Strong A.
 Proof.
   rapply Build_Is1Cat_Strong; hnf; intros; apply path_hom.
@@ -294,12 +404,12 @@ Class Faithful {A B : Type} (F : A -> B) `{Is1Functor A B F} :=
 
 Section IdentityFunctor.
 
-  Global Instance is0functor_idmap {A : Type} `{IsGraph A} : Is0Functor idmap.
+  #[export] Instance is0functor_idmap {A : Type} `{IsGraph A} : Is0Functor idmap.
   Proof.
     by apply Build_Is0Functor.
   Defined.
 
-  Global Instance is1functor_idmap {A : Type} `{Is1Cat A} : Is1Functor idmap.
+  #[export] Instance is1functor_idmap {A : Type} `{Is1Cat A} : Is1Functor idmap.
   Proof.
     by apply Build_Is1Functor.
   Defined.
@@ -316,7 +426,7 @@ Section ConstantFunctor.
 
   Context {A B : Type}.
 
-  Global Instance is01functor_const
+  #[export] Instance is01functor_const
     `{IsGraph A} `{Is01Cat B} (x : B)
     : Is0Functor (fun _ : A => x).
   Proof.
@@ -324,7 +434,7 @@ Section ConstantFunctor.
     intros a b f; apply Id.
   Defined.
 
-  Global Instance is1functor_const
+  #[export] Instance is1functor_const
    `{Is1Cat A} `{Is1Cat B} (x : B)
     : Is1Functor (fun _ : A => x).
   Proof.
@@ -340,7 +450,7 @@ End ConstantFunctor.
 
 (** Composite functors *)
 
-Global Instance is0functor_compose {A B C : Type}
+Instance is0functor_compose {A B C : Type}
   `{IsGraph A, IsGraph B, IsGraph C}
   (F : A -> B) `{!Is0Functor F} (G : B -> C) `{!Is0Functor G}
   : Is0Functor (G o F).
@@ -349,7 +459,7 @@ Proof.
   intros a b f; exact (fmap G (fmap F f)).
 Defined.
 
-Global Instance is1functor_compose {A B C : Type}
+Instance is1functor_compose {A B C : Type}
   `{Is1Cat A, Is1Cat B, Is1Cat C}
   (F : A -> B) `{!Is0Functor F, !Is1Functor F}
   (G : B -> C) `{!Is0Functor G, !Is1Functor G}
@@ -359,7 +469,7 @@ Proof.
   - intros a b f g p; exact (fmap2 G (fmap2 F p)).
   - intros a; exact (fmap2 G (fmap_id F a) $@ fmap_id G (F a)).
   - intros a b c f g.
-    refine (fmap2 G (fmap_comp F f g) $@ _).
+    lhs' rapply (fmap2 G (fmap_comp F f g)).
     exact (fmap_comp G (fmap F f) (fmap F g)).
 Defined.
 
@@ -404,21 +514,21 @@ Definition gpd_hV_h {A} `{Is1Gpd A} {a b c : A} (f : b $-> c) (g : b $-> a)
 Definition gpd_moveL_1M {A} `{Is1Gpd A} {x y : A} {p q : x $-> y}
   (r : p $o q^$ $== Id _) : p $== q.
 Proof.
-  refine ((cat_idr p)^$ $@ (p $@L (gpd_issect q)^$) $@ (cat_assoc _ _ _)^$ $@ _).
-  refine ((r $@R q) $@ cat_idl q).
+  lhs' exact ((cat_idr p)^$ $@ (p $@L (gpd_issect q)^$) $@ (cat_assoc _ _ _)^$).
+  exact ((r $@R q) $@ cat_idl q).
 Defined.
 
 Definition gpd_moveR_V1 {A} `{Is1Gpd A} {x y : A} {p : x $-> y}
   {q : y $-> x} (r : Id _ $== p $o q) : p^$ $== q.
 Proof.
-  refine ((cat_idr p^$)^$ $@ (p^$ $@L r) $@ _).
+  lhs' exact ((cat_idr p^$)^$ $@ (p^$ $@L r)).
   apply gpd_V_hh.
 Defined.
 
 Definition gpd_moveR_M1 {A : Type} `{Is1Gpd A} {x y : A} {p q : x $-> y}
   (r : Id _ $== p^$ $o q) : p $== q.
 Proof.
-  refine (_ $@ (cat_assoc _ _ _)^$ $@ ((gpd_isretr p) $@R q) $@ (cat_idl q)).
+  rhs_V' exact ((cat_assoc _ _ _)^$ $@ (gpd_isretr p $@R q) $@ cat_idl q).
   exact ((cat_idr p)^$ $@ (p $@L r)).
 Defined.
 
@@ -433,8 +543,8 @@ Defined.
 Definition gpd_moveL_1V {A : Type} `{Is1Gpd A} {x y : A} {p : x $-> y}
   {q : y $-> x} (r : p $o q $== Id _) : p $== q^$.
 Proof.
-  refine (_ $@ (cat_idl q^$)).
-  refine (_ $@ (r $@R q^$)).
+  rhs_V' apply cat_idl.
+  rhs_V' exact (r $@R q^$).
   exact (gpd_hh_V _ _)^$.
 Defined.
 
@@ -478,17 +588,16 @@ Definition gpd_rev_pp {A} `{Is1Gpd A} {a b c : A} (f : b $-> c) (g : a $-> b)
   : (f $o g)^$ $== g^$ $o f^$.
 Proof.
   apply gpd_moveR_V1.
-  refine (_ $@ cat_assoc _ _ _).
+  rhs_V' napply cat_assoc.
   apply gpd_moveL_hV.
-  refine (cat_idl _ $@ _).
+  lhs' napply cat_idl.
   exact (gpd_hh_V _ _)^$.
 Defined.
 
 Definition gpd_rev_1 {A} `{Is1Gpd A} {a : A} : (Id a)^$ $== Id a.
 Proof.
-  refine ((gpd_rev2 (gpd_issect (Id a)))^$ $@ _).
-  refine (gpd_rev_pp _ _ $@ _).
-  apply gpd_isretr.
+  rhs_V' exact (gpd_isretr (Id a)).
+  symmetry; apply cat_idl.
 Defined.
 
 Definition gpd_rev_rev {A} `{Is1Gpd A} {a0 a1 : A} (g : a0 $== a1)
@@ -550,7 +659,7 @@ Definition gpd_strong_1functor_V {A B} `{Is1Gpd A, Is1Gpd B, !HasMorExt B}
 
 Class Is3Graph (A : Type) `{Is2Graph A}
   := isgraph_hom_hom : forall (a b : A), Is2Graph (a $-> b).
-Global Existing Instance isgraph_hom_hom | 30.
+Existing Instance isgraph_hom_hom | 30.
 #[global] Typeclasses Transparent Is3Graph.
 
 (** *** Preservation of initial and terminal objects *)
@@ -558,8 +667,7 @@ Global Existing Instance isgraph_hom_hom | 30.
 Class PreservesInitial {A B : Type} (F : A -> B)
   `{Is1Functor A B F} : Type
   := isinitial_preservesinitial
-    : forall (x : A), IsInitial x -> IsInitial (F x).
-Global Existing Instance isinitial_preservesinitial.
+    :: forall (x : A), IsInitial x -> IsInitial (F x).
 
 (** The initial morphism is preserved by such a functor. *)
 Lemma fmap_initial {A B : Type} (F : A -> B)
@@ -572,8 +680,7 @@ Defined.
 Class PreservesTerminal {A B : Type} (F : A -> B)
   `{Is1Functor A B F} : Type
   := isterminal_preservesterminal
-    : forall (x : A), IsTerminal x -> IsTerminal (F x).
-Global Existing Instance isterminal_preservesterminal.
+    :: forall (x : A), IsTerminal x -> IsTerminal (F x).
 
 (** The terminal morphism is preserved by such a functor. *)
 Lemma fmap_terminal {A B : Type} (F : A -> B)
@@ -588,7 +695,7 @@ Defined.
 Record BasepointPreservingFunctor (B C : Type)
        `{Is01Cat B, Is01Cat C} `{IsPointed B, IsPointed C} := {
     bp_map : B -> C;
-    bp_is0functor : Is0Functor bp_map;
+    bp_is0functor :: Is0Functor bp_map;
     bp_pointed : bp_map (point B) $-> point C
   }.
 
@@ -598,8 +705,6 @@ Arguments Build_BasepointPreservingFunctor {B C}%_type_scope {H H0 H1 H2 H3 H4}
 
 Coercion bp_map : BasepointPreservingFunctor >-> Funclass.
 
-Global Existing Instance bp_is0functor.
-
 Notation "B -->* C" := (BasepointPreservingFunctor B C) (at level 70).
 
 Definition basepointpreservingfunctor_compose {B C D : Type}
@@ -608,7 +713,7 @@ Definition basepointpreservingfunctor_compose {B C D : Type}
            (F : B -->* C) (G : C -->* D)
   : B -->* D.
 Proof.
-  snrapply Build_BasepointPreservingFunctor.
+  snapply Build_BasepointPreservingFunctor.
   - exact (G o F).
   - exact _.
   - exact (bp_pointed G $o fmap G (bp_pointed F)).

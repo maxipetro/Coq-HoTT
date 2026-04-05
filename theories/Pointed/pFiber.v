@@ -1,4 +1,5 @@
-Require Import Basics Types WildCat.
+From HoTT Require Import Basics Types.
+From HoTT.WildCat Require Import Core Equiv.
 Require Import HFiber.
 Require Import Pointed.Core.
 Require Import Pointed.pEquiv.
@@ -8,20 +9,20 @@ Local Open Scope pointed_scope.
 
 (** ** Pointed fibers *)
 
-Global Instance ispointed_fiber {A B : pType} (f : A ->* B) : IsPointed (hfiber f (point B))
+Instance ispointed_fiber {A B : pType} (f : A ->* B) : IsPointed (hfiber f (point B))
   := (point A; point_eq f).
 
 Definition pfiber {A B : pType} (f : A ->* B) : pType := [hfiber f (point B), _].
 
 Definition pfib {A B : pType} (f : A ->* B) : pfiber f ->* A
-  := Build_pMap (pfiber f) A pr1 1.
+  := Build_pMap pr1 1.
 
 (** The double fiber object is equivalent to loops on the base. *)
 Definition pfiber2_loops {A B : pType} (f : A ->* B)
   : pfiber (pfib f) <~>* loops B.
 Proof.
   pointed_reduce_pmap f.
-  snrapply Build_pEquiv'.
+  snapply Build_pEquiv'.
   1: make_equiv_contr_basedpaths.
   reflexivity.
 Defined.
@@ -61,7 +62,7 @@ Proof.
   induction n.
   1: reflexivity.
   refine (_ o*E pfiber_fmap_loops _ ).
-  rapply (emap loops).
+  tapply (emap loops).
   exact IHn.
 Defined.
 
@@ -71,17 +72,17 @@ Definition functor_pfiber {A B C D}
   : pfiber f ->* pfiber g.
 Proof.
   srapply Build_pMap.
-  + cbn. refine (functor_hfiber2 p (point_eq k)).
+  + cbn. exact (functor_hfiber2 p (point_eq k)).
   + srapply path_hfiber. 
     - apply point_eq.
-    - refine (concat_pp_p _ _ _ @ _). apply moveR_Vp. apply (point_htpy p)^.
+    - refine (concat_pp_p _ _ _ @ _). apply moveR_Vp. exact (point_htpy p)^.
 Defined.
 
 Definition pequiv_pfiber {A B C D}
            {f : A ->* B} {g : C ->* D} (h : A <~>* C) (k : B <~>* D)
            (p : k o* f ==* g o* h)
   : pfiber f $<~> pfiber g
-  := Build_pEquiv _ _ (functor_pfiber p) _.
+  := Build_pEquiv (functor_pfiber p) _.
 
 Definition square_functor_pfiber {A B C D}
            {f : A ->* B} {g : C ->* D} {h : A ->* C} {k : B ->* D}
@@ -100,7 +101,7 @@ Definition square_pequiv_pfiber {A B C D}
   : h o* pfib f ==* pfib g o* pequiv_pfiber h k p
   := square_functor_pfiber p.
 
-(** The triple-fiber functor is equal to the negative of the loopspace functor. *)
+(** The triple-fiber functor is equal to the negative of the loop space functor. *)
 Definition pfiber2_fmap_loops {A B : pType} (f : A ->* B)
 : pfiber2_loops f o* pfib (pfib (pfib f))
   ==* fmap loops f o* (loops_inv _ o* pfiber2_loops (pfib f)).

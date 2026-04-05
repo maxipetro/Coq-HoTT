@@ -51,7 +51,7 @@ Definition equiv_ap10 {A B : Type} f g
   : (f = g) <~> (f == g)
   := Build_Equiv _ _ (@ap10 A B f g) _.
 
-Global Instance isequiv_path_arrow {A B : Type} (f g : A -> B)
+#[export] Instance isequiv_path_arrow {A B : Type} (f g : A -> B)
   : IsEquiv (path_arrow f g) | 0
   := isequiv_path_forall f g.
 
@@ -196,6 +196,22 @@ Proof.
   simpl; apply path_arrow_1.
 Defined.
 
+(** The action of pre/post-composition on a path between functions.  See also [ap10_ap_precompose] and [ap10_ap_postcompose] in PathGroupoids.v and [ap_precomposeD] in Forall.v. *)
+Definition ap_precompose {B P Q : Type}
+  {f g : Q -> P} (h : f = g) (i : B -> Q)
+  : ap (fun (k : Q -> P) => k o i) h
+    = path_arrow (f o i) (g o i) (ap10 h o i)
+  := ap_lambdaD _ _.
+
+Definition ap_postcompose {B P Q : Type}
+  {f g : Q -> P} (h : f = g) (j : P -> B)
+  : ap (fun (k : Q -> P) => j o k) h
+    = path_arrow (j o f) (j o g ) (fun q => ap j (ap10 h q)).
+Proof.
+  destruct h; cbn.
+  symmetry; apply path_forall_1.
+Defined.
+
 (** ** Functorial action *)
 
 Definition functor_arrow `(f : B -> A) `(g : C -> D)
@@ -222,11 +238,11 @@ Definition ap_functor_arrow `(f : B -> A) `(g : C -> D)
 
 (** ** Truncatedness: functions into an n-type is an n-type *)
 
-Global Instance contr_arrow {A B : Type} `{Contr B}
+#[export] Instance contr_arrow {A B : Type} `{Contr B}
   : Contr (A -> B) | 100
   := contr_forall.
 
-Global Instance istrunc_arrow {A B : Type} `{IsTrunc n B}
+#[export] Instance istrunc_arrow {A B : Type} `{IsTrunc n B}
   : IsTrunc n (A -> B) | 100
   := istrunc_forall.
 
@@ -244,7 +260,7 @@ Defined.
 
 (** ** Equivalences *)
 
-Global Instance isequiv_functor_arrow `{IsEquiv B A f} `{IsEquiv C D g}
+#[export] Instance isequiv_functor_arrow `{IsEquiv B A f} `{IsEquiv C D g}
   : IsEquiv (functor_arrow f g) | 1000
   := @isequiv_functor_forall _ A (fun _ => C) B (fun _ => D)
      _ _ _ _.
@@ -267,7 +283,7 @@ End AssumeFunext.
 (** ** Decidability *)
 
 (** This doesn't require funext *)
-Global Instance decidable_arrow {A B : Type}
+Instance decidable_arrow {A B : Type}
   `{Decidable A} `{Decidable B}
   : Decidable (A -> B).
 Proof.

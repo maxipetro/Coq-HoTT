@@ -1,5 +1,5 @@
 Require Import Classes.interfaces.canonical_names.
-Require Import WildCat.
+From HoTT.WildCat Require Import Core Equiv.
 Require Import Modalities.ReflectiveSubuniverse.
 Require Import Algebra.AbGroups.
 Require Import Algebra.Rings.Ring.
@@ -41,7 +41,7 @@ Section ChineseRemainderTheorem.
     revert a; srapply QuotientRing_ind_hprop; intro a.
     revert b; srapply QuotientRing_ind_hprop; intro b.
     (** We can think of [a] and [b] as the pair [(a mod I, b mod J)]. We need to show that there merely exists some element in [R] that gets mapped by  [rng_homo_crt] to the pair. *)
-    snrapply Build_Contr; [|intros z; strip_truncations; apply path_ishprop].
+    snapply Build_Contr; [|intros z; strip_truncations; apply path_ishprop].
     (** We make this choice and show it maps as desired. *)
     apply tr; exists (b * x + a * y).
     (** Finally using some simple ring laws we can show it maps to our pair. *)
@@ -90,7 +90,7 @@ Section ChineseRemainderTheorem.
   End rng_homo_crt_beta.
 
   (** We can now show the map is surjective from coprimality of [I] and [J]. *)
-  Global Instance issurjection_rng_homo_crt
+  #[export] Instance issurjection_rng_homo_crt
     : Coprime I J -> IsSurjection rng_homo_crt.
   Proof.
     intros c.
@@ -114,11 +114,11 @@ Section ChineseRemainderTheorem.
   Theorem chinese_remainder : R / (I ∩ J)%ideal ≅ (R / I) × (R / J).
   Proof.
     (** We use the first isomorphism theorem. Coq can already infer which map we wish to use, so for clarity we tell it not to do so. *)
-    snrapply rng_first_iso'.
-    1: rapply rng_homo_crt.
+    snapply rng_first_iso'.
+    1: exact rng_homo_crt.
     1: exact _.
     (** Finally we must show the ideal of this map is the intersection. *)
-    apply ideal_subset_antisymm.
+    apply pred_subset_antisymm.
     - intros r [i j].
       apply path_prod; apply qglue.
       1: change (I (- r + 0)).
@@ -140,7 +140,7 @@ Section ChineseRemainderTheorem.
 
 End ChineseRemainderTheorem.
 
-(** We also have the same for products of ideals when in a commuatative ring. *)
+(** We also have the same for products of ideals when in a commutative ring. *)
 Theorem chinese_remainder_prod `{Univalence}
   {R : CRing} (I J : Ideal R) (c : Coprime I J)
   : R / (I ⋅ J)%ideal ≅ (R / I) × (R / J).

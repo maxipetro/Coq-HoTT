@@ -28,7 +28,7 @@ Arguments mss_mult {R _ _ _ _}.
 (** *** Examples *)
 
 (** The multiplicative subset of powers of a ring element. *)
-Global Instance ismultiplicative_powers (R : CRing) (x : R)
+Instance ismultiplicative_powers (R : CRing) (x : R)
   : IsMultiplicativeSubset (fun r => exists n, rng_power x n = r).
 Proof.
   srapply Build_IsMultiplicativeSubset; cbn beta.
@@ -36,12 +36,12 @@ Proof.
   intros a b np mq.
   destruct np as [n p], mq as [m q].
   exists (n + m)%nat.
-  lhs_V nrapply rng_power_mult_law.
+  lhs_V napply rng_power_mult_law.
   f_ap.
 Defined.
 
 (** Invertible elements of a ring form a multiplicative subset. *)
-Global Instance ismultiplicative_isinvertible (R : CRing)
+Instance ismultiplicative_isinvertible (R : CRing)
   : IsMultiplicativeSubset (@IsInvertible R) := {}.
 
 (** TODO: Property of being a localization. *)
@@ -64,7 +64,7 @@ Section Localization.
 
   along with the condition that this HIT be a set.
 
-  We will implement this HIT by writing it as a set quotient. From now onwards, [loc_frac] will be implemented as [class_of fraction_eq] and [loc_frac_eq] will be implemented as [qglue]. *)
+  We will implement this HIT by writing it as a set quotient. From now on, [loc_frac] will be implemented as [class_of fraction_eq] and [loc_frac_eq] will be implemented as [qglue]. *)
 
   Context (R : CRing) (S : R -> Type) `{!IsMultiplicativeSubset S}.
 
@@ -77,7 +77,7 @@ Section Localization.
     in_mult_subset_denominator : S denominator ;
   }.
 
-  (** We consider two fractions to be equal if we can rearrange the fractions as products and ask for equality upto some scaling factor from the multiplicative subset [S]. *)
+  (** We consider two fractions to be equal if we can rearrange the fractions as products and ask for equality up to some scaling factor from the multiplicative subset [S]. *)
   Definition fraction_eq : Relation Fraction.
   Proof.
     intros [n1 d1 ?] [n2 d2 ?].
@@ -85,15 +85,15 @@ Section Localization.
     exact (x * n1 * d2 = x * n2 * d1).
   Defined.
 
-  (** It is convenient to produce elements of this relation specalized to when the scaling factor is [1]. *)
+  (** It is convenient to produce elements of this relation specialized to when the scaling factor is [1]. *)
   Definition fraction_eq_simple f1 f2
     (p : numerator f1 * denominator f2 = numerator f2 * denominator f1)
     : fraction_eq f1 f2.
   Proof.
     exists 1.
     refine (mss_one, _).
-    lhs_V nrapply rng_mult_assoc.
-    rhs_V nrapply rng_mult_assoc.
+    lhs_V napply rng_mult_assoc.
+    rhs_V napply rng_mult_assoc.
     exact (ap (1 *.) p).
   Defined.
 
@@ -117,7 +117,7 @@ Section Localization.
     fun '(Build_Fraction n1 d1 p1) '(Build_Fraction n2 d2 p2)
       => Build_Fraction (n1 * d2 + n2 * d1) (d1 * d2) (mss_mult p1 p2).
 
-  (** Fraction addition is well-defined upto equality of fractions. *)
+  (** Fraction addition is well-defined up to equality of fractions. *)
 
   (** It is easier to prove well-definedness as a function of both arguments at once. *)
   Definition frac_add_wd (f1 f1' f2 f2' : Fraction)
@@ -130,7 +130,7 @@ Section Localization.
     refine (x * y ; (mss_mult sx sy, _)).
     simpl.
     rewrite 2 rng_dist_l, 2 rng_dist_r.
-    snrapply (ap011 (+)). 
+    snapply (ap011 (+)). 
     - rewrite 4 rng_mult_assoc.
       rewrite 8 (rng_mult_permute_2_3 _ y).
       apply (ap (.* y)).
@@ -138,14 +138,14 @@ Section Localization.
       apply (ap (.* t)).
       rewrite (rng_mult_permute_2_3 _ t').
       f_ap.
-    - do 2 lhs_V nrapply rng_mult_assoc.
-      do 2 rhs_V nrapply rng_mult_assoc.
+    - do 2 lhs_V napply rng_mult_assoc.
+      do 2 rhs_V napply rng_mult_assoc.
       f_ap.
       rewrite 6 rng_mult_assoc.
       rewrite 2 (rng_mult_permute_2_3 _ _ t').
       rewrite 2 (rng_mult_permute_2_3 _ _ t).
-      lhs_V nrapply rng_mult_assoc.
-      rhs_V nrapply rng_mult_assoc.
+      lhs_V napply rng_mult_assoc.
+      rhs_V napply rng_mult_assoc.
       f_ap; apply rng_mult_comm.
   Defined.
 
@@ -188,8 +188,8 @@ Section Localization.
     rewrite 4 rng_mult_assoc.
     rewrite (rng_mult_permute_2_3 _ _ (denominator f1')).
     rewrite (rng_mult_permute_2_3 _ _ (denominator f1)).
-    lhs_V nrapply rng_mult_assoc.
-    rhs_V nrapply rng_mult_assoc.
+    lhs_V napply rng_mult_assoc.
+    rhs_V napply rng_mult_assoc.
     f_ap.
   Defined.
 
@@ -203,8 +203,8 @@ Section Localization.
     rewrite 2 (rng_mult_permute_2_3 _ _ (denominator f2')).
     rewrite (rng_mult_permute_2_3 _ _ (numerator f2')).
     rewrite 2 (rng_mult_permute_2_3 _ _ (denominator f2)).
-    lhs_V nrapply rng_mult_assoc.
-    rhs_V nrapply rng_mult_assoc.
+    lhs_V napply rng_mult_assoc.
+    rhs_V napply rng_mult_assoc.
     f_ap.
   Defined.
 
@@ -354,25 +354,30 @@ Section Localization.
 
   Definition rng_localization : CRing.
   Proof.
-    snrapply Build_CRing'.
-    1: rapply (Build_AbGroup' (Quotient fraction_eq)).
+    snapply Build_CRing'.
+    (* All of the laws can be found by typeclass search, but it's slightly faster if we fill them in: *)
+    1: exact (Build_AbGroup' (Quotient fraction_eq)
+                commutative_plus_rng_localization
+                associative_plus_rng_localization
+                leftidentity_plus_rng_localization
+                leftinverse_plus_rng_localization).
     all: exact _.
   Defined.
 
   Definition loc_in : R $-> rng_localization.
   Proof.
-    snrapply Build_RingHomomorphism.
+    snapply Build_RingHomomorphism.
     1: exact (class_of _ o frac_in).
-    snrapply Build_IsSemiRingPreserving.
-    - snrapply Build_IsMonoidPreserving.
+    snapply Build_IsSemiRingPreserving.
+    - snapply Build_IsMonoidPreserving.
       + intros x y.
-        snrapply qglue.
+        snapply qglue.
         apply fraction_eq_simple.
         by simpl; rewrite 5 rng_mult_one_r.
       + reflexivity.
-    - snrapply Build_IsMonoidPreserving.
+    - snapply Build_IsMonoidPreserving.
       + intros x y.
-        snrapply qglue.
+        snapply qglue.
         apply fraction_eq_simple.
         by simpl; rewrite 3 rng_mult_one_r.
       + reflexivity.
@@ -392,64 +397,64 @@ Section Localization.
       - simpl.
         intros x y z.
         apply rng_inv_moveR_rV.
-        rhs_V nrapply rng_mult_move_left_assoc.
-        rhs_V nrapply rng_mult_assoc.
+        rhs_V napply rng_mult_move_left_assoc.
+        rhs_V napply rng_mult_assoc.
         apply rng_inv_moveL_Vr.
-        lhs_V nrapply rng_homo_mult.
-        rhs_V nrapply rng_homo_mult.
-        nrapply (equiv_inj (f z.1 *.)).
-        { nrapply isequiv_rng_inv_mult_l.
+        lhs_V napply rng_homo_mult.
+        rhs_V napply rng_homo_mult.
+        napply (equiv_inj (f z.1 *.)).
+        { napply isequiv_rng_inv_mult_l.
           exact (H _ (fst z.2)). }
-        lhs_V nrapply rng_homo_mult.
-        rhs_V nrapply rng_homo_mult.
-        lhs nrapply ap.
-        1: lhs nrapply rng_mult_assoc.
-        1: nrapply rng_mult_permute_2_3.
-        rhs nrapply ap.
-        2: nrapply rng_mult_assoc.
+        lhs_V napply rng_homo_mult.
+        rhs_V napply rng_homo_mult.
+        lhs napply ap.
+        1: lhs napply rng_mult_assoc.
+        1: napply rng_mult_permute_2_3.
+        rhs napply ap.
+        2: napply rng_mult_assoc.
         exact (ap f (snd z.2)).
     Defined.
 
     Instance issemiringpreserving_rng_localization_rec_map
       : IsSemiRingPreserving rng_localization_rec_map.
     Proof.
-      snrapply Build_IsSemiRingPreserving.
-      - snrapply Build_IsMonoidPreserving.
+      snapply Build_IsSemiRingPreserving.
+      - snapply Build_IsMonoidPreserving.
         + srapply Quotient_ind2_hprop.
           intros x y; simpl.
           apply rng_inv_moveR_rV.
-          rhs nrapply rng_dist_r.
+          rhs napply rng_dist_r.
           rewrite rng_homo_plus.
           rewrite 3 rng_homo_mult.
           f_ap.
-          1,2: rhs_V nrapply rng_mult_assoc.
+          1,2: rhs_V napply rng_mult_assoc.
           1,2: f_ap.
-          1,2: lhs_V nrapply rng_mult_one_l.
-          1,2: rhs nrapply rng_mult_assoc.
-          2: rhs nrapply rng_mult_comm.
-          2: rhs nrapply rng_mult_assoc.
+          1,2: lhs_V napply rng_mult_one_l.
+          1,2: rhs napply rng_mult_assoc.
+          2: rhs napply rng_mult_comm.
+          2: rhs napply rng_mult_assoc.
           1,2: f_ap.
           1,2: symmetry.
           * apply rng_inv_l.
           * apply rng_inv_r. 
         + hnf; simpl. rewrite rng_homo_zero.
-          nrapply rng_mult_zero_l.
-      - snrapply Build_IsMonoidPreserving.
+          napply rng_mult_zero_l.
+      - snapply Build_IsMonoidPreserving.
         + srapply Quotient_ind2_hprop.
           intros x y; simpl.
           apply rng_inv_moveR_rV.
-          lhs nrapply rng_homo_mult.
-          rhs_V nrapply rng_mult_assoc.
-          rhs_V nrapply rng_mult_assoc.
+          lhs napply rng_homo_mult.
+          rhs_V napply rng_mult_assoc.
+          rhs_V napply rng_mult_assoc.
           apply ap.
           apply rng_inv_moveL_Vr.
-          lhs nrapply rng_mult_comm.
-          rhs_V nrapply rng_mult_assoc.
+          lhs napply rng_mult_comm.
+          rhs_V napply rng_mult_assoc.
           apply ap.
           apply rng_inv_moveL_Vr.
           symmetry.
-          rhs nrapply rng_mult_comm.
-          nrapply rng_homo_mult.
+          rhs napply rng_mult_comm.
+          napply rng_homo_mult.
         + apply rng_inv_moveR_rV; symmetry.
           apply rng_mult_one_l.
     Defined.
@@ -462,28 +467,28 @@ Section Localization.
     Proof.
       intros x; simpl.   
       apply rng_inv_moveR_rV.
-      lhs_V nrapply rng_mult_one_r.
-      nrapply ap; symmetry.
+      lhs_V napply rng_mult_one_r.
+      napply ap; symmetry.
       apply rng_homo_one.
     Defined.
   
   End Rec.
   
   (** Elements belonging to the multiplicative subset [S] of [R] become invertible in [rng_localization R S]. *)
-  Global Instance isinvertible_rng_localization (x : R) (Sx : S x)
+  #[export] Instance isinvertible_rng_localization (x : R) (Sx : S x)
     : IsInvertible rng_localization (loc_in x).
   Proof.
-    snrapply isinvertible_cring.
+    snapply isinvertible_cring.
     - exact (class_of _ (Build_Fraction 1 x Sx)).
     - apply qglue, fraction_eq_simple.
-      exact (rng_mult_assoc _ _ _)^.
+      exact (ring_mult_assoc_opp _ _ _ _).
   Defined.
   
   (** As a special case, any denominator of a fraction must necessarily be invertible. *)
-  Global Instance isinvertible_denominator (f : Fraction)
+  #[export] Instance isinvertible_denominator (f : Fraction)
     : IsInvertible rng_localization (loc_in (denominator f)).
   Proof.
-    snrapply isinvertible_rng_localization.
+    snapply isinvertible_rng_localization.
     exact (in_mult_subset_denominator f).
   Defined.
   
@@ -498,7 +503,7 @@ Section Localization.
       = loc_in (numerator f) * inverse_elem (loc_in (denominator f)).
   Proof.
     apply qglue, fraction_eq_simple.
-    nrapply rng_mult_assoc.
+    napply rng_mult_assoc.
   Defined.
 
   Definition rng_localization_ind
@@ -510,7 +515,8 @@ Section Localization.
     (Hmul : forall x y, P x -> P y -> P (x * y))
     : forall x, P x.
   Proof.
-    srapply Quotient_ind.
+    snapply Quotient_ind.
+    - exact _.
     - intros f.
       refine (transport P (fraction_decompose f)^ _).
       apply Hmul.
@@ -532,8 +538,8 @@ Section Localization.
       apply isinvertible_unique.
       exact q.
     - hnf; intros x y q r.
-      lhs nrapply rng_homo_mult.
-      rhs nrapply rng_homo_mult.
+      lhs napply rng_homo_mult.
+      rhs napply rng_homo_mult.
       f_ap.
   Defined.
 

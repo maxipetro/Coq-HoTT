@@ -50,7 +50,7 @@ Definition finnat_ind_beta_zero@{u} (P : forall n : nat, FinNat n -> Type@{u})
   (n : nat)
   : finnat_ind P z s (zero_finnat n) = z n.
 Proof.
-  snrapply (transport2 _ (q:=idpath@{Set})).
+  snapply (transport2 _ (q:=idpath@{Set})).
   rapply path_ishprop.
 Defined.
 
@@ -72,11 +72,18 @@ Definition is_bounded_fin_to_nat@{} {n} (k : Fin n)
 Proof.
   induction n as [| n IHn].
   - elim k.
-  - destruct k as [k | []]; exact _.
+  - destruct k as [k | []].
+    + rapply lt_succ_r. (* Typeclass search finds a different solution, but we want this one. *)
+    + exact _.
 Defined.
 
 Definition fin_to_finnat {n} (k : Fin n) : FinNat n
   := (fin_to_nat k; is_bounded_fin_to_nat k).
+
+(** Because the proof of [is_bounded_fin_to_nat] was chosen carefully, we have the following definitional equality. *)
+Definition path_fin_to_finnat_fin_incl_incl_finnat_fin_to_finnat {n} (k : Fin n)
+  : fin_to_finnat (fin_incl k) = incl_finnat (fin_to_finnat k)
+  := idpath.
 
 Fixpoint finnat_to_fin@{} {n : nat} : FinNat n -> Fin n
   := match n with
@@ -99,7 +106,7 @@ Definition path_fin_to_finnat_fin_zero@{} (n : nat)
   : fin_to_finnat (@fin_zero n) = zero_finnat n.
 Proof.
   apply path_sigma_hprop.
-  apply path_nat_fin_zero.
+  exact path_nat_fin_zero.
 Defined.
 
 Definition path_finnat_to_fin_succ@{} {n : nat} (u : FinNat n)
@@ -112,11 +119,11 @@ Definition path_finnat_to_fin_incl@{} {n : nat} (u : FinNat n)
   : finnat_to_fin (incl_finnat u) = fin_incl (finnat_to_fin u).
 Proof.
   revert n u.
-  snrapply finnat_ind.
+  snapply finnat_ind.
   1: reflexivity.
   intros n u; cbn beta; intros p.
-  lhs nrapply (path_finnat_to_fin_succ (incl_finnat u)).
-  lhs nrapply (ap fsucc p).
+  lhs exact (path_finnat_to_fin_succ (incl_finnat u)).
+  lhs exact (ap fsucc p).
   exact (ap fin_incl (path_finnat_to_fin_succ _))^.
 Defined.
 

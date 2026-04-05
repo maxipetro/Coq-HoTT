@@ -1,4 +1,4 @@
-Require Import WildCat.
+From HoTT.WildCat Require Import Core Equiv Induced.
 (* Some of the material in abstract_algebra and canonical names could be selectively exported to the user, as is done in Groups/Group.v. *)
 Require Import Classes.interfaces.abstract_algebra.
 Require Import Algebra.AbGroups.
@@ -6,6 +6,7 @@ Require Export Algebra.Rings.Ring Algebra.Rings.Ideal Algebra.Rings.QuotientRing
 
 (** * Commutative Rings *)
 
+Local Open Scope predicate_scope.
 Local Open Scope ring_scope.
 Local Open Scope wc_iso_scope.
 
@@ -19,19 +20,19 @@ Record CRing := {
 
 Definition issig_CRing : _ <~> CRing := ltac:(issig).
 
-Global Instance cring_plus {R : CRing} : Plus R := plus_abgroup R.
-Global Instance cring_zero {R : CRing} : Zero R := zero_abgroup R.
-Global Instance cring_negate {R : CRing} : Negate R := negate_abgroup R.
+Instance cring_plus {R : CRing} : Plus R := plus_abgroup R.
+Instance cring_zero {R : CRing} : Zero R := zero_abgroup R.
+Instance cring_negate {R : CRing} : Negate R := negate_abgroup R.
 
 Definition Build_CRing' (R : AbGroup) `(!One R, !Mult R)
   (comm : Commutative (.*.)) (assoc : Associative (.*.))
   (dist_l : LeftDistribute (.*.) (+)) (unit_l : LeftIdentity (.*.) 1)
   : CRing.
 Proof.
-  snrapply Build_CRing.
+  snapply Build_CRing.
   - rapply (Build_Ring R); only 1,2,4: exact _.
     + intros x y z.
-      lhs nrapply comm.
+      lhs napply comm.
       lhs rapply dist_l.
       f_ap.
     + intros x.
@@ -48,22 +49,23 @@ Definition rng_mult_comm {R : CRing} (x y : R) : x * y = y * x := commutativity 
 Lemma rng_power_mult {R : CRing} (x y : R) (n : nat)
   : rng_power (R:=R) (x * y) n = rng_power (R:=R) x n * rng_power (R:=R) y n.
 Proof.
-  induction n.
+  simple_induction' n.
   1: symmetry; rapply rng_mult_one_l.
   simpl.
-  rewrite (rng_mult_assoc (A:=R)).
-  rewrite <- (rng_mult_assoc (A:=R) x _ y).
-  rewrite (rng_mult_comm (rng_power (R:=R) x n) y).
-  rewrite rng_mult_assoc.
-  rewrite <- (rng_mult_assoc _ (rng_power (R:=R) x n)).
-  f_ap.
+  lhs_V napply rng_mult_assoc.
+  rhs_V napply rng_mult_assoc.
+  napply (ap (x *.)).
+  lhs napply (ap (y *.) IH).
+  lhs napply rng_mult_assoc.
+  rhs napply rng_mult_assoc.
+  exact (ap (.* _) (rng_mult_comm _ _)).
 Defined.
 
 Definition rng_mult_permute_2_3 {R : CRing} (x y z : R)
   : x * y * z = x * z * y.
 Proof.
-  lhs_V nrapply rng_mult_assoc.
-  rhs_V nrapply rng_mult_assoc.
+  lhs_V napply rng_mult_assoc.
+  rhs_V napply rng_mult_assoc.
   apply ap, rng_mult_comm.
 Defined.
 
@@ -84,10 +86,10 @@ Definition isinvertible_cring (R : CRing) (x : R)
   (inv : R) (inv_l : inv * x = 1)
   : IsInvertible R x.
 Proof.
-  snrapply Build_IsInvertible.
+  snapply Build_IsInvertible.
   - exact inv.
   - exact inv_l.
-  - lhs nrapply rng_mult_comm.
+  - lhs napply rng_mult_comm.
     exact inv_l.
 Defined.
 
@@ -96,7 +98,7 @@ Defined.
 Section IdealCRing.
   Context {R : CRing}.
   
-  (** The section is meant to complement the IdealLemmas section in Algebra.Rings.Ideal. Since the results here only hold in commutative rings, they have to be kept here. *)
+  (** The section is meant to complement the [IdealLemmas] section in Algebra.Rings.Ideal. Since the results here only hold in commutative rings, they have to be kept here. *)
   
   (** We import ideal notations as used in Algebra.Rings.Ideal but only for this section. Important to note is that [↔] corresponds to equality of ideals. *)
   Import Ideal.Notation.
@@ -121,7 +123,7 @@ Section IdealCRing.
   (** Ideal products are commutative in commutative rings. Note that we are using ideal notations here and [↔] corresponds to equality of ideals. Essentially a subset in each direction. *)
   Lemma ideal_product_comm (I J : Ideal R) : I ⋅ J ↔ J ⋅ I.
   Proof.
-    apply ideal_subset_antisymm;
+    apply pred_subset_antisymm;
     apply ideal_product_subset_product_commutative.
   Defined.
   
@@ -143,11 +145,11 @@ Section IdealCRing.
   Proof.
     intros p.
     etransitivity.
-    { apply ideal_eq_subset.
+    { apply pred_subset_pred_eq.
       symmetry.
       apply ideal_product_unit_r. }
     etransitivity.
-    1: rapply (ideal_product_subset_pres_r _ _ _ p).
+    1: exact (ideal_product_subset_pres_r _ _ _ p).
     rapply ideal_product_intersection_sum_subset'.
   Defined.
 
@@ -156,22 +158,23 @@ Section IdealCRing.
     : Coprime I J -> I ∩ J ↔ I ⋅ J.
   Proof.
     intros p.
-    apply ideal_subset_antisymm.
+    apply pred_subset_antisymm.
     - apply ideal_intersection_subset_product.
       unfold Coprime in p.
       apply symmetry in p.
-      rapply p.
+      exact p.
     - apply ideal_product_subset_intersection.
   Defined.
 
   Lemma ideal_quotient_product (I J K : Ideal R)
     : (I :: J) :: K ↔ (I :: (J ⋅ K)).
   Proof.
-    apply ideal_subset_antisymm.
+    apply pred_subset_antisymm.
     - intros x [p q]; strip_truncations; split; apply tr;
       intros r; rapply Trunc_rec; intros jk.
       + induction jk as [y [z z' j k] | | ? ? ? ? ? ? ].
         * rewrite (rng_mult_comm z z').
+          simpl.
           rewrite rng_mult_assoc.
           destruct (p z' k) as [p' ?].
           revert p'; apply Trunc_rec; intros p'.
@@ -199,7 +202,8 @@ Section IdealCRing.
           by apply ideal_in_plus_negate.
     - intros x [p q]; strip_truncations; split; apply tr;
       intros r k; split; apply tr; intros z j.
-      + rewrite <- rng_mult_assoc.
+      + simpl.
+        rewrite <- rng_mult_assoc.
         rewrite (rng_mult_comm r z).
         by apply p, tr, sgt_in, ipn_in.
       + cbn in z.
@@ -253,22 +257,22 @@ End IdealCRing.
 
 (** ** Category of commutative rings. *)
 
-Global Instance isgraph_CRing : IsGraph CRing := isgraph_induced cring_ring.
-Global Instance is01cat_CRing : Is01Cat CRing := is01cat_induced cring_ring.
-Global Instance is2graph_CRing : Is2Graph CRing := is2graph_induced cring_ring.
-Global Instance is1cat_CRing : Is1Cat CRing := is1cat_induced cring_ring.
-Global Instance hasequiv_CRing : HasEquivs CRing := hasequivs_induced cring_ring.
+Instance isgraph_CRing : IsGraph CRing := isgraph_induced cring_ring.
+Instance is01cat_CRing : Is01Cat CRing := is01cat_induced cring_ring.
+Instance is2graph_CRing : Is2Graph CRing := is2graph_induced cring_ring.
+Instance is1cat_CRing : Is1Cat CRing := is1cat_induced cring_ring.
+Instance hasequiv_CRing : HasEquivs CRing := hasequivs_induced cring_ring.
 
 (** ** Quotient rings *)
 
-Global Instance commutative_quotientring_mult (R : CRing) (I : Ideal R)
+Instance commutative_quotientring_mult (R : CRing) (I : Ideal R)
   : Commutative (A:=QuotientRing R I) (.*.).
 Proof.
   intros x; srapply QuotientRing_ind_hprop; intros y; revert x.
   srapply QuotientRing_ind_hprop; intros x; hnf.
-  lhs_V nrapply rng_homo_mult.
-  rhs_V nrapply rng_homo_mult.
-  snrapply ap.
+  lhs_V napply rng_homo_mult.
+  rhs_V napply rng_homo_mult.
+  snapply ap.
   apply commutativity.
 Defined.
 

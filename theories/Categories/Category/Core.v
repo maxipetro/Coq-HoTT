@@ -71,7 +71,7 @@ Record PreCategory :=
       (** Ask for the double-identity version so that [InitialTerminalCategory.Functors.from_terminal Cᵒᵖ X] and [(InitialTerminalCategory.Functors.from_terminal C X)ᵒᵖ] are convertible. *)
       identity_identity : forall x, identity x o identity x = identity x;
 
-      trunc_morphism : forall s d, IsHSet (morphism s d)
+      trunc_morphism :: forall s d, IsHSet (morphism s d)
     }.
 
 Bind Scope category_scope with PreCategory.
@@ -105,8 +105,6 @@ Definition Build_PreCategory
        left_identity
        right_identity
        (fun _ => left_identity _ _ _).
-
-Global Existing Instance trunc_morphism.
 
 (** create a hint db for all category theory things *)
 Create HintDb category discriminated.
@@ -156,6 +154,23 @@ Module Export CategoryCoreNotations.
   Local Notation "x --> y" := (morphism _ x y) : type_scope.
   Notation "1" := (identity _) : morphism_scope.
 End CategoryCoreNotations.
+
+(** ** Transport lemmas for morphisms *)
+
+(** Transport distributes over composition. *)
+Definition transport_compose_morphism {C : PreCategory} {X Y Z W : object C}
+  (p : X = W) (f : morphism C X Y) (g : morphism C Y Z)
+  : transport (fun U => morphism C U Z) p (g o f)%morphism =
+    (g o transport (fun U => morphism C U Y) p f)%morphism
+  := match p with idpath => idpath end.
+
+(** Transporting the middle object in a composition. *)
+Definition transport_compose_middle {C : PreCategory} {W X Y Z : object C}
+  (p : W = X) (f : morphism C W Z) (g : morphism C Y W)
+  : (transport (fun U : object C => morphism C U Z) p f o 
+     transport (fun U : object C => morphism C Y U) p g)%morphism =
+    (f o g)%morphism
+  := match p with idpath => idpath end.
 
 (** We have a tactic for trying to run a tactic after associating morphisms either all the way to the left, or all the way to the right *)
 Tactic Notation "try_associativity_quick" tactic(tac) :=

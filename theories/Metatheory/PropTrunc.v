@@ -1,11 +1,11 @@
-Require Import Basics Types.
+From HoTT Require Import Basics Types.
 Require Import Diagrams.Sequence.
 Require Import Homotopy.Join.Core.
 Require Import Colimits.Colimit Colimits.Sequential.
 
 Local Open Scope nat_scope.
 
-(** * Propositonal truncation as a colimit. *)
+(** * Propositional truncation as a colimit. *)
 
 (** In this file we give an alternative construction of the propositional truncation using colimits. This can serve as a metatheoretic justification that propositional truncations exist. *)
 
@@ -45,7 +45,7 @@ Proof.
 Defined.
 
 (** The propositional truncation is a hprop. *)
-Global Instance ishprop_proptrunc `{Funext} (A : Type)
+Instance ishprop_proptrunc `{Funext} (A : Type)
   : IsHProp (PropTrunc A).
 Proof.
   rapply hprop_inhabited_contr.

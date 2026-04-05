@@ -34,7 +34,7 @@ Definition Build_Associator {A : Type} `{HasEquivs A} (F : A -> A -> A)
     (fun '(a, b, c) => associator a b c))
   : Associator F.
 Proof.
-  snrapply Build_NatEquiv.
+  snapply Build_NatEquiv.
   - intros [[a b] c].
     exact (associator a b c).
   - exact isnat_assoc.
@@ -124,8 +124,8 @@ Class IsMonoidal (A : Type) `{HasEquivs A}
   (** These all satisfy the following properties: *)
   := {
   (** A [cat_tensor] is a 1-bifunctor. *)
-  is0bifunctor_cat_tensor : Is0Bifunctor cat_tensor;
-  is1bifunctor_cat_tensor : Is1Bifunctor cat_tensor;
+  is0bifunctor_cat_tensor :: Is0Bifunctor cat_tensor | 10;
+  is1bifunctor_cat_tensor :: Is1Bifunctor cat_tensor | 10;
   (** A natural isomorphism [associator] witnessing the associativity of the tensor product. *)
   cat_tensor_associator :: Associator cat_tensor;
   (** A natural isomorphism [left_unitor] witnessing the left unit law. *)
@@ -137,9 +137,6 @@ Class IsMonoidal (A : Type) `{HasEquivs A}
   (** The pentagon identity. *)
   cat_tensor_pentagon_identity :: PentagonIdentity cat_tensor;
 }.
-
-Existing Instance is0bifunctor_cat_tensor | 10.
-Existing Instance is1bifunctor_cat_tensor | 10.
 
 (** TODO: Braided monoidal categories *)
 
@@ -180,7 +177,7 @@ Section Associator.
       $== fmap10 F (fmap10 F f y) z $o associator x y z.
   Proof.
     refine ((_ $@L _^$) $@ _ $@ (_ $@R _)).
-    2: rapply (associator_nat f (Id _) (Id _)).
+    2: exact (associator_nat f (Id _) (Id _)).
     - exact (fmap12 _ _ (fmap11_id _ _ _) $@ fmap10_is_fmap11 _ _ _).
     - exact (fmap21 _ (fmap10_is_fmap11 _ _ _) _ $@ fmap10_is_fmap11 _ _ _).
   Defined.
@@ -190,7 +187,7 @@ Section Associator.
       $== fmap10 F (fmap01 F x g) z $o associator x y z.
   Proof.
     refine ((_ $@L _^$) $@ _ $@ (_ $@R _)).
-    2: nrapply (associator_nat (Id _) g (Id _)).
+    2: exact (associator_nat (Id _) g (Id _)).
     - exact (fmap12 _ _ (fmap10_is_fmap11 _ _ _) $@ fmap01_is_fmap11 _ _ _).
     - exact (fmap21 _ (fmap01_is_fmap11 _ _ _) _ $@ fmap10_is_fmap11 _ _ _).
   Defined.
@@ -200,12 +197,12 @@ Section Associator.
       $== fmap01 F (F x y) h $o associator x y z.
   Proof.
     refine ((_ $@L _^$) $@ _ $@ (_ $@R _)).
-    2: nrapply (associator_nat (Id _) (Id _) h).
+    2: exact (associator_nat (Id _) (Id _) h).
     - exact (fmap12 _ _ (fmap01_is_fmap11 _ _ _) $@ fmap01_is_fmap11 _ _ _).
     - exact (fmap21 _ (fmap11_id _ _ _) _ $@ fmap01_is_fmap11 F _ _).
   Defined.
 
-  Global Instance associator_op : Associator (A:=A^op) F
+  #[export] Instance associator_op : Associator (A:=A^op) F
     := natequiv_inverse (natequiv_op assoc).
 
 End Associator.
@@ -221,17 +218,17 @@ Section LeftUnitor.
   Context {A : Type} `{HasEquivs A} {F : A -> A -> A} (unit : A)
     `{!Is0Bifunctor F, !Is1Bifunctor F, !LeftUnitor F unit, !RightUnitor F unit}.
 
-  Global Instance left_unitor_op : LeftUnitor (A:=A^op) F unit
+  #[export] Instance left_unitor_op : LeftUnitor (A:=A^op) F unit
     := natequiv_inverse (natequiv_op left_unitor).
   
-  Global Instance right_unitor_op : RightUnitor (A:=A^op) F unit
+  #[export] Instance right_unitor_op : RightUnitor (A:=A^op) F unit
     := natequiv_inverse (natequiv_op right_unitor).
 
 End LeftUnitor.
 
 (** ** Theory about [Braiding] *)
 
-Global Instance braiding_op {A : Type} `{HasEquivs A} {F : A -> A -> A}
+Instance braiding_op {A : Type} `{HasEquivs A} {F : A -> A -> A}
   `{!Is0Bifunctor F, !Is1Bifunctor F, braid : !Braiding F}
   : Braiding (A:=A^op) F
   := nattrans_op (nattrans_flip braid).
@@ -255,7 +252,7 @@ Section SymmetricBraid.
     : F a b $<~> F b a
     := Build_CatEquiv (braid a b).
 
-  Definition moveL_braidL a b c f (g : c $-> _)
+  Definition moveL_braidL {a b c : A} f (g : c $-> _)
     : braid a b $o f $== g -> f $== braid b a $o g.
   Proof.
     intros p.
@@ -266,7 +263,7 @@ Section SymmetricBraid.
     apply braid_braid.
   Defined.
 
-  Definition moveL_braidR a b c f (g : _ $-> c)
+  Definition moveL_braidR {a b c : A} f (g : _ $-> c)
     : f $o braid a b $== g -> f $== g $o braid b a.
   Proof.
     intros p.
@@ -279,19 +276,19 @@ Section SymmetricBraid.
     exact p.
   Defined.
 
-  Definition moveR_braidL a b c f (g : c $-> _)
+  Definition moveR_braidL {a b c : A} f (g : c $-> _)
     : f $== braid b a $o g -> braid a b $o f $== g.
   Proof.
     intros p; symmetry; apply moveL_braidL; symmetry; exact p.
   Defined.
 
-  Definition moveR_braidR a b c f (g : _ $-> c)
+  Definition moveR_braidR {a b c : A} f (g : _ $-> c)
     : f $== g $o braid b a -> f $o braid a b $== g.
   Proof.
     intros p; symmetry; apply moveL_braidR; symmetry; exact p.
   Defined.
 
-  Definition moveL_fmap01_braidL a b c d f (g : d $-> _)
+  Definition moveL_fmap01_braidL {a b c d : A} f (g : d $-> _)
     : fmap01 F a (braid b c) $o f $== g
       -> f $== fmap01 F a (braid c b) $o g.
   Proof.
@@ -310,7 +307,7 @@ Section SymmetricBraid.
     apply cate_buildequiv_fun.
   Defined.
 
-  Definition moveL_fmap01_braidR a b c d f (g : _ $-> d)
+  Definition moveL_fmap01_braidR {a b c d : A} f (g : _ $-> d)
     :  f $o fmap01 F a (braid b c) $== g
       -> f $== g $o fmap01 F a (braid c b).
   Proof.
@@ -329,21 +326,21 @@ Section SymmetricBraid.
     apply cate_buildequiv_fun.
   Defined.
 
-  Definition moveR_fmap01_braidL a b c d f (g : d $-> _)
+  Definition moveR_fmap01_braidL {a b c d : A} f (g : d $-> _)
     : f $== fmap01 F a (braid c b) $o g
       -> fmap01 F a (braid b c) $o f $== g.
   Proof.
     intros p; symmetry; apply moveL_fmap01_braidL; symmetry; exact p.
   Defined.
 
-  Definition moveR_fmap01_braidR a b c d f (g : _ $-> d)
+  Definition moveR_fmap01_braidR {a b c d : A} f (g : _ $-> d)
     : f $== g $o fmap01 F a (braid c b)
       -> f $o fmap01 F a (braid b c) $== g.
   Proof.
     intros p; symmetry; apply moveL_fmap01_braidR; symmetry; exact p.
   Defined.
 
-  Definition moveL_fmap01_fmap01_braidL a b c d e f (g : e $-> _)
+  Definition moveL_fmap01_fmap01_braidL {a b c d e : A} f (g : e $-> _)
     : fmap01 F a (fmap01 F b (braid c d)) $o f $== g
       -> f $== fmap01 F a (fmap01 F b (braid d c)) $o g.
   Proof.
@@ -366,7 +363,7 @@ Section SymmetricBraid.
     apply cate_buildequiv_fun.
   Defined.
 
-  Definition moveL_fmap01_fmap01_braidR a b c d e f (g : _ $-> e)
+  Definition moveL_fmap01_fmap01_braidR {a b c d e : A} f (g : _ $-> e)
     : f $o fmap01 F a (fmap01 F b (braid c d)) $== g
       -> f $== g $o fmap01 F a (fmap01 F b (braid d c)).
   Proof.
@@ -389,14 +386,14 @@ Section SymmetricBraid.
     apply cate_buildequiv_fun.
   Defined.
 
-  Definition moveR_fmap01_fmap01_braidL a b c d e f (g : e $-> _)
+  Definition moveR_fmap01_fmap01_braidL {a b c d e : A} f (g : e $-> _)
     : f $== fmap01 F a (fmap01 F b (braid d c)) $o g
       -> fmap01 F a (fmap01 F b (braid c d)) $o f $== g.
   Proof.
     intros p; symmetry; apply moveL_fmap01_fmap01_braidL; symmetry; exact p.
   Defined.
 
-  Definition moveR_fmap01_fmap01_braidR a b c d e f (g : _ $-> e)
+  Definition moveR_fmap01_fmap01_braidR {a b c d e : A} f (g : _ $-> e)
     : f $== g $o fmap01 F a (fmap01 F b (braid d c))
       -> f $o fmap01 F a (fmap01 F b (braid c d)) $== g.
   Proof.
@@ -424,9 +421,9 @@ Section SymmetricBraid.
     exact (isnat braid_uncurried (a := (a, b)) (a' := (a, c)) (Id _ , g)).
   Defined.
   
-  Global Instance symmetricbraiding_op : SymmetricBraiding (A:=A^op) F.
+  #[export] Instance symmetricbraiding_op : SymmetricBraiding (A:=A^op) F.
   Proof.
-    snrapply Build_SymmetricBraiding.
+    snapply Build_SymmetricBraiding.
     - exact _.
     - intros a b.
       rapply braid_braid.
@@ -442,11 +439,11 @@ Definition symmetricbraiding_op' {A : Type} {F : A -> A -> A}
 
 (** ** Opposite Monoidal Categories *)
 
-Global Instance ismonoidal_op {A : Type} (tensor : A -> A -> A) (unit : A)
+Instance ismonoidal_op {A : Type} (tensor : A -> A -> A) (unit : A)
   `{IsMonoidal A tensor unit}
   : IsMonoidal A^op tensor unit.
 Proof.
-  snrapply Build_IsMonoidal.
+  snapply Build_IsMonoidal.
   1-5: exact _.
   - intros a b; unfold op in a, b; simpl.
     refine (_^$ $@ _ $@ (_ $@L _)).
@@ -471,39 +468,39 @@ Definition ismonoidal_op' {A : Type} (tensor : A -> A -> A) (unit : A)
   : IsMonoidal A tensor unit
   := ismonoidal_op (A:=A^op) tensor unit.
 
-Global Instance issymmetricmonoidal_op {A : Type} (tensor : A -> A -> A) (unit : A)
+Instance issymmetricmonoidal_op {A : Type} (tensor : A -> A -> A) (unit : A)
   `{IsSymmetricMonoidal A tensor unit}
   : IsSymmetricMonoidal A^op tensor unit.
 Proof.
-  snrapply Build_IsSymmetricMonoidal.
+  snapply Build_IsSymmetricMonoidal.
   - rapply ismonoidal_op.
-  - rapply symmetricbraiding_op.
+  - exact symmetricbraiding_op.
   - intros a b c; unfold op in a, b, c; simpl.
     snrefine (_ $@ (_ $@L (_ $@R _))).
     2: exact ((braide _ _)^-1$).
-    2: { nrapply cate_moveR_V1.
+    2: { napply cate_moveR_V1.
       symmetry.
       nrefine ((_ $@R _) $@ _).
-      1: nrapply cate_buildequiv_fun.
+      1: napply cate_buildequiv_fun.
       rapply braid_braid. }
     snrefine ((_ $@R _) $@ _).
     { refine (emap _ _)^-1$.
       rapply braide. }
     { symmetry.
       refine (cate_inv_adjointify _ _ _ _ $@ fmap2 _ _).
-      nrapply cate_inv_adjointify. }
+      napply cate_inv_adjointify. }
     snrefine ((_ $@L (_ $@L _)) $@ _).
     { refine (emap (flip tensor c) _)^-1$.
       rapply braide. }
     { symmetry.
       refine (cate_inv_adjointify _ _ _ _ $@ fmap2 _ _).
-      nrapply cate_inv_adjointify. }
+      napply cate_inv_adjointify. }
     refine ((_ $@L _)^$ $@ _^$ $@ cate_inv2 _ $@ _ $@ (_ $@L _)).
     1,2,4,5: rapply cate_inv_compose'.
     refine (_ $@ (_ $@@ _) $@ _ $@ (_ $@R _)^$ $@ _^$).
     1-3,5-6: rapply cate_buildequiv_fun.
     refine ((fmap02 _ _ _ $@@ ((_ $@ fmap20 _ _ _) $@R _)) $@ cat_symm_tensor_hexagon a b c $@ ((_ $@L _^$) $@R _)).
-    1-4: nrapply cate_buildequiv_fun.
+    1-4: napply cate_buildequiv_fun.
 Defined.
 
 Definition issymmetricmonoidal_op' {A : Type} (tensor : A -> A -> A) (unit : A)
@@ -512,7 +509,7 @@ Definition issymmetricmonoidal_op' {A : Type} (tensor : A -> A -> A) (unit : A)
   := issymmetricmonoidal_op (A:=A^op) tensor unit.
 
 (** ** Further Coherence Conditions *)
-(** In MacLane's original axiomatisation of a monoidal category, 3 extra coherence conditions were given in addition to the pentagon and triangle identities. It was later shown by Kelly that these axioms are redundant and follow from the rest. We reproduce these arguments here. *)
+(** In Mac Lane's original axiomatisation of a monoidal category, 3 extra coherence conditions were given in addition to the pentagon and triangle identities. It was later shown by Kelly that these axioms are redundant and follow from the rest. We reproduce these arguments here. *)
 
 (** The left unitor of a tensor can be decomposed as an associator and a functorial action of the tensor on a left unitor. *)
 Definition left_unitor_associator {A} (tensor : A -> A -> A) (unit : A)
@@ -576,11 +573,11 @@ Proof.
   apply cate_moveR_eV.
   refine (_ $@ (_ $@L left_unitor_associator _ _ _ _)^$).
   nrefine (_ $@ (_ $@R _) $@ cat_assoc _ _ _). 
-  2: rapply (isnat_natequiv right_unitor _)^$.
+  2: exact (isnat_natequiv right_unitor _)^$.
   nrefine ((_ $@L _) $@ cat_assoc_opp _ _ _).
   refine (triangle_identity _ _ _ _ _ _ $@ _).
   nrefine (_ $@R _).
-  nrapply cate_monic_equiv.
+  napply cate_monic_equiv.
   exact (isnat_natequiv right_unitor (right_unitor unit)).
 Defined.
 
@@ -653,7 +650,7 @@ Proof.
   refine ((_ $@L (fmap12 tensorB _ (fmap_id _ _)
     $@ fmap10_is_fmap11 _ _ _)^$) $@ _). 
   refine (_ $@ (fmap2 F (fmap10_is_fmap11 _ _ _) $@R _)).
-  snrapply fmap_tensor_nat.
+  snapply fmap_tensor_nat.
 Defined.
 
 Definition fmap_tensor_nat_r {A B : Type}
@@ -666,5 +663,5 @@ Proof.
   refine ((_ $@L (fmap21 tensorB (fmap_id _ _) _
     $@ fmap01_is_fmap11 _ _ _)^$) $@ _).
   refine (_ $@ (fmap2 F (fmap01_is_fmap11 _ _ _) $@R _)).
-  snrapply fmap_tensor_nat.
+  snapply fmap_tensor_nat.
 Defined.

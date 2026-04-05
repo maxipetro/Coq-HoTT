@@ -12,8 +12,8 @@ Require Import
 
 Record Isomorphic {σ : Signature} (A B : Algebra σ) := BuildIsomorphic
   { def_isomorphic : ∀ s, A s → B s
-  ; is_homomorphism_isomorphic : IsHomomorphism def_isomorphic
-  ; is_isomorphism_isomorphic : IsIsomorphism def_isomorphic }.
+  ; is_homomorphism_isomorphic :: IsHomomorphism def_isomorphic
+  ; is_isomorphism_isomorphic :: IsIsomorphism def_isomorphic }.
 
 Arguments BuildIsomorphic {σ A B} def_isomorphic
             {is_homomorphism_isomorphic} {is_isomorphism_isomorphic}.
@@ -21,9 +21,6 @@ Arguments BuildIsomorphic {σ A B} def_isomorphic
 Arguments def_isomorphic {σ A B}.
 Arguments is_homomorphism_isomorphic {σ A B}.
 Arguments is_isomorphism_isomorphic {σ A B}.
-
-Global Existing Instance is_homomorphism_isomorphic.
-Global Existing Instance is_isomorphism_isomorphic.
 
 Module isomorphic_notations.
   Global Notation "A ≅ B" := (Isomorphic A B) : Algebra_scope.
@@ -49,7 +46,7 @@ Proof.
   exact (path_isomorphism (def_isomorphic e)).
 Defined.
 
-(** Identified algebras are isomorophic [A = B → A ≅ B] *)
+(** Identified algebras are isomorphic [A = B → A ≅ B] *)
 
 Lemma isomorphic_id {σ} {A B : Algebra σ} (p : A = B) : A ≅ B.
 Proof.
@@ -151,7 +148,7 @@ Section isequiv_isomorphic_id.
     exact _.
   Qed.
 
-  Global Instance isequiv_isomorphic_id : IsEquiv (@isomorphic_id σ A B)
+  #[export] Instance isequiv_isomorphic_id : IsEquiv (@isomorphic_id σ A B)
     := isequiv_adjointify
           isomorphic_id
           id_isomorphic

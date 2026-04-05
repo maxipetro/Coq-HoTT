@@ -1,11 +1,10 @@
-Require Import Basics Types.
+From HoTT Require Import Basics Types.
 Require Import Truncations.Core.
 Require Import Algebra.Groups.Group.
 Require Import Algebra.Groups.FreeGroup.
 Require Import Algebra.Groups.GroupCoeq.
 Require Import Spaces.Finite Spaces.List.Core.
-Require Import WildCat.
-
+From HoTT.WildCat Require Import Core Equiv Yoneda.
 
 Local Open Scope mc_scope.
 Local Open Scope mc_mult_scope.
@@ -29,8 +28,8 @@ Definition group_gp : GroupPresentation -> Group.
 Proof.
   intros [X I R].
   exact (GroupCoeq
-    (FreeGroup_rec I (FreeGroup X) R)
-    (FreeGroup_rec I (FreeGroup X) (fun x => @group_unit (FreeGroup X)))).
+    (FreeGroup_rec R)
+    (FreeGroup_rec (fun x => @group_unit (FreeGroup X)))).
 Defined.
 
 (** A group [G] has a presentation if there exists a group presentation whose presented group is isomorphic to [G]. *)
@@ -81,10 +80,10 @@ Class IsFinitelyPresented (G : Group) := {
 (** A group homomorphism from a presented group is determined with how the underlying map acts on generators subject to the condition that relators are sent to the unit. *)
 Theorem grp_pres_rec {funext : Funext} (G : Group) (P : HasPresentation G) (H : Group)
   : {f : gp_generators P -> H & forall r,
-      FreeGroup_rec _ _ f (gp_relators P r) = group_unit}
+      FreeGroup_rec f (gp_relators P r) = group_unit}
     <~> GroupHomomorphism G H.
 Proof.
-  refine ((equiv_precompose_cat_equiv grp_iso_presentation)^-1 oE _).
+  refine ((equiv_precompose_cat_equiv grp_iso_presentation (z:=H))^-1 oE _).
   refine (equiv_groupcoeq_rec _ _ oE _).
   srefine (equiv_functor_sigma_pb _ oE _).
   2: apply equiv_freegroup_rec.
@@ -92,8 +91,8 @@ Proof.
   intros f.
   srapply equiv_iff_hprop.
   { intros p.
-    change (equiv_freegroup_rec H _ f $o FreeGroup_rec _ _ (gp_relators P)
-      $== equiv_freegroup_rec _ _ f $o FreeGroup_rec _ _ (fun _ => group_unit)).
+    change (equiv_freegroup_rec H _ f $o FreeGroup_rec (gp_relators P)
+      $== equiv_freegroup_rec _ _ f $o FreeGroup_rec (fun _ => group_unit)).
     rapply FreeGroup_ind_homotopy.
     exact p. }
   intros p r.
@@ -107,13 +106,13 @@ Definition Build_Finite_GroupPresentation n m
   (f : FinSeq m (FreeGroup (Fin n)))
   : GroupPresentation.
 Proof.
-  snrapply Build_GroupPresentation.
+  snapply Build_GroupPresentation.
   - exact (Fin n).
   - exact (Fin m).
   - exact f.
 Defined.
 
-Global Instance FinitelyGeneratedPresentation_Build_Finite_GroupPresentation
+Instance FinitelyGeneratedPresentation_Build_Finite_GroupPresentation
   {n m f}
   : FinitelyGeneratedPresentation (Build_Finite_GroupPresentation n m f).
 Proof.
@@ -121,7 +120,7 @@ Proof.
   2: simpl; apply tr; reflexivity.
 Defined.
 
-Global Instance FinitelyRelatedPresentation_Build_Finite_GroupPresentation
+Instance FinitelyRelatedPresentation_Build_Finite_GroupPresentation
   {n m f}
   : FinitelyRelatedPresentation (Build_Finite_GroupPresentation n m f).
 Proof.

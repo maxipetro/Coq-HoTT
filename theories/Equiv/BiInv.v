@@ -1,4 +1,4 @@
-Require Import Basics Types.Prod Types.Equiv.
+From HoTT Require Import Basics Types.Prod Types.Equiv.
 
 Local Open Scope path_scope.
 Generalizable Variables A B f.
@@ -36,7 +36,7 @@ Proof.
   - apply biinv_isequiv.
 Defined.
 
-Global Instance ishprop_biinv `{Funext} `(f : A -> B) : IsHProp (BiInv f) | 0.
+Instance ishprop_biinv `{Funext} `(f : A -> B) : IsHProp (BiInv f) | 0.
 Proof.
   apply hprop_inhabited_contr.
   intros bif; pose (fe := isequiv_biinv f bif).

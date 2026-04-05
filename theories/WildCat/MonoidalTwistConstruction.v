@@ -77,7 +77,7 @@ Section TwistConstruction.
 
   (** *** Finer naturality *)
 
-  (** The naturality postulates we have for [twist] are natural in all their arguments similtaneously. We show the finer naturality of [twist] in each argument separately as this becomes more useful in practice. *)
+  (** The naturality postulates we have for [twist] are natural in all their arguments simultaneously. We show the finer naturality of [twist] in each argument separately as this becomes more useful in practice. *)
 
   Definition twist_nat_l {a a'} (f : a $-> a') b c
     : twist a' b c $o fmap10 cat_tensor f (cat_tensor b c)
@@ -234,25 +234,25 @@ Section TwistConstruction.
   (** Now we can use [associator_twist'] and show that it is a natural equivalence in each variable. *)
   Instance associator_twist : Associator cat_tensor.
   Proof.
-    snrapply Build_Associator.
+    snapply Build_Associator.
     - exact associator_twist'.
-    - snrapply Build_Is1Natural.
+    - snapply Build_Is1Natural.
       simpl; intros [[a b] c] [[a' b'] c'] [[f g] h]; simpl in f, g, h.
       (** To prove naturality it will be easier to reason about squares. *)
       change (?w $o ?x $== ?y $o ?z) with (Square z w x y).
       (** First we remove all the equivalences from the equation. *)
-      nrapply hconcatL.
+      napply hconcatL.
       1: apply associator_twist'_unfold.
-      nrapply hconcatR.
+      napply hconcatR.
       2: apply associator_twist'_unfold.
       (** The first square involving [braid] on its own is a naturality square. *)
-      nrapply vconcat.
+      napply vconcat.
       2: rapply braid_nat.
       (** The second square is just the naturality of twist. *)
-      nrapply vconcat.
+      napply vconcat.
       2: apply twist_nat.
-      nrapply hconcatL.
-      2: nrapply hconcatR.
+      napply hconcatL.
+      2: napply hconcatR.
       1,3: symmetry; rapply fmap01_is_fmap11.
       (** Leaving us with a square with a functor application. *)
       rapply fmap11_square.
@@ -269,18 +269,18 @@ Section TwistConstruction.
   (** Since we assume the [right_unitor] exists, we can derive the [left_unitor] from it together with [braid]. *)
   Instance left_unitor_twist : LeftUnitor cat_tensor cat_tensor_unit.
   Proof.
-    snrapply Build_NatEquiv'.
-    - snrapply Build_NatTrans.
+    snapply Build_NatEquiv'.
+    - snapply Build_NatTrans.
       + exact (fun a => right_unitor a $o braid cat_tensor_unit a).
-      + snrapply Build_Is1Natural.
+      + snapply Build_Is1Natural.
         intros a b f.
         change (?w $o ?x $== ?y $o ?z) with (Square z w x y).
-        nrapply vconcat.
-        2: rapply (isnat right_unitor f).
-        rapply braid_nat_r.
+        napply vconcat.
+        2: exact (isnat right_unitor f).
+        napply braid_nat_r.
     - intros a.
       rapply compose_catie'.
-      rapply catie_braid.
+      exact (catie_braid _ _).
   Defined.
 
   (** *** Triangle *)
@@ -308,8 +308,8 @@ Section TwistConstruction.
     intros a b c d.
     refine ((_ $@@ _) $@ _ $@ ((fmap02 _ _ _ $@ _)^$ $@@ (_ $@@ (fmap20 _ _ _ $@ _))^$)).
     1,2,4,6,7: apply associator_twist'_unfold.
-    2: refine (fmap01_comp _ _ _ _ $@ (_ $@L (fmap01_comp _ _ _ _))).
-    2: refine (fmap10_comp _ _ _ _ $@ (_ $@L (fmap10_comp _ _ _ _))).
+    2: exact (fmap01_comp _ _ _ _ $@ (_ $@L (fmap01_comp _ _ _ _))).
+    2: exact (fmap10_comp _ _ _ _ $@ (_ $@L (fmap10_comp _ _ _ _))).
     (** We use a notation defined above that shows the base type of the groupoid hom and formats the equation in a way that is easier to read. *)
     (** Normalize brackets on LHS *)
     refine (cat_assoc _ _ _ $@ _).
@@ -319,7 +319,7 @@ Section TwistConstruction.
     refine (_ $@ (((cat_assoc _ _ _) $@R _) $@R _)).
     do 2 refine (_ $@ ((cat_assoc _ _ _) $@R _)).
     do 2 refine (_ $@ cat_assoc _ _ _).
-    (** Cancel two braids next to eachother. *)
+    (** Cancel two braids next to each other. *)
     apply moveL_fmap01_fmap01_braidR.
     apply moveL_fmap01_twistR.
     refine (_ $@ (cat_assoc _ _ _)^$).

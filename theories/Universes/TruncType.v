@@ -25,7 +25,7 @@ Section TruncType.
     exact (equiv_path_sigma_hprop (_;_) (_;_)).
   Defined.
 
-  Global Instance isequiv_ap_trunctype {n : trunc_index} (A B : n-Type)
+  #[export] Instance isequiv_ap_trunctype {n : trunc_index} (A B : n-Type)
     : IsEquiv (@ap _ _ (@trunctype_type n) A B).
   Proof.
     srefine (isequiv_homotopic _^-1%equiv _).
@@ -41,7 +41,7 @@ Section TruncType.
     : A <~> B -> (A = B :> TruncType n)
   := equiv_path_trunctype@{a b} A B.
 
-  Global Instance isequiv_path_trunctype {n : trunc_index} {A B : TruncType n}
+  #[export] Instance isequiv_path_trunctype {n : trunc_index} {A B : TruncType n}
     : IsEquiv (@path_trunctype n A B) := _.
 
   (** [path_trunctype] is functorial *)
@@ -63,7 +63,7 @@ Section TruncType.
     rewrite (path_sigma_hprop_V (path_universe_uncurried f)).
     refine (concat_p1 _ @ concat_1p _ @ _).
     refine (_ @ (ap inverse (concat_1p _))^ @ (ap inverse (concat_p1 _))^).
-    refine (ap_V _ _).
+    exact (ap_V _ _).
   Qed.
 
   Definition path_trunctype_pp {n : trunc_index} {A B C : TruncType n}
@@ -76,7 +76,7 @@ Section TruncType.
     refine (concat_p1 _ @ concat_1p _ @ _).
     refine (_ @ (ap _ (concat_1p _))^ @ (ap _ (concat_p1 _))^).
     refine (_ @ (ap (fun z => z @ _) (concat_1p _))^ @ (ap (fun z => z @ _) (concat_p1 _))^).
-    refine (ap_pp _ _ _).
+    exact (ap_pp _ _ _).
   Qed.
 
   Definition ap_trunctype {n : trunc_index} {A B : TruncType n} {f : A <~> B}
@@ -93,23 +93,23 @@ Section TruncType.
   Definition path_hset {A B} := @path_trunctype 0 A B.
   Definition path_hprop {A B} := @path_trunctype (-1) A B.
 
-  Global Instance istrunc_trunctype {n : trunc_index}
+  #[export] Instance istrunc_trunctype {n : trunc_index}
     : IsTrunc n.+1 (TruncType n) | 0.
   Proof.
     apply istrunc_S.
     intros A B.
     refine (istrunc_equiv_istrunc _ (equiv_path_trunctype@{i j} A B)).
     case n as [ | n'].
-    - apply contr_equiv_contr_contr. (* The reason is different in this case. *)
-    - apply istrunc_equiv.
+    - exact contr_equiv_contr_contr. (* The reason is different in this case. *)
+    - exact istrunc_equiv.
   Defined.
 
-  Global Instance isset_HProp : IsHSet HProp := _.
+  #[export] Instance isset_HProp : IsHSet HProp := _.
 
-  Global Instance istrunc_sig_istrunc : forall n, IsTrunc n.+1 { A : Type & IsTrunc n A } | 0.
+  #[export] Instance istrunc_sig_istrunc : forall n, IsTrunc n.+1 { A : Type & IsTrunc n A } | 0.
   Proof.
     intro n.
-    apply (istrunc_equiv_istrunc _ issig_trunctype^-1).
+    exact (istrunc_equiv_istrunc _ issig_trunctype^-1).
   Defined.
 
   (** ** Some standard inhabitants *)
@@ -119,13 +119,13 @@ Section TruncType.
   Definition Negation_hp `{Funext} (hprop : HProp) : HProp := Build_HProp (~hprop).
   (** We could continue with products etc *)
 
-  (** ** The canonical map from Bool to hProp *)
+  (** ** The canonical map from [Bool] to [HProp] *)
   Definition is_true (b : Bool) : HProp
     := if b then Unit_hp else False_hp.
 
-  (** ** Facts about HProps using univalence *)
+  (** ** Facts about [HProp]s using univalence *)
 
-  Global Instance trunc_path_IsHProp X Y `{IsHProp Y}
+  #[export] Instance trunc_path_IsHProp X Y `{IsHProp Y}
   : IsHProp (X = Y).
   Proof.
     apply hprop_allpath.
@@ -143,10 +143,10 @@ Section TruncType.
   : (A <-> B) -> A = B :> HProp
     := (@path_hprop A B) o (@equiv_iff_hprop_uncurried A _ B _).
 
-  Global Instance isequiv_path_iff_ishprop_uncurried `{IsHProp A, IsHProp B}
+  #[export] Instance isequiv_path_iff_ishprop_uncurried `{IsHProp A, IsHProp B}
   : IsEquiv (@path_iff_ishprop_uncurried A _ B _) := _.
 
-  Global Instance isequiv_path_iff_hprop_uncurried {A B : HProp}
+  #[export] Instance isequiv_path_iff_hprop_uncurried {A B : HProp}
   : IsEquiv (@path_iff_hprop_uncurried A B) := _.
 
   Definition path_iff_ishprop `{IsHProp A, IsHProp B}
@@ -166,7 +166,49 @@ Section TruncType.
   Lemma equiv_path_iff_hprop {A B : HProp}
     : (A <-> B) <~> (A = B).
   Proof.
-    refine (equiv_path_trunctype' _ _ oE equiv_path_iff_ishprop).
+    exact (equiv_path_trunctype' _ _ oE equiv_path_iff_ishprop).
+  Defined.
+
+  (** An [HProp] cannot be not equal to [Unit_hp] and not equal to [False_hp]. *)
+  Definition not_not_unit_and_not_empty_hprop (P : HProp)
+    : ~ ((P <> Unit_hp) * (P <> False_hp)).
+  Proof.
+    intros [h1 h2].
+    apply (iff_contradiction (~ P)); constructor.
+    - intro p. apply h1. exact (path_iff_hprop (fun _ => tt) (fun _ => p)).
+    - intro q. apply h2. exact (path_iff_hprop q Empty_rec).
+  Defined.
+
+  (** Any map from [HProp] to a type with [~~]-stable paths that maps [Unit_hp] and [False_hp] to equal terms is weakly constant. *)
+  Definition weaklyconstant_hprop_to_stable_paths' {A : Type}
+    (F : HProp -> A) (s : forall x y : HProp, Stable (F x = F y))
+    (h1 : F Unit_hp = F False_hp)
+    : forall (B : HProp), F B = F Unit_hp.
+  Proof.
+    intros B.
+    apply (s B Unit_hp); intro h'.
+    apply (not_not_unit_and_not_empty_hprop B).
+    split; intro p; apply h'.
+    - exact (ap F p).
+    - exact (ap F p @ h1^).
+  Defined.
+
+  Definition weaklyconstant_hprop_to_stable_paths {A : Type}
+    (F : HProp -> A) (s : forall x y : HProp, Stable (F x = F y))
+    (h1 : F Unit_hp = F False_hp)
+    : WeaklyConstant F
+    := fun B C => weaklyconstant_hprop_to_stable_paths' F s h1 B
+                  @ (weaklyconstant_hprop_to_stable_paths' F s h1 C)^.
+
+  Definition not_not_constant_family_hprop (P : HProp -> Type)
+    (p : P Unit_hp) (p' : P False_hp) (x : HProp)
+    : ~~P x.
+  Proof.
+    intro f.
+    apply (not_not_unit_and_not_empty_hprop x).
+    split; intro h; apply f.
+    - exact (h^ # p).
+    - exact (h^ # p').
   Defined.
 
 End TruncType.

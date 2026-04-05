@@ -1,4 +1,4 @@
-Require Import Basics Types HFiber Truncations.Core Truncations.SeparatedTrunc Pointed
+From HoTT Require Import Basics Types HFiber Truncations.Core Truncations.SeparatedTrunc Pointed
   Modalities.ReflectiveSubuniverse.
 
 Local Open Scope pointed_scope.
@@ -25,10 +25,10 @@ Definition O_pcover_prod `{O : ReflectiveSubuniverse} {X Y : pType@{u}}
 Proof.
   srapply Build_pEquiv'.
   { refine (_ oE equiv_functor_sigma_id _).
-    2: intro; nrapply equiv_path_O_prod.
-    nrapply equiv_sigma_prod_prod. }
-  nrapply path_prod; cbn.
-  all: snrapply path_sigma'.
+    2: intro; napply equiv_path_O_prod.
+    napply equiv_sigma_prod_prod. }
+  napply path_prod; cbn.
+  all: snapply path_sigma'.
   1,3: exact idpath.
   all: cbn.
   all: by rewrite concat_p1, concat_Vp.
@@ -55,7 +55,7 @@ Definition pfunctor_O_pcover `{O : ReflectiveSubuniverse} {X Y : pType}
 
 Definition pequiv_pfunctor_O_pcover `{O : ReflectiveSubuniverse} {X Y : pType}
   (f : X ->* Y) `{IsEquiv _ _ f} : O_pcover O X pt <~>* O_pcover O Y pt
-  := Build_pEquiv _ _ (pfunctor_O_pcover f) _.
+  := Build_pEquiv (pfunctor_O_pcover f) _.
 
 (** In the case of truncations, [ptr_natural] gives a better proof of pointedness. *)
 Definition pfunctor_pTr_pcover `{n : trunc_index} {X Y : pType}
@@ -65,7 +65,7 @@ Definition pfunctor_pTr_pcover `{n : trunc_index} {X Y : pType}
 Definition pequiv_pfunctor_pTr_pcover `{n : trunc_index}
   {X Y : pType} (f : X ->* Y) `{IsEquiv _ _ f}
   : O_pcover (Tr n) X pt <~>* O_pcover (Tr n) Y pt
-  := Build_pEquiv _ _ (pfunctor_pTr_pcover f) _.
+  := Build_pEquiv (pfunctor_pTr_pcover f) _.
 
 
 (** * Components *)

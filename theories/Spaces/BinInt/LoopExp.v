@@ -1,4 +1,4 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Types.Universe.
 Require Import Spaces.Pos.
 Require Import Spaces.BinInt.Core.
@@ -172,7 +172,7 @@ Proof.
   apply loopexp_binint_pos_sub_r.
 Qed.
 
-(** Under univalence, exponentiation of loops corresponds to iteration of autoequivalences. *)
+(** Under univalence, exponentiation of loops corresponds to iteration of auto-equivalences. *)
 
 Definition equiv_path_loopexp
            {A : Type} (p : A = A) (z : BinInt) (a : A)

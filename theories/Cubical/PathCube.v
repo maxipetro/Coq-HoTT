@@ -1,4 +1,4 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Cubical.DPath.
 Require Import Cubical.PathSquare.
 Require Import Cubical.DPathSquare.
@@ -25,21 +25,21 @@ x011   |               |          x011----pi11----x111   |
       x010----pi10----x110              x010----pi10----x110
  *)
 
-(* Contents:
-  * Definition of PathCube
-  * PathCube reflexivity
-  * PathCube face rewriting
-  * PathCubes from paths between squares
-  * PathCubes from squres
-  * PathCube flipping
+(** Contents:
+  * Definition of [PathCube]
+  * [PathCube] reflexivity
+  * [PathCube] face rewriting
+  * [PathCube]s from paths between squares
+  * [PathCube]s from squares
+  * [PathCube] flipping
   * Kan fillers
-  * PathCube concatenation
-  * natural cubes from ap
+  * [PathCube] concatenation
+  * natural cubes from [ap]
 *)
 
 
-(* Homogeneous cubes *)
-(* PathCube left right top bottom front back *)
+(** Homogeneous cubes *)
+(** PathCube left right top bottom front back *)
 Cumulative Inductive PathCube {A}
   : forall x000 {x010 x100 x110 x001 x011 x101 x111 : A}
   {p0i0 : x000 = x010} {p1i0 : x100 = x110} {pi00 : x000 = x100}
@@ -53,13 +53,15 @@ Cumulative Inductive PathCube {A}
 
 Arguments PathCube {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
 
+(* TODO: ": rename" is needed because the default names changed in Rocq 9.2.0.  When the minimum supported version is >= 9.2.0, the ": rename" can be removed. *)
 Scheme PathCube_ind := Induction for PathCube Sort Type.
 Arguments PathCube_ind {A} P f
-  {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+  {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _} : rename.
 
+(* TODO: ": rename" is needed because the default names changed in Rocq 9.2.0.  When the minimum supported version is >= 9.2.0, the ": rename" can be removed. *)
 Scheme PathCube_rec := Minimality for PathCube Sort Type.
 Arguments PathCube_rec {A} P f
-  {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+  {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _} : rename.
 
 (* These notations make it easier to write our lemmas *)
 Local Notation hr := (sq_refl_h _).
@@ -67,7 +69,7 @@ Local Notation vr := (sq_refl_v _).
 Local Notation tr := sq_tr.
 Local Notation fv := sq_flip_v.
 
-(* PathCubes form a path of squares up to retyping *)
+(** [PathCube]s form a path of squares up to retyping *)
 Definition equiv_cu_path {A} {x000 x010 x100 x110 x001 x011 x101 x111 : A}
   {p0i0 : x000 = x010} {p1i0 : x100 = x110} {pi00 : x000 = x100}
   {pi10 : x010 = x110} {p0i1 : x001 = x011} {p1i1 : x101 = x111}
@@ -108,7 +110,7 @@ Notation cu_path := equiv_cu_path.
 
 Section Reflexivity.
 
-  (* PathCube reflexivity *)
+  (** [PathCube] reflexivity *)
 
   Context {A} {a00 a10 a01 a11 : A}
     {px0 : a00 = a10} {px1 : a01 = a11}
@@ -232,9 +234,9 @@ Defined.
 
 Notation cu_rot_tb_fb := equiv_cu_rot_tb_fb.
 
-(* Degnerate cubes formed from paths between squares *)
+(** Degenerate cubes formed from paths between squares *)
 
-(* The first case is easiest to prove and can be written as equivalences *)
+(** The first case is easiest to prove and can be written as equivalences *)
 Definition equiv_cu_G11 {A} {a00 a10 a01 a11 : A}
   {px0 : a00 = a10} {px1 : a01 = a11}
   {p0x : a00 = a01} {p1x : a10 = a11}
@@ -251,8 +253,8 @@ Proof.
   apply equiv_path_inverse.
 Defined.
 
-(* This case can be reduced to the first by rotating the cube
-   and rewriting some faces *)
+(** This case can be reduced to the first by rotating the cube
+    and rewriting some faces *)
 Definition equiv_cu_1G1 {A} {a00 a10 a01 a11 : A}
   {px0 : a00 = a10} {px1 : a01 = a11}
   {p0x : a00 = a01} {p1x : a10 = a11}
@@ -265,10 +267,10 @@ Proof.
   1,2: exact sq_tr_refl_v^.
   1,2: exact (eisretr tr _)^.
   refine (_ oE equiv_ap' tr _ _).
-  apply equiv_cu_G11.
+  exact equiv_cu_G11.
 Defined.
 
-(* Finally this is an even simpler rotation *)
+(** Finally this is an even simpler rotation *)
 Definition equiv_cu_11G {A} {a00 a10 a01 a11 : A}
   {px0 : a00 = a10} {px1 : a01 = a11}
   {p0x : a00 = a01} {p1x : a10 = a11}
@@ -278,14 +280,14 @@ Proof.
   refine (cu_rot_tb_fb oE _).
   refine (cu_ccGGGG _ _ _ _ oE _).
   1-4: exact sq_tr_refl_v^.
-  by apply equiv_cu_G11.
+  by exact equiv_cu_G11.
 Defined.
 
 Notation cu_G11 := equiv_cu_G11.
 Notation cu_1G1 := equiv_cu_1G1.
 Notation cu_11G := equiv_cu_11G.
 
-(* Degnerate cubes given by squares *)
+(** Degenerate cubes given by squares *)
 Section PathPathSquares.
 
   Context {A} {x y : A} {a00 a10 a01 a11 : x = y}
@@ -330,7 +332,7 @@ Arguments cu_GG1 {_ _ _ _ _ _ _ _ _ _ _}.
 Arguments cu_G1G {_ _ _ _ _ _ _ _ _ _ _}.
 Arguments cu_1GG {_ _ _ _ _ _ _ _ _ _ _}.
 
-(* PathCubes can be given by DPathSquares over Paths*)
+(** [PathCube]s can be given by [DPathSquare]s over paths *)
 Definition equiv_cu_ds
   {A B} {f g : A -> B} {a00 a10 a01 a11 : A}
   {px0 : a00 = a10} {px1 : a01 = a11}
@@ -347,12 +349,12 @@ Definition equiv_cu_ds
       (sq_ap f s) (sq_ap g s).
 Proof.
   destruct s.
-  apply cu_GG1.
+  exact cu_GG1.
 Defined.
 
 Notation cu_ds := equiv_cu_ds.
 
-(* PathCubes can be given by DPaths over PathSquares *)
+(** [PathCube]s can be given by [DPath]s over [PathSquare]s *)
 Definition equiv_dp_cu {A B : Type} {x1 x2 : A} {a00 a01 a10 a11 : A -> B}
   {px0 : a00 == a10} {px1 : a01 == a11} {p0x : a00 == a01} {p1x : a10 == a11}
   {f1 : PathSquare (px0 x1) (px1 x1) (p0x x1) (p1x x1)}
@@ -367,7 +369,7 @@ Defined.
 
 Notation dp_cu := equiv_dp_cu.
 
-(* Flipping a cube along the left right direction *)
+(** Flipping a cube along the left right direction *)
 Definition equiv_cu_flip_lr {A} {x000 x010 x100 x110 x001 x011 x101 x111 : A}
   {p0i0 : x000 = x010} {p1i0 : x100 = x110} {pi00 : x000 = x100}
   {pi10 : x010 = x110} {p0i1 : x001 = x011} {p1i1 : x101 = x111}
@@ -392,7 +394,7 @@ Defined.
 
 Notation cu_flip_lr := equiv_cu_flip_lr.
 
-(* PathCube Kan fillers ~ Every open crate has a lid *)
+(** [PathCube] Kan fillers ~ Every open crate has a lid *)
 
 Definition cu_fill_left {A} {x000 x010 x100 x110 x001 x011 x101 x111 : A}
   {p0i0 : x000 = x010} {p1i0 : x100 = x110} {pi00 : x000 = x100}
@@ -499,7 +501,7 @@ Proof.
   apply cu_fill_right.
 Defined.
 
-(** PathCube concatenation *)
+(** [PathCube] concatenation *)
 
 Section Concat.
 
@@ -570,7 +572,7 @@ Notation "x '@lr' y" := (cu_concat_lr x y) : cube_scope.
 
 Local Notation apc := (ap_compose_sq _ _ _).
 
-(* sq_ap analogue for ap_compse *)
+(** [sq_ap] analogue for [ap_compose] *)
 Definition sq_ap_compose {A B C : Type} {a00 a10 a01 a11 : A}
   {px0 : a00 = a10} {px1 : a01 = a11} {p0x : a00 = a01} {p1x : a10 = a11}
   (f : A -> B) (g : B -> C) (s : PathSquare px0 px1 p0x p1x)
@@ -581,7 +583,7 @@ Defined.
 
 Local Notation api := (ap_idmap_sq _).
 
-(* sq_ap analogue for ap_idmap *)
+(** [sq_ap] analogue for [ap_idmap] *)
 Definition sq_ap_idmap {A : Type} {a00 a10 a01 a11 : A}
   {px0 : a00 = a10} {px1 : a01 = a11} {p0x : a00 = a01} {p1x : a10 = a11}
   (s : PathSquare px0 px1 p0x p1x)
@@ -592,7 +594,7 @@ Defined.
 
 Local Notation apn := (ap_nat _ _).
 
-(* sq_ap analogue for ap_nat *)
+(** [sq_ap] analogue for [ap_nat] *)
 Definition sq_ap_nat
   {A B : Type} {a00 a10 a01 a11 : A} (f f' : A -> B) (h : f == f')
   {px0 : a00 = a10} {px1 : a01 = a11} {p0x : a00 = a01} {p1x : a10 = a11}
@@ -602,7 +604,7 @@ Proof.
   destruct s as [x]; cbn; by destruct (h x).
 Defined.
 
-(* Uncurry a function in sq_ap2 *)
+(** Uncurry a function in [sq_ap2] *)
 Definition sq_ap_uncurry {A B C} (f : A -> B -> C)
   {a a' : A} (p : a = a') {b b' : B} (q : b = b')
   : PathCube (sq_ap (uncurry f) (sq_prod (hr, vr))) (sq_ap011 f p q)
@@ -612,7 +614,7 @@ Proof.
   by destruct p, q.
 Defined.
 
-(* ap for cubes *)
+(** [ap] for cubes *)
 Definition cu_ap {A B} {x000 x010 x100 x110 x001 x011 x101 x111 : A}
   {p0i0 : x000 = x010} {p1i0 : x100 = x110} {pi00 : x000 = x100}
   {pi10 : x010 = x110} {p0i1 : x001 = x011} {p1i1 : x101 = x111}

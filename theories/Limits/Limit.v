@@ -1,4 +1,4 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Diagrams.Diagram.
 Require Import Diagrams.Graph.
 Require Import Diagrams.Cone.
@@ -14,12 +14,9 @@ Generalizable All Variables.
 (** A Limit is the extremity of a cone. *)
 
 Class IsLimit `(D : Diagram G) (Q : Type) := {
-  islimit_cone : Cone Q D;
+  islimit_cone :: Cone Q D;
   islimit_unicone : UniversalCone islimit_cone;
 }.
-(* Use :> and remove the two following lines,
-   once Coq 8.16 is the minimum required version. *)
-#[export] Existing Instance islimit_cone.
 Coercion islimit_cone : IsLimit >-> Cone.
 
 Arguments Build_IsLimit {G D Q} C H : rename.
@@ -47,12 +44,12 @@ Definition cone_limit `(D : Diagram G) : Cone (Limit D) D.
 Proof.
   srapply Build_Cone.
   + intros i x.
-    apply (lim x i).
+    exact (lim x i).
   + intros i j g x.
     apply limp.
 Defined.
 
-Global Instance unicone_limit `(D : Diagram G)
+Instance unicone_limit `(D : Diagram G)
   : UniversalCone (cone_limit D).
 Proof.
   srapply Build_UniversalCone; intro Y.
@@ -60,13 +57,13 @@ Proof.
   { intros c y.
     srapply Build_Limit.
     { intro i.
-      apply (legs c i y). }
+      exact (legs c i y). }
     intros i j g.
     apply legs_comm. }
   all: intro; reflexivity.
 Defined.
 
-Global Instance islimit_limit `(D : Diagram G) : IsLimit D (Limit D)
+Instance islimit_limit `(D : Diagram G) : IsLimit D (Limit D)
   := Build_IsLimit (cone_limit _) _.
 
 (** * Functoriality of limits *)
@@ -147,7 +144,7 @@ Section FunctorialityLimit.
     apply cone_postcompose_identity.
   Defined.
 
-  Global Instance isequiv_functor_limit
+  #[export] Instance isequiv_functor_limit
     : IsEquiv (functor_limit m HQ1 HQ2)
     := isequiv_adjointify _ _
       functor_limit_eissect functor_limit_eisretr.
@@ -159,7 +156,7 @@ End FunctorialityLimit.
 
 (** * Unicity of limits *)
 
-(** A particuliar case of the functoriality result is that all limits of a diagram are equivalent (and hence equal in presence of univalence). *)
+(** A particular case of the functoriality result is that all limits of a diagram are equivalent (and hence equal in presence of univalence). *)
 
 Theorem limit_unicity `{Funext} {G : Graph} {D : Diagram G} {Q1 Q2 : Type}
   (HQ1 : IsLimit D Q1) (HQ2 : IsLimit D Q2)

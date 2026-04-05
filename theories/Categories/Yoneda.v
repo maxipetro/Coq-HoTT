@@ -21,7 +21,7 @@ Local Open Scope morphism_scope.
 Local Open Scope category_scope.
 Local Open Scope functor_scope.
 
-(** Quoting Wikipedia on the Yoneda lemma (chainging [A] to [a] and
+(** Quoting Wikipedia on the Yoneda lemma (changing [A] to [a] and
     [C] to [A] so that we can use unicode superscripts and
     subscripts):
 
@@ -76,7 +76,7 @@ Local Open Scope functor_scope.
     [f ↦ Hom(a, f) = ⟦ Hom(a, x) ∋ g ↦ f ∘ g ∈ Hom(a,y) ⟧].
  *)
 
-(** ** The (co)yoneda functors [A → (Aᵒᵖ → set)] *)
+(** ** The (co-)Yoneda functors [A → (Aᵒᵖ → set)] *)
 Section yoneda.
   Context `{Funext}.
 
@@ -89,7 +89,7 @@ Section yoneda.
     := coyoneda A^op.
 End yoneda.
 
-(** ** The (co)yoneda lemma *)
+(** ** The (co-)Yoneda lemma *)
 Section coyoneda_lemma.
 
   Section functor.
@@ -202,7 +202,7 @@ Section coyoneda_lemma.
       ).
   Defined.
 
-  Global Instance coyoneda_lemma `{Funext} A
+  #[export] Instance coyoneda_lemma `{Funext} A
   : IsIsomorphism (coyoneda_natural_transformation A).
   Proof.
     eapply isisomorphism_natural_transformation.
@@ -283,7 +283,7 @@ Section yoneda_lemma.
              (yoneda_functor A)
     := @morphism_inverse _ _ _ _ (coyoneda_lemma A^op).
 
-  Global Instance yoneda_lemma
+  #[export] Instance yoneda_lemma
   : IsIsomorphism yoneda_natural_transformation
     := @isisomorphism_inverse _ _ _ _ (coyoneda_lemma A^op).
 End yoneda_lemma.

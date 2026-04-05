@@ -23,32 +23,24 @@ Definition Vector@{i|} (A : Type@{i}) (n : nat) : Type@{i}
 
 Definition Build_Vector (A : Type) (n : nat)
   (f : forall (i : nat), (i < n)%nat -> A)
-  : Vector A n. 
-Proof.
-  exists (list_map (fun '(i; Hi) => f i Hi) (seq' n)).
-  lhs nrapply length_list_map.
-  apply length_seq'.
-Defined.
+  : Vector A n
+  := (Build_list n f; length_Build_list n f).
 
 (** *** Projections *)
 
 Definition entry {A : Type} {n : nat} (v : Vector A n) i {Hi : (i < n)%nat} : A
   := nth' (pr1 v) i ((pr2 v)^ # Hi).
 
-(** *** Basic properties *) 
+(** *** Basic properties *)
 
 Definition entry_Build_Vector {A : Type} {n}
   (f : forall (i : nat), (i < n)%nat -> A) i {Hi : (i < n)%nat}
   : entry (Build_Vector A n f) i = f i Hi.
 Proof.
-  snrefine (nth'_list_map _ _ _ (_^ # Hi) _ @ _).
-  1: nrapply length_seq'.
-  snrapply ap011D.
-  1: nrapply nth'_seq'.
-  rapply path_ishprop. 
+  snapply nth'_Build_list.
 Defined.
 
-Global Instance istrunc_vector@{i} (A : Type@{i}) (n : nat) k `{IsTrunc k.+2 A}
+Instance istrunc_vector@{i} (A : Type@{i}) (n : nat) k `{IsTrunc k.+2 A}
   : IsTrunc k.+2 (Vector A n).
 Proof.
   rapply istrunc_sigma@{i i i}.
@@ -59,7 +51,7 @@ Definition path_vector@{i} (A : Type@{i}) {n : nat} (v1 v2 : Vector@{i} A n)
   : v1 = v2.
 Proof.
   rapply path_sigma_hprop@{i i i}.
-  snrapply path_list_nth'.
+  snapply path_list_nth'.
   1: exact (pr2 v1 @ (pr2 v2)^).
   intros i Hi.
   snrefine (_ @ H i (pr2 v1 # Hi) @ _).
@@ -143,8 +135,8 @@ Section VectorAddition.
 
   Definition abgroup_vector : AbGroup.
   Proof.
-    snrapply Build_AbGroup.
-    1: snrapply Build_Group.
+    snapply Build_AbGroup.
+    1: snapply Build_Group.
     5: repeat split.
     - exact (Vector A n).
     - exact vector_plus.
@@ -206,7 +198,7 @@ Section VectorScale.
   Definition isleftmodule_isleftmodule_vector
     : IsLeftModule R (abgroup_vector M n).
   Proof.
-    snrapply Build_IsLeftModule.
+    snapply Build_IsLeftModule.
     - exact vector_lact.
     - exact left_heterodistribute_vector_lact_plus.
     - exact right_heterodistribute_vector_lact_plus.

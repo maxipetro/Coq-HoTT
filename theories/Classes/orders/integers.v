@@ -36,7 +36,7 @@ destruct (int_abs_sig Z nat n) as [[a A]|[a A]].
     apply Psuc1.
     * apply to_semiring_nonneg.
     * trivial.
-- rewrite <-(groups.negate_involutive n), <-A.
+- rewrite <-(negate_involutive n), <-A.
   clear A. revert a. apply naturals.induction.
   + rewrite rings.preserves_0, rings.negate_0. trivial.
   + intros m E.
@@ -66,7 +66,7 @@ apply (antisymmetry (≤)).
   + apply le_0_2.
 Qed.
 
-Global Instance: Biinduction Z.
+#[export] Instance: Biinduction Z.
 Proof.
 intros P P0 Psuc. apply induction; trivial.
 - intros ??;apply Psuc.
@@ -75,7 +75,7 @@ intros P P0 Psuc. apply induction; trivial.
   trivial.
 Qed.
 
-Global Instance slow_int_le_dec : forall x y: Z, Decidable (x ≤ y) | 10.
+#[export] Instance slow_int_le_dec : forall x y: Z, Decidable (x ≤ y) | 10.
 Proof.
 intros x y.
 (* otherwise Z_le gets defined using peano.nat_ring

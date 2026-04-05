@@ -93,7 +93,7 @@ Section path_category.
     repeat f_ap; apply path_ishprop.
   Defined.
 
-  Global Instance isequiv__path_precategory''_T__of__path_precategory'_T `{fs : Funext} C D
+  #[export] Instance isequiv__path_precategory''_T__of__path_precategory'_T `{fs : Funext} C D
   : IsEquiv (@path_precategory''_T__of__path_precategory'_T fs C D)
     := isequiv_adjointify
          (@path_precategory''_T__of__path_precategory'_T fs C D)
@@ -128,7 +128,7 @@ Section path_category.
     reflexivity.
   Qed.
 
-  (** ** Equality of precategorys gives rise to an inhabitant of the path-classifying-type *)
+  (** ** Equality of precategories gives rise to an inhabitant of the path-classifying-type *)
   Definition path_precategory_uncurried'_inv (C D : PreCategory)
   : C = D -> path_precategory''_T C D.
   Proof.
@@ -138,7 +138,7 @@ Section path_category.
     split.
     - refine (_ @ apD (@compose) H'); cbn.
       refine (transport_pp _ _ _ _ @ _).
-      refine ((ap _ (transportD_compose
+      exact ((ap _ (transportD_compose
                        (fun obj => obj -> obj -> Type)
                        (fun obj mor =>
                           forall s d d' : obj, mor d d' -> mor s d -> mor s d') object H'
@@ -150,7 +150,7 @@ Section path_category.
                      (@compose C))).
     - refine (_ @ apD (@identity) H'); cbn.
       refine (transport_pp _ _ _ _ @ _).
-      refine ((ap _ (transportD_compose
+      exact ((ap _ (transportD_compose
                        (fun obj => obj -> obj -> Type)
                        (fun obj mor =>
                           forall x : obj, mor x x) object H'
@@ -162,7 +162,7 @@ Section path_category.
                      (@identity C))).
   Defined.
 
-  (** ** Classify equality of precategorys up to equivalence *)
+  (** ** Classify equality of precategories up to equivalence *)
   Lemma equiv_path_precategory_uncurried'__eissect `{Funext} (C D : PreCategory)
   : forall x : path_precategory''_T C D,
       path_precategory_uncurried'_inv (path_precategory_uncurried' C D x) = x.

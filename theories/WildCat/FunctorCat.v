@@ -11,27 +11,33 @@ Require Import WildCat.NatTrans.
 
 Record Fun01 (A B : Type) `{IsGraph A} `{IsGraph B} := {
   fun01_F : A -> B;
-  fun01_is0functor : Is0Functor fun01_F;
+  fun01_is0functor :: Is0Functor fun01_F;
 }.
 
 Coercion fun01_F : Fun01 >-> Funclass.
-Global Existing Instance fun01_is0functor.
 
-Arguments Build_Fun01 A B {isgraph_A isgraph_B} F {fun01_is0functor} : rename.
+Arguments Build_Fun01 {A B isgraph_A isgraph_B} F {fun01_is0functor} : rename.
+Arguments fun01_F {A B isgraph_A isgraph_B} : rename.
+
+(** An alternate constructor that expects the [fmap] argument. *)
+Definition Build_Fun01' {A B : Type} `{IsGraph A} `{IsGraph B}
+  (F : A -> B) (fmap : forall a b (f : a $-> b), F a $-> F b)
+  : Fun01 A B
+  := Build_Fun01 F (fun01_is0functor:=Build_Is0Functor F fmap).
 
 Definition issig_Fun01 (A B : Type) `{IsGraph A} `{IsGraph B}
   : _  <~> Fun01 A B := ltac:(issig).
 
-(* Note that even if [A] and [B] are fully coherent oo-categories, the objects of our "functor category" are not fully coherent.  Thus we cannot in general expect this "functor category" to itself be fully coherent.  However, it is at least a 0-coherent 1-category, as long as [B] is a 1-coherent 1-category. *)
+(** Note that even if [A] and [B] are fully coherent oo-categories, the objects of our "functor category" are not fully coherent.  Thus we cannot in general expect this "functor category" to itself be fully coherent.  However, it is at least a 0-coherent 1-category, as long as [B] is a 1-coherent 1-category. *)
 
-Global Instance isgraph_fun01 (A B : Type) `{IsGraph A} `{Is1Cat B} : IsGraph (Fun01 A B).
+Instance isgraph_fun01 (A B : Type) `{IsGraph A} `{Is1Cat B} : IsGraph (Fun01 A B).
 Proof.
   srapply Build_IsGraph.
   intros [F ?] [G ?].
   exact (NatTrans F G).
 Defined.
 
-Global Instance is01cat_fun01 (A B : Type) `{IsGraph A} `{Is1Cat B} : Is01Cat (Fun01 A B).
+Instance is01cat_fun01 (A B : Type) `{IsGraph A} `{Is1Cat B} : Is01Cat (Fun01 A B).
 Proof.
   srapply Build_Is01Cat.
   - intros [F ?]; cbn.
@@ -40,7 +46,7 @@ Proof.
     exact (nattrans_comp gamma alpha).
 Defined.
 
-Global Instance is2graph_fun01 (A B : Type) `{IsGraph A, Is1Cat B}
+Instance is2graph_fun01 (A B : Type) `{IsGraph A, Is1Cat B}
   : Is2Graph (Fun01 A B).
 Proof.
   intros [F ?] [G ?]; apply Build_IsGraph.
@@ -50,7 +56,7 @@ Defined.
 
 (** In fact, in this case it is automatically also a 0-coherent 2-category and a 1-coherent 1-category, with a totally incoherent notion of 2-cell between 1-coherent natural transformations. *)
 
-Global Instance is1cat_fun01 (A B : Type) `{IsGraph A} `{Is1Cat B} : Is1Cat (Fun01 A B).
+Instance is1cat_fun01 (A B : Type) `{IsGraph A} `{Is1Cat B} : Is1Cat (Fun01 A B).
 Proof.
   srapply Build_Is1Cat.
   - intros [F ?] [G ?]; srapply Build_Is01Cat.
@@ -81,7 +87,7 @@ Defined.
 
 (** It also inherits a notion of equivalence, namely a natural transformation that is a pointwise equivalence.  Note that this is not a "fully coherent" notion of equivalence, since the functors and transformations are not themselves fully coherent. *)
 
-Global Instance hasequivs_fun01 (A B : Type) `{Is01Cat A} `{HasEquivs B}
+Instance hasequivs_fun01 (A B : Type) `{Is01Cat A} `{HasEquivs B}
   : HasEquivs (Fun01 A B).
 Proof.
   srapply Build_HasEquivs.
@@ -96,7 +102,7 @@ Proof.
   - intros; apply cate_issect.
   - intros; apply cate_isretr.
   - intros [gamma ?] r s a; cbn in *.
-    refine (catie_adjointify (alpha a) (gamma a) (r a) (s a)).
+    exact (catie_adjointify (alpha a) (gamma a) (r a) (s a)).
 Defined.
 
 (** Bundled opposite functors *)
@@ -104,7 +110,7 @@ Definition fun01_op (A B : Type) `{IsGraph A} `{IsGraph B}
   : Fun01 A B -> Fun01 A^op B^op.
 Proof.
   intros F.
-  rapply (Build_Fun01 A^op B^op F).
+  exact (Build_Fun01 (A:=A^op) (B:=B^op) F).
 Defined.
 
 (** ** Categories of 1-coherent 1-functors *)
@@ -112,13 +118,11 @@ Defined.
 Record Fun11 (A B : Type) `{Is1Cat A} `{Is1Cat B} :=
 {
   fun11_fun : A -> B ;
-  is0functor_fun11 : Is0Functor fun11_fun ;
-  is1functor_fun11 : Is1Functor fun11_fun
+  is0functor_fun11 :: Is0Functor fun11_fun ;
+  is1functor_fun11 :: Is1Functor fun11_fun
 }.
 
 Coercion fun11_fun : Fun11 >-> Funclass.
-Global Existing Instance is0functor_fun11.
-Global Existing Instance is1functor_fun11.
 
 Arguments Build_Fun11 A B
   {isgraph_A is2graph_A is01cat_A is1cat_A
@@ -132,30 +136,30 @@ Proof.
   exists F; exact _.
 Defined.
 
-Global Instance isgraph_fun11 {A B : Type} `{Is1Cat A} `{Is1Cat B}
+Instance isgraph_fun11 {A B : Type} `{Is1Cat A} `{Is1Cat B}
   : IsGraph (Fun11 A B)
   := isgraph_induced fun01_fun11.
 
-Global Instance is01cat_fun11 {A B : Type} `{Is1Cat A} `{Is1Cat B}
+Instance is01cat_fun11 {A B : Type} `{Is1Cat A} `{Is1Cat B}
   : Is01Cat (Fun11 A B)
   := is01cat_induced fun01_fun11.
 
-Global Instance is2graph_fun11 {A B : Type} `{Is1Cat A, Is1Cat B}
+Instance is2graph_fun11 {A B : Type} `{Is1Cat A, Is1Cat B}
   : Is2Graph (Fun11 A B)
   := is2graph_induced fun01_fun11.
 
-Global Instance is1cat_fun11 {A B :Type} `{Is1Cat A} `{Is1Cat B}
+Instance is1cat_fun11 {A B :Type} `{Is1Cat A} `{Is1Cat B}
   : Is1Cat (Fun11 A B)
   := is1cat_induced fun01_fun11.
 
-Global Instance hasequivs_fun11 {A B : Type} `{Is1Cat A} `{HasEquivs B}
+Instance hasequivs_fun11 {A B : Type} `{Is1Cat A} `{HasEquivs B}
   : HasEquivs (Fun11 A B)
   := hasequivs_induced fun01_fun11.
 
 (** * Identity functors *)
 
 Definition fun01_id {A} `{IsGraph A} : Fun01 A A
-  := Build_Fun01 A A idmap.
+  := Build_Fun01 idmap.
 
 Definition fun11_id {A} `{Is1Cat A} : Fun11 A A
   := Build_Fun11 _ _ idmap.
@@ -164,7 +168,7 @@ Definition fun11_id {A} `{Is1Cat A} : Fun11 A A
 
 Definition fun01_compose {A B C} `{IsGraph A, IsGraph B, IsGraph C}
   : Fun01 B C -> Fun01 A B -> Fun01 A C
-  := fun G F => Build_Fun01 _ _ (G o F).
+  := fun G F => Build_Fun01 (G o F).
 
 Definition fun01_postcomp {A B C}
   `{IsGraph A, Is1Cat B, Is1Cat C} (F : Fun11 B C)
@@ -172,17 +176,18 @@ Definition fun01_postcomp {A B C}
   := fun01_compose (A:=A) F.
 
 (** Warning: [F] needs to be a 1-functor for this to be a 0-functor. *)
-Global Instance is0functor_fun01_postcomp {A B C}
+Instance is0functor_fun01_postcomp {A B C}
   `{IsGraph A, Is1Cat B, Is1Cat C} (F : Fun11 B C)
   : Is0Functor (fun01_postcomp (A:=A) F).
 Proof.
   apply Build_Is0Functor.
   intros a b f.
-  rapply nattrans_postwhisker.
+  napply nattrans_postwhisker.
+  1: exact _.
   exact f.
 Defined.
 
-Global Instance is1functor_fun01_postcomp {A B C}
+Instance is1functor_fun01_postcomp {A B C}
   `{IsGraph A, Is1Cat B, Is1Cat C} (F : Fun11 B C)
   : Is1Functor (fun01_postcomp (A:=A) F).
 Proof.
@@ -205,6 +210,6 @@ Definition fun11_compose {A B C} `{Is1Cat A, Is1Cat B, Is1Cat C}
   : Fun11 B C -> Fun11 A B -> Fun11 A C.
 Proof.
   intros F G.
-  nrapply Build_Fun11.
-  rapply (is1functor_compose G F).
+  napply Build_Fun11.
+  exact (is1functor_compose G F).
 Defined.

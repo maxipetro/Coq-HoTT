@@ -1,4 +1,4 @@
-(** * The groupid structure of paths *)
+(** * The groupoid structure of paths *)
 
 Require Import Basics.Overture Basics.Tactics.
 
@@ -16,7 +16,7 @@ Local Open Scope path_scope.
 
    Theorems about concatenation of paths are called [concat_XXX] where [XXX] tells us what is on the left-hand side of the equation. You have to guess the right-hand side. We use the following symbols in [XXX]:
 
-   - [1] means the identity path
+   - [1] means the identity path, or sometimes the identity function
    - [p] means 'the path'
    - [V] means 'the inverse path'
    - [A] means '[ap]'
@@ -27,12 +27,12 @@ Local Open Scope path_scope.
 
    Associativity is indicated with an underscore. Here are some examples of how the name gives hints about the left-hand side of the equation.
 
-   - [concat_1p] means [1 * p]
-   - [concat_Vp] means [p^ * p]
-   - [concat_p_pp] means [p * (q * r)]
-   - [concat_pp_p] means [(p * q) * r]
-   - [concat_V_pp] means [p^ * (p * q)]
-   - [concat_pV_p] means [(q * p^) * p] or [(p * p^) * q], but probably the former because for the latter you could just use [concat_pV].
+   - [concat_1p] means [1 @ p]
+   - [concat_Vp] means [p^ @ p]
+   - [concat_p_pp] means [p @ (q @ r)]
+   - [concat_pp_p] means [(p @ q) @ r]
+   - [concat_V_pp] means [p^ @ (p @ q)]
+   - [concat_pV_p] means [(q @ p^) @ p] or [(p @ p^) @ q], but probably the former because for the latter you could just use [concat_pV].
 
    Laws about inverse of something are of the form [inv_XXX], and those about [ap] are of the form [ap_XXX], and so on. For example:
 
@@ -49,23 +49,37 @@ Local Open Scope path_scope.
 
    - [moveL_pM] means that we transform [p = q @ r] to [p @ r^ = q]
      because we are moving something to the left-hand side, and we are
-     moving the right argument of concat.
+     moving the right argument of [concat].
 
    - [moveR_Mp] means that we transform [p @ q = r] to [q = p^ @ r]
      because we move to the right-hand side, and we are moving the left
-     argument of concat.
+     argument of [concat].
 
-   - [moveR_1M] means that we transform [p = q] (rather than [p = 1 @ q]) to [p * q^ = 1].
+   - [moveR_1M] means that we transform [p = q] (rather than [p = 1 @ q]) to [p @ q^ = 1].
 
    There are also cancellation laws called [cancelR] and [cancelL], which are inverse to the 2-dimensional 'whiskering' operations [whiskerR] and [whiskerL].
-
-   We may now proceed with the groupoid structure proper.
 *)
 
 (** ** The 1-dimensional groupoid structure. *)
 
-(** [concat], with arguments flipped. Useful mainly in the idiom [apply (concatR (expression))]. Given as a notation not a definition so that the resultant terms are literally instances of [concat], with no unfolding required. *)
-Notation concatR := (fun p q => concat q p).
+(** Partially applied versions of [concat].  The first is a synonym for [concat p], but we include it to parallel the second one. *)
+Definition concat_l {A : Type} {x y z : A} (p : x = y)
+  : (y = z) -> (x = z)
+  := concat p.
+
+Definition concat_r {A : Type} {x y z : A} (q : y = z)
+  : (x = y) -> (x = z)
+  := fun p => p @ q.
+
+(** The operation of composing a path on two sides. *)
+Definition concat_lr {A : Type} {w x y z : A} (p : w = x) (r : y = z)
+  : (x = y) -> (w = z)
+  := fun q => p @ q @ r.
+
+(** The "/" indicates that these should be unfolded by [cbn] and [simpl] when the specified arguments are given. *)
+Arguments concat_l {A x y z} p q /.
+Arguments concat_r {A x y z} q p /.
+Arguments concat_lr {A w x y z} p r q /.
 
 (** The identity path is a right unit. *)
 Definition concat_p1 {A : Type} {x y : A} (p : x = y) :
@@ -186,112 +200,112 @@ Definition moveR_Mp {A : Type} {x y z : A} (p : x = z) (q : y = z) (r : y = x) :
   p = r^ @ q -> r @ p = q.
 Proof.
   destruct r.
-  intro h. exact (concat_1p _ @ h @ concat_1p _).
+  exact (concat_lr (concat_1p _) (concat_1p _)).
 Defined.
 
 Definition moveR_pM {A : Type} {x y z : A} (p : x = z) (q : y = z) (r : y = x) :
   r = q @ p^ -> r @ p = q.
 Proof.
   destruct p.
-  intro h. exact (concat_p1 _ @ h @ concat_p1 _).
+  exact (concat_lr (concat_p1 _) (concat_p1 _)).
 Defined.
 
 Definition moveR_Vp {A : Type} {x y z : A} (p : x = z) (q : y = z) (r : x = y) :
   p = r @ q -> r^ @ p = q.
 Proof.
   destruct r.
-  intro h. exact (concat_1p _ @ h @ concat_1p _).
+  exact (concat_lr (concat_1p _) (concat_1p _)).
 Defined.
 
 Definition moveR_pV {A : Type} {x y z : A} (p : z = x) (q : y = z) (r : y = x) :
   r = q @ p -> r @ p^ = q.
 Proof.
   destruct p.
-  intro h. exact (concat_p1 _ @ h @ concat_p1 _).
+  exact (concat_lr (concat_p1 _) (concat_p1 _)).
 Defined.
 
 Definition moveL_Mp {A : Type} {x y z : A} (p : x = z) (q : y = z) (r : y = x) :
   r^ @ q = p -> q = r @ p.
 Proof.
   destruct r.
-  intro h. exact ((concat_1p _)^ @ h @ (concat_1p _)^).
+  exact (concat_lr (concat_1p _)^ (concat_1p _)^).
 Defined.
 
 Definition moveL_pM {A : Type} {x y z : A} (p : x = z) (q : y = z) (r : y = x) :
   q @ p^ = r -> q = r @ p.
 Proof.
   destruct p.
-  intro h. exact ((concat_p1 _)^ @ h @ (concat_p1 _)^).
+  exact (concat_lr (concat_p1 _)^ (concat_p1 _)^).
 Defined.
 
 Definition moveL_Vp {A : Type} {x y z : A} (p : x = z) (q : y = z) (r : x = y) :
   r @ q = p -> q = r^ @ p.
 Proof.
   destruct r.
-  intro h. exact ((concat_1p _)^ @ h @ (concat_1p _)^).
+  exact (concat_lr (concat_1p _)^ (concat_1p _)^).
 Defined.
 
 Definition moveL_pV {A : Type} {x y z : A} (p : z = x) (q : y = z) (r : y = x) :
   q @ p = r -> q = r @ p^.
 Proof.
   destruct p.
-  intro h. exact ((concat_p1 _)^ @ h @ (concat_p1 _)^).
+  exact (concat_lr (concat_p1 _)^ (concat_p1 _)^).
 Defined.
 
 Definition moveL_1M {A : Type} {x y : A} (p q : x = y) :
   p @ q^ = 1 -> p = q.
 Proof.
   destruct q.
-  intro h. exact ((concat_p1 _)^ @ h).
+  exact (concat_l (concat_p1 _)^).
 Defined.
 
 Definition moveL_M1 {A : Type} {x y : A} (p q : x = y) :
   q^ @ p = 1 -> p = q.
 Proof.
   destruct q.
-  intro h. exact ((concat_1p _)^ @ h).
+  exact (concat_l (concat_1p _)^).
 Defined.
 
 Definition moveL_1V {A : Type} {x y : A} (p : x = y) (q : y = x) :
   p @ q = 1 -> p = q^.
 Proof.
   destruct q.
-  intro h. exact ((concat_p1 _)^ @ h).
+  exact (concat_l (concat_p1 _)^).
 Defined.
 
 Definition moveL_V1 {A : Type} {x y : A} (p : x = y) (q : y = x) :
   q @ p = 1 -> p = q^.
 Proof.
   destruct q.
-  intro h. exact ((concat_1p _)^ @ h).
+  exact (concat_l (concat_1p _)^).
 Defined.
 
 Definition moveR_M1 {A : Type} {x y : A} (p q : x = y) :
   1 = p^ @ q -> p = q.
 Proof.
   destruct p.
-  intro h. exact (h @ (concat_1p _)).
+  exact (concat_r (concat_1p _)).
 Defined.
 
 Definition moveR_1M {A : Type} {x y : A} (p q : x = y) :
   1 = q @ p^ -> p = q.
 Proof.
   destruct p.
-  intro h. exact (h @ (concat_p1 _)).
+  exact (concat_r (concat_p1 _)).
 Defined.
 
 Definition moveR_1V {A : Type} {x y : A} (p : x = y) (q : y = x) :
   1 = q @ p -> p^ = q.
 Proof.
   destruct p.
-  intro h. exact (h @ (concat_p1 _)).
+  exact (concat_r (concat_p1 _)).
 Defined.
 
 Definition moveR_V1 {A : Type} {x y : A} (p : x = y) (q : y = x) :
   1 = p @ q -> p^ = q.
 Proof.
   destruct p.
-  intro h. exact (h @ (concat_1p _)).
+  exact (concat_r (concat_1p _)).
 Defined.
 
 (* In general, the path we want to move might be arbitrarily deeply nested at the beginning of a long concatenation.  Thus, instead of defining functions such as [moveL_Mp_p], we define a tactical that can repeatedly rewrite with associativity to expose it. *)
@@ -428,7 +442,7 @@ Definition ap_compose {A B C : Type} (f : A -> B) (g : B -> C) {x y : A} (p : x 
   :=
   match p with idpath => 1 end.
 
-(* Sometimes we don't have the actual function [compose]. *)
+(** Sometimes we don't have the actual function [compose]. *)
 Definition ap_compose' {A B C : Type} (f : A -> B) (g : B -> C) {x y : A} (p : x = y) :
   ap (fun a => g (f a)) p = ap g (ap f p)
   :=
@@ -448,7 +462,7 @@ Definition concat_Ap {A B : Type} {f g : A -> B} (p : forall x, f x = g x) {x y 
     | idpath => concat_1p_p1 _
   end.
 
-(* A useful variant of concat_Ap. *)
+(** A useful variant of [concat_Ap]. *)
 Definition ap_homotopic {A B : Type} {f g : A -> B} (p : forall x, f x = g x) {x y : A} (q : x = y)
   : (ap f q) = (p x) @ (ap g q) @ (p y)^.
 Proof.
@@ -464,7 +478,7 @@ Definition concat_A1p {A : Type} {f : A -> A} (p : forall x, f x = x) {x y : A} 
     | idpath => concat_1p_p1 _
   end.
 
-(* The corresponding variant of concat_A1p. *)
+(** The corresponding variant of [concat_A1p]. *)
 Definition ap_homotopic_id {A : Type} {f : A -> A} (p : forall x, f x = x) {x y : A} (q : x = y)
   : (ap f q) = (p x) @ q @ (p y)^.
 Proof.
@@ -479,14 +493,20 @@ Definition concat_pA1 {A : Type} {f : A -> A} (p : forall x, x = f x) {x y : A} 
     | idpath => concat_p1_1p _
   end.
 
+Definition apD_natural {A : Type} {B : A -> Type} {f g : forall x, B x}
+  (p : forall x, f x = g x) {x y : A} (q : x = y)
+  : apD f q @ p y = ap (transport B q) (p x) @ apD g q.
+Proof.
+  destruct q.
+  unfold transport.
+  exact (concat_1p _ @ (ap_idmap _)^ @ (concat_p1 _)^).
+Defined.
+
 Definition apD_homotopic {A : Type} {B : A -> Type} {f g : forall x, B x}
   (p : forall x, f x = g x) {x y : A} (q : x = y)
   : apD f q = ap (transport B q) (p x) @ apD g q @ (p y)^.
 Proof.
-  apply moveL_pV.
-  destruct q; unfold apD, transport.
-  symmetry.
-  exact (concat_p1 _ @ ap_idmap _ @ (concat_1p _)^).
+  apply moveL_pV, apD_natural.
 Defined.
 
 (** Naturality with other paths hanging around. *)
@@ -919,7 +939,7 @@ Proof.
   by induction p.
 Defined.
 
-(* TODO: What should this be called? *)
+(* Naturality of transport.  TODO: What should this be called?  [transport_postcompose]? *)
 Lemma ap_transport {A} {P Q : A -> Type} {x y : A} (p : x = y) (f : forall x, P x -> Q x) (z : P x) :
   f y (p # z) = (p # (f x z)).
 Proof.
@@ -1056,6 +1076,13 @@ Definition transport_idmap_ap {A} (P : A -> Type) {x y : A} (p : x = y) (u : P x
 : transport P p u = transport idmap (ap P p) u
   := match p with idpath => idpath end.
 
+(** A combination of [transport_compose] with [transport2]. *)
+Definition transport_compose_path_ap {X Y : Type} (P : Y -> Type) (g : X -> Y)
+  {x0 x1 : X} {p : x0 = x1} {r : g x0 = g x1} (s : ap g p = r)
+  (z : P (g x0))
+  : transport (P o g) p z = transport P r z
+  := transport_compose P g p z @ transport2 P s z.
+
 (** Sometimes, it's useful to have the goal be in terms of [ap], so we can use lemmas about [ap].  However, we can't just [rewrite !transport_idmap_ap], as that's likely to loop.  So, instead, we provide a tactic [transport_to_ap], that replaces all [transport P p u] with [transport idmap (ap P p) u] for non-[idmap] [P]. *)
 Ltac transport_to_ap :=
   repeat match goal with
@@ -1124,6 +1151,16 @@ Definition inverse2 {A : Type} {x y : A} {p q : x = y} (h : p = q)
   : p^ = q^
 := ap inverse h.
 
+(** Two common combinations of [ap_pp] and [ap_V]. *)
+
+Definition ap_pV {A B : Type} (f : A -> B) {a0 a1 a0' : A} (p : a0 = a1) (q : a0' = a1)
+  : ap f (p @ q^) = ap f p @ (ap f q)^
+  := ap_pp f p q^ @ (1 @@ ap_V f q).
+
+Definition ap_Vp {A B : Type} (f : A -> B) {a0 a1 a1' : A} (p : a0 = a1) (q : a0 = a1')
+  : ap f (p^ @ q) = (ap f p)^ @ ap f q
+  := ap_pp f p^ q @ (ap_V f p @@ 1).
+
 (** Some higher coherences *)
 
 Lemma ap_pp_concat_p1 {A B} (f : A -> B) {a b : A} (p : a = b)
@@ -1138,15 +1175,14 @@ Proof.
   destruct p; reflexivity.
 Defined.
 
-Lemma ap_pp_concat_pV {A B} (f : A -> B) {x y : A} (p : x = y)
-: ap_pp f p p^ @ ((1 @@ ap_V f p) @ concat_pV (ap f p))
-  = ap (ap f) (concat_pV p).
+Lemma ap_pV_concat_pV {A B} (f : A -> B) {x y : A} (p : x = y)
+  : ap_pV f p p @ concat_pV (ap f p) = ap (ap f) (concat_pV p).
 Proof.
   destruct p; reflexivity.
 Defined.
 
-Lemma ap_pp_concat_Vp {A B} (f : A -> B) {x y : A} (p : x = y)
-: ap_pp f p^ p @ ((ap_V f p @@ 1) @ concat_Vp (ap f p))
+Lemma ap_Vp_concat_Vp {A B} (f : A -> B) {x y : A} (p : x = y)
+  : ap_Vp f p p @ concat_Vp (ap f p)
   = ap (ap f) (concat_Vp p).
 Proof.
   destruct p; reflexivity.
@@ -1163,6 +1199,17 @@ Lemma concat_Vp_inverse2 {A} {x y : A} (p q : x = y) (r : p = q)
 Proof.
   destruct r, p; reflexivity.
 Defined.
+
+(** Often [ap_pV_concat_pV] is combined with [concat_pV_inverse2] using a beta rule for [ap f p].  This and several above are best read from right-to-left, and the name here reflects the right-hand-side. *)
+Definition ap_ap_concat_pV {A B} (f : A -> B) {x y : A} (p : x = y)
+  (q : f x = f y) (r : ap f p = q)
+  : ap_pV f p p @ ((r @@ inverse2 r) @ concat_pV q) = ap (ap f) (concat_pV p)
+  := (1 @@ concat_pV_inverse2 _ q r) @ ap_pV_concat_pV f p.
+
+Definition ap_ap_concat_Vp {A B} (f : A -> B) {x y : A} (p : x = y)
+  (q : f x = f y) (r : ap f p = q)
+  : ap_Vp f p p @ ((inverse2 r @@ r) @ concat_Vp q) = ap (ap f) (concat_Vp p)
+  := (1 @@ concat_Vp_inverse2 _ q r) @ ap_Vp_concat_Vp f p.
 
 (** *** Whiskering *)
 
@@ -1216,14 +1263,14 @@ Definition whiskerR_p1_1 {A} {x : A} (h : idpath x = idpath x)
 : whiskerR h 1 = h.
 Proof.
   refine (_ @ whiskerR_p1 h); simpl.
-  symmetry; refine (concat_p1 _ @ concat_1p _).
+  symmetry; exact (concat_p1 _ @ concat_1p _).
 Defined.
 
 Definition whiskerL_1p_1 {A} {x : A} (h : idpath x = idpath x)
 : whiskerL 1 h = h.
 Proof.
   refine (_ @ whiskerL_1p h); simpl.
-  symmetry; refine (concat_p1 _ @ concat_1p _).
+  symmetry; exact (concat_p1 _ @ concat_1p _).
 Defined.
 
 Definition cancel2L {A : Type} {x y z : A} {p p' : x = y} {q q' : y = z}
@@ -1233,7 +1280,7 @@ Proof.
   intro r. induction g, p, q.
   refine ((whiskerL_1p h)^ @ _). refine (_ @ (whiskerL_1p k)).
   refine (whiskerR _ _). refine (whiskerL _ _).
-  apply r.
+  exact r.
 Defined.
 
 Definition cancel2R {A : Type} {x y z : A} {p p' : x = y} {q q' : y = z}
@@ -1243,7 +1290,7 @@ Proof.
   intro r. induction k, p, q.
   refine ((whiskerR_p1 g)^ @ _). refine (_ @ (whiskerR_p1 h)).
   refine (whiskerR _ _). refine (whiskerL _ _).
-  apply r.
+  exact r.
 Defined.
 
 

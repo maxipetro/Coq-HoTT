@@ -1,4 +1,4 @@
-Require Import Basics Types.
+From HoTT Require Import Basics Types.
 Require Import HoTT.Truncations.
 Require Import Universes.BAut Universes.Rigid.
 Require Import ExcludedMiddle.
@@ -10,7 +10,7 @@ Local Open Scope path_scope.
 
 (** ** Automorphisms of the universe *)
 
-(** See "Parametricity, automorphisms of the universe, and excluded middle" by Booij, Escardo, Lumsdaine, Shulman. *)
+(** See "Parametricity, automorphisms of the universe, and excluded middle" by Booij, Escardó, Lumsdaine, Shulman. *)
 
 (** If two inequivalent types have equivalent automorphism oo-groups, then assuming LEM we can swap them and leave the rest of the universe untouched. *)
 Section SwapTypes.
@@ -86,7 +86,7 @@ Definition equiv_swap_rigid `{Univalence} `{ExcludedMiddle}
   : Type <~> Type.
 Proof.
   refine (equiv_swap_types A B ne _).
-  apply equiv_contr_contr.
+  exact equiv_contr_contr.
 Defined.
 
 (** Such as [Empty] and [Unit]. *)

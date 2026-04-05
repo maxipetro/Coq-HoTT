@@ -1,11 +1,12 @@
-Require Import Basics Types.
+From HoTT Require Import Basics Types.
 Require Import Cubical.DPath Cubical.PathSquare.
-Require Import NullHomotopy.
+Require Import Homotopy.NullHomotopy.
 Require Import Extensions.
 Require Import Colimits.Pushout.
 Require Import Truncations.Core Truncations.Connectedness.
 Require Import Pointed.Core.
-Require Import WildCat.
+From HoTT.WildCat Require Import Core Universe Equiv EquivGpd
+  ZeroGroupoid Yoneda FunctorCat NatTrans Bifunctor Monoidal.
 Require Import Spaces.Nat.Core.
 
 Local Open Scope pointed_scope.
@@ -30,7 +31,7 @@ Section Join.
 
   Definition Join_ind {A B : Type} (P : Join A B -> Type)
     (P_A : forall a, P (joinl a)) (P_B : forall b, P (joinr b))
-    (P_g : forall a b, transport P (jglue a b) (P_A a) = (P_B b))
+    (P_g : forall a b, transport P (jglue a b) (P_A a) = P_B b)
     : forall (x : Join A B), P x.
   Proof.
     apply (Pushout_ind P P_A P_B).
@@ -50,12 +51,10 @@ Section Join.
     (Hglue : forall a b, ap f (jglue a b) @ Hr b = Hl a @ ap g (jglue a b))
     : f == g.
   Proof.
-    snrapply Join_ind.
-    - exact Hl.
-    - exact Hr.
-    - intros a b.
-      nrapply transport_paths_FlFr'.
-      apply Hglue.
+    snapply (Join_ind _ Hl Hr).
+    intros a b.
+    transport_paths FlFr.
+    apply Hglue.
   Defined.
 
   Definition Join_ind_Flr {A B : Type} (f : Join A B -> Join A B)
@@ -64,11 +63,10 @@ Section Join.
     (Hglue : forall a b, ap f (jglue a b) @ Hr b = Hl a @ jglue a b)
     : forall x, f x = x.
   Proof.
-    snrapply (Join_ind_FlFr _ _ Hl Hr).
+    snapply (Join_ind _ Hl Hr).
     intros a b.
-    lhs nrapply Hglue.
-    apply ap; symmetry.
-    apply ap_idmap.
+    transport_paths Flr.
+    apply Hglue.
   Defined.
 
   (** And a version for showing that a composite is homotopic to the identity. *)
@@ -78,12 +76,49 @@ Section Join.
     (Hglue : forall a b, ap g (ap f (jglue a b)) @ Hr b = Hl a @ jglue a b)
     : forall x, g (f x) = x.
   Proof.
-    snrapply Join_ind.
-    - exact Hl.
-    - exact Hr.
-    - intros a b.
-      nrapply transport_paths_FFlr'.
-      apply Hglue.
+    snapply (Join_ind _ Hl Hr).
+    intros a b.
+    transport_paths FFlr.
+    apply Hglue.
+  Defined.
+  
+  Definition Join_ind_FFlFr {A B C P : Type}
+    (f : Join A B -> C) (g : C -> P) (h : Join A B -> P)
+    (Hl : forall a, g (f (joinl a)) = h (joinl a))
+    (Hr : forall b, g (f (joinr b)) = h (joinr b))
+    (Hglue : forall a b, ap g (ap f (jglue a b)) @ Hr b = Hl a @ ap h (jglue a b))
+    : g o f == h.
+  Proof.
+    snapply (Join_ind _ Hl Hr).
+    intros a b; cbn beta.
+    transport_paths FFlFr.
+    apply Hglue.
+  Defined.
+  
+  Definition Join_ind_FlFFr {A B C P : Type}
+    (f : Join A B -> C) (g : C -> P) (h : Join A B -> P)
+    (Hl : forall a, h (joinl a) = g (f (joinl a)))
+    (Hr : forall b, h (joinr b) = g (f (joinr b)))
+    (Hglue : forall a b, ap h (jglue a b) @ Hr b = Hl a @ ap g (ap f (jglue a b)))
+    : h == g o f.
+  Proof.
+    snapply (Join_ind _ Hl Hr).
+    intros a b; cbn beta.
+    transport_paths FlFFr.
+    apply Hglue.
+  Defined.
+  
+  Definition Join_ind_FFlFFr {A B C D P : Type}
+    (f : Join A B -> C) (g : C -> P) (h : Join A B -> D) (i : D -> P)
+    (Hl : forall a, i (h (joinl a)) = g (f (joinl a)))
+    (Hr : forall b, i (h (joinr b)) = g (f (joinr b)))
+    (Hglue : forall a b, ap i (ap h (jglue a b)) @ Hr b = Hl a @ ap g (ap f (jglue a b)))
+    : i o h == g o f.
+  Proof.
+    snapply (Join_ind _ Hl Hr).
+    intros a b; cbn beta.
+    transport_paths FFlFFr.
+    apply Hglue.
   Defined.
 
   Definition Join_rec {A B P : Type} (P_A : A -> P) (P_B : B -> P)
@@ -97,10 +132,10 @@ Section Join.
     (P_B : B -> P) (P_g : forall a b, P_A a = P_B b) a b
     : ap (Join_rec P_A P_B P_g) (jglue a b) = P_g a b.
   Proof.
-    snrapply Pushout_rec_beta_pglue.
+    exact (Pushout_rec_beta_pglue _ _ _ _ (a, b)).
   Defined.
 
-  (** If [A] is ipointed, so is [Join A B]. *)
+  (** If [A] is pointed, so is [Join A B]. *)
   Definition pjoin (A : pType) (B : Type) : pType
     := [Join A B, joinl pt].
 
@@ -108,6 +143,34 @@ End Join.
 
 Arguments joinl {A B}%_type_scope _ , [A] B _.
 Arguments joinr {A B}%_type_scope _ , A [B] _.
+
+(** ** Zigzags in joins *)
+
+(** These paths are very common, so we give them names and prove a few results about them. *)
+Definition zigzag {A B : Type} (a a' : A) (b : B)
+  : joinl a = joinl a'
+  := jglue a b @ (jglue a' b)^.
+
+Definition zagzig {A B : Type} (a : A) (b b' : B)
+  : joinr b = joinr b'
+  := (jglue a b)^ @ jglue a b'.
+
+Definition zigzag_zigzag {A B : Type} (a a' : A) (b : B)
+  : zigzag a a' b @ zigzag a' a b = 1
+  := concat_pp_p _ _ _ @ (1 @@ concat_V_pp _ _) @ concat_pV _.
+
+Definition zigzag_inv {A B : Type} (a a' : A) (b : B)
+  : (zigzag a a' b)^ = zigzag a' a b
+  := inv_pp _ _ @ (inv_V _ @@ 1).
+
+(** And we give a beta rule for zigzags. *)
+Definition Join_rec_beta_zigzag {A B P : Type} (P_A : A -> P)
+  (P_B : B -> P) (P_g : forall a b, P_A a = P_B b) a a' b
+  : ap (Join_rec P_A P_B P_g) (zigzag a a' b) = P_g a b @ (P_g a' b)^.
+Proof.
+  lhs napply ap_pV.
+  exact (Join_rec_beta_jglue _ _ _ a b @@ inverse2 (Join_rec_beta_jglue _ _ _ a' b)).
+Defined.
 
 (** * [Join_rec] gives an equivalence of 0-groupoids
 
@@ -135,7 +198,7 @@ Definition join_rec_beta_jg {A B P : Type} (f : JoinRecData A B P) (a : A) (b : 
 Definition joinrecdata_fun {A B P Q : Type} (g : P -> Q) (f : JoinRecData A B P)
   : JoinRecData A B Q.
 Proof.
-  snrapply Build_JoinRecData.
+  snapply Build_JoinRecData.
   - exact (g o jl f).
   - exact (g o jr f).
   - exact (fun a b => ap g (jg f a b)).
@@ -170,7 +233,7 @@ Definition bundle_joinrecpath {A B P : Type} {jl' : A -> P} {jr' : B -> P}
   (h : forall a b, f a b = g a b)
   : JoinRecPath (Build_JoinRecData jl' jr' f) (Build_JoinRecData jl' jr' g).
 Proof.
-  snrapply Build_JoinRecPath.
+  snapply Build_JoinRecPath.
   1, 2: reflexivity.
   intros; apply equiv_p1_1q, h.
 Defined.
@@ -233,17 +296,17 @@ Global Ltac square_ind g h a b :=
 (** ** Use the WildCat library to organize things *)
 
 (** We begin by showing that [JoinRecData A B P] is a 0-groupoid, one piece at a time. *)
-Global Instance isgraph_joinrecdata (A B P : Type) : IsGraph (JoinRecData A B P)
+Instance isgraph_joinrecdata (A B P : Type) : IsGraph (JoinRecData A B P)
   := {| Hom := JoinRecPath |}.
 
-Global Instance is01cat_joinrecdata (A B P : Type) : Is01Cat (JoinRecData A B P).
+Instance is01cat_joinrecdata (A B P : Type) : Is01Cat (JoinRecData A B P).
 Proof.
   apply Build_Is01Cat.
   - intro f.
     bundle_joinrecpath.
     reflexivity.
   - intros f1 f2 f3 h2 h1.
-    snrapply Build_JoinRecPath; intros; cbn beta.
+    snapply Build_JoinRecPath; intros; cbn beta.
     + exact (hl h1 a @ hl h2 a).
     + exact (hr h1 b @ hr h2 b).
     + (* Some simple path algebra works as well. *)
@@ -252,11 +315,11 @@ Proof.
       by interval_ind f1 a b.
 Defined.
 
-Global Instance is0gpd_joinrecdata (A B P : Type) : Is0Gpd (JoinRecData A B P).
+Instance is0gpd_joinrecdata (A B P : Type) : Is0Gpd (JoinRecData A B P).
 Proof.
   apply Build_Is0Gpd.
   intros f g h.
-  snrapply Build_JoinRecPath; intros; cbn beta.
+  snapply Build_JoinRecPath; intros; cbn beta.
   + exact (hl h a)^.
   + exact (hr h b)^.
   + (* Some simple path algebra works as well. *)
@@ -272,12 +335,12 @@ Definition joinrecdata_0gpd (A B P : Type) : ZeroGpd
   It's a 1-functor that lands in [ZeroGpd], and the morphisms of [ZeroGpd] are 0-functors, so it's easy to get confused about the levels. *)
 
 (** First we need to show that the induced map is a morphism in [ZeroGpd], i.e. that it is a 0-functor. *)
-Global Instance is0functor_joinrecdata_fun {A B P Q : Type} (g : P -> Q)
+Instance is0functor_joinrecdata_fun {A B P Q : Type} (g : P -> Q)
   : Is0Functor (@joinrecdata_fun A B P Q g).
 Proof.
   apply Build_Is0Functor.
   intros f1 f2 h.
-  snrapply Build_JoinRecPath; intros; cbn.
+  snapply Build_JoinRecPath; intros; cbn.
   - exact (ap g (hl h a)).
   - exact (ap g (hr h b)).
   - square_ind f2 h a b.
@@ -285,22 +348,20 @@ Proof.
 Defined.
 
 (** [joinrecdata_0gpd A B] is a 0-functor from [Type] to [ZeroGpd] (one level up). *)
-Global Instance is0functor_joinrecdata_0gpd (A B : Type) : Is0Functor (joinrecdata_0gpd A B).
+Instance is0functor_joinrecdata_0gpd (A B : Type) : Is0Functor (joinrecdata_0gpd A B).
 Proof.
   apply Build_Is0Functor.
   intros P Q g.
-  snrapply Build_Morphism_0Gpd.
-  - exact (joinrecdata_fun g).
-  - apply is0functor_joinrecdata_fun.
+  exact (Build_Fun01 (joinrecdata_fun g)).
 Defined.
 
 (** [joinrecdata_0gpd A B] is a 1-functor from [Type] to [ZeroGpd]. *)
-Global Instance is1functor_joinrecdata_0gpd (A B : Type) : Is1Functor (joinrecdata_0gpd A B).
+Instance is1functor_joinrecdata_0gpd (A B : Type) : Is1Functor (joinrecdata_0gpd A B).
 Proof.
   apply Build_Is1Functor.
   (* If [g1 g2 : P -> Q] are homotopic, then the induced maps are homotopic: *)
   - intros P Q g1 g2 h f; cbn in *.
-    snrapply Build_JoinRecPath; intros; cbn.
+    snapply Build_JoinRecPath; intros; cbn.
     1, 2: apply h.
     interval_ind f a b; cbn.
     apply concat_1p_p1.
@@ -321,7 +382,7 @@ Definition joinrecdata_0gpd_fun (A B : Type) : Fun11 Type ZeroGpd
 Definition join_nattrans_recdata {A B J : Type} (f : JoinRecData A B J)
   : NatTrans (opyon_0gpd J) (joinrecdata_0gpd_fun A B).
 Proof. 
-  snrapply Build_NatTrans.
+  snapply Build_NatTrans.
   1: rapply opyoneda_0gpd.
   2: exact _.
   exact f.
@@ -336,7 +397,7 @@ Definition join_rec_inv_nattrans (A B : Type)
 Definition join_rec_inv_natequiv (A B : Type)
   : NatEquiv (opyon_0gpd (Join A B)) (joinrecdata_0gpd_fun A B).
 Proof.
-  snrapply Build_NatEquiv'.
+  snapply Build_NatEquiv'.
   1: apply join_rec_inv_nattrans.
   intro P.
   apply isequiv_0gpd_issurjinj.
@@ -357,7 +418,7 @@ Local Definition join_rec_natequiv_check (A B P : Type)
   := idpath.
 
 (** It follows that [join_rec A B P] is a 0-functor. *)
-Global Instance is0functor_join_rec (A B P : Type) : Is0Functor (@join_rec A B P).
+Instance is0functor_join_rec (A B P : Type) : Is0Functor (@join_rec A B P).
 Proof.
   change (Is0Functor (equiv_fun_0gpd (join_rec_natequiv A B P))).
   exact _.
@@ -369,6 +430,22 @@ Definition join_rec_nat (A B : Type) {P Q : Type} (g : P -> Q) (f : JoinRecData 
 Proof.
   exact (isnat (join_rec_natequiv A B) g f).
 Defined.
+
+(** We restate the previous two results using [Join_rec] for convenience. *)
+Definition Join_rec_homotopic (A B : Type) {P : Type}
+  (fl  : A -> P) (fr  : B -> P) (fg  : forall a b, fl  a = fr  b)
+  (fl' : A -> P) (fr' : B -> P) (fg' : forall a b, fl' a = fr' b)
+  (hl : forall a, fl a = fl' a)
+  (hr : forall b, fr b = fr' b)
+  (hg : forall a b, fg a b @ hr b = hl a @ fg' a b)
+  : Join_rec fl fr fg == Join_rec fl' fr' fg'
+  := fmap join_rec (Build_JoinRecPath _ _ _
+      {| jl:=fl; jr:=fr; jg:=fg |} {| jl:=fl'; jr:=fr'; jg:=fg' |} hl hr hg).
+
+Definition Join_rec_nat (A B : Type) {P Q : Type} (g : P -> Q)
+  (fl : A -> P) (fr : B -> P) (fg : forall a b, fl a = fr b)
+  : Join_rec (g o fl) (g o fr) (fun a b => ap g (fg a b)) == g o Join_rec fl fr fg
+  := join_rec_nat _ _ g {| jl:=fl; jr:=fr; jg:=fg |}.
 
 (** * Various types of equalities between paths in joins *)
 
@@ -414,7 +491,7 @@ Section Triangle.
   Defined.
 
   Definition triangle_h' {a a' : A} (b : B) (p : a = a')
-    : jglue a b @ (jglue a' b)^ = ap joinl p.
+    : zigzag a a' b = ap joinl p.
   Proof.
     destruct p.
     apply concat_pV.
@@ -428,7 +505,7 @@ Section Triangle.
   Defined.
 
   Definition triangle_v' (a : A) {b b' : B} (p : b = b')
-    : (jglue a b)^ @ jglue a b' = ap joinr p.
+    : zagzig a b b' = ap joinr p.
   Proof.
     destruct p.
     apply concat_Vp.
@@ -439,7 +516,7 @@ Section Triangle.
     : triangle_v a p^ = (1 @@ ap_V joinr p) @ moveR_pV _ _ _ (triangle_v a p)^.
   Proof.
     destruct p; cbn.
-    rhs nrapply concat_1p.
+    rhs napply concat_1p.
     symmetry; apply concat_pV_p.
   Defined.
 
@@ -454,7 +531,7 @@ Section Diamond.
     := PathSquare (jglue a b) (jglue a' b')^ (jglue a b') (jglue a' b)^.
 
   Definition diamond_h {a a' : A} (b b' : B) (p : a = a')
-    : jglue a b @ (jglue a' b)^ = jglue a b' @ (jglue a' b')^.
+    : zigzag a a' b = zigzag a a' b'.
   Proof.
     destruct p.
     exact (concat_pV _ @ (concat_pV _)^).
@@ -467,10 +544,8 @@ Section Diamond.
   Defined.
 
   Definition diamond_v (a a' : A) {b b' : B} (p : b = b')
-    : jglue a b @ (jglue a' b)^ = jglue a b' @ (jglue a' b')^.
-  Proof.
-    by destruct p.
-  Defined.
+    : zigzag a a' b = zigzag a a' b'
+    := ap (zigzag a a') p.
 
   Definition diamond_v_sq (a a' : A) {b b' : B} (p : b = b')
     : Diamond a a' b b'.
@@ -512,30 +587,34 @@ Section FunctorJoin.
     : ap (functor_join f g) (jglue a b) = jglue (f a) (g b)
     := join_rec_beta_jg _ a b.
 
+  Definition functor_join_beta_zigzag {A B C D : Type} (f : A -> C) (g : B -> D)
+    (a a' : A) (b : B)
+    : ap (functor_join f g) (zigzag a a' b) = zigzag (f a) (f a') (g b)
+    := Join_rec_beta_zigzag _ _ _ a a' b.
+
   Definition functor_join_compose {A B C D E F}
     (f : A -> C) (g : B -> D) (h : C -> E) (i : D -> F)
     : functor_join (h o f) (i o g) == functor_join h i o functor_join f g.
   Proof.
-    snrapply Join_ind_FlFr.
+    snapply Join_ind_FlFFr.
     1,2: reflexivity.
     intros a b.
     simpl.
     apply equiv_p1_1q.
-    lhs nrapply functor_join_beta_jglue; symmetry.
-    lhs nrapply (ap_compose (functor_join f g) _ (jglue a b)).
+    lhs napply functor_join_beta_jglue; symmetry.
     lhs nrefine (ap _ (functor_join_beta_jglue _ _ _ _)).
-    apply functor_join_beta_jglue.
+    napply (functor_join_beta_jglue _ _ (f a) (g b)).
   Defined.
 
   Definition functor_join_idmap {A B}
     : functor_join idmap idmap == (idmap : Join A B -> Join A B).
   Proof.
-    snrapply Join_ind_FlFr.
+    snapply Join_ind_FlFr.
     1,2: reflexivity.
     intros a b.
     simpl.
     apply equiv_p1_1q.
-    lhs nrapply functor_join_beta_jglue.
+    lhs napply functor_join_beta_jglue.
     symmetry; apply ap_idmap.
   Defined.
 
@@ -547,23 +626,23 @@ Section FunctorJoin.
     - simpl; intros; apply ap, h.
     - simpl; intros; apply ap, k.
     - intros a b; cbn beta.
-      lhs nrapply (functor_join_beta_jglue _ _ _ _ @@ 1).
+      lhs napply (functor_join_beta_jglue _ _ _ _ @@ 1).
       symmetry.
-      lhs nrapply (1 @@ functor_join_beta_jglue _ _ _ _).
+      lhs napply (1 @@ functor_join_beta_jglue _ _ _ _).
       apply join_natsq.
   Defined.
 
-  Global Instance isequiv_functor_join {A B C D}
+  #[export] Instance isequiv_functor_join {A B C D}
     (f : A -> C) `{!IsEquiv f} (g : B -> D) `{!IsEquiv g}
     : IsEquiv (functor_join f g).
   Proof.
-    snrapply isequiv_adjointify.
-    - apply (functor_join f^-1 g^-1).
+    snapply isequiv_adjointify.
+    - exact (functor_join f^-1 g^-1).
     - etransitivity.
       1: symmetry; apply functor_join_compose.
       etransitivity.
       1: exact (functor2_join (eisretr f) (eisretr g)).
-      apply functor_join_idmap.
+      exact functor_join_idmap.
     - etransitivity.
       1: symmetry; apply functor_join_compose.
       etransitivity.
@@ -574,19 +653,19 @@ Section FunctorJoin.
   Definition equiv_functor_join {A B C D} (f : A <~> C) (g : B <~> D)
     : Join A B <~> Join C D := Build_Equiv _ _ (functor_join f g) _.
 
-  Global Instance is0bifunctor_join : Is0Bifunctor Join.
+  #[export] Instance is0bifunctor_join : Is0Bifunctor Join.
   Proof.
-    snrapply Build_Is0Bifunctor'.
+    snapply Build_Is0Bifunctor'.
     1,2: exact _.
     apply Build_Is0Functor.
     intros A B [f g].
     exact (functor_join f g).
   Defined.
 
-  Global Instance is1bifunctor_join : Is1Bifunctor Join.
+  #[export] Instance is1bifunctor_join : Is1Bifunctor Join.
   Proof.
-    snrapply Build_Is1Bifunctor'.
-    nrapply Build_Is1Functor.
+    snapply Build_Is1Bifunctor'.
+    napply Build_Is1Functor.
     - intros A B f g [p q].
       exact (functor2_join p q).
     - intros A; exact functor_join_idmap.
@@ -598,22 +677,21 @@ End FunctorJoin.
 
 (** * Symmetry of Join
 
-  We'll use the recursion equivalence above to prove the symmetry of Join, using the Yoneda lemma.  The idea is that [Join A B -> P] is equivalent (as a 0-groupoid) to [JoinRecData A B P], and the latter is very symmetrical by construction, which makes it easy to show that it is equivalent to [JoinRecData B A P].  Going back along the first equivalence gets us to [Join B A -> P].  These equivalences are natural in [P], so the symmetry equivalence follows from the Yoneda lemma.  This is mainly meant as a warmup to proving the associativity of the join. *)
+  We'll use the recursion equivalence above to prove the symmetry of Join, using the Yoneda lemma.  The idea is that [Join A B -> P] is equivalent (as a 0-groupoid) to [JoinRecData A B P], and the latter is very symmetrical by construction, which makes it easy to show that it is equivalent to [JoinRecData B A P].  Going back along the first equivalence gets us to [Join B A -> P].  These equivalences are natural in [P], so the symmetry equivalence follows from the Yoneda lemma.  This is mainly meant as a warm-up to proving the associativity of the join. *)
 
 Section JoinSym.
 
   Definition joinrecdata_sym (A B P : Type)
     : joinrecdata_0gpd A B P $-> joinrecdata_0gpd B A P.
   Proof.
-    snrapply Build_Morphism_0Gpd.
+    snapply Build_Fun01'.
     (* The map of types [JoinRecData A B P -> JoinRecData B A P]: *)
     - intros [fl fr fg].
-      snrapply (Build_JoinRecData fr fl).
+      snapply (Build_JoinRecData fr fl).
       intros b a; exact (fg a b)^.
     (* It respects the paths. *)
-    - apply Build_Is0Functor.
-      intros f g h; simpl.
-      snrapply Build_JoinRecPath; simpl.
+    - intros f g h; simpl.
+      snapply Build_JoinRecPath; simpl.
       1, 2: intros; apply h.
       intros b a.
       square_ind g h a b.
@@ -634,14 +712,14 @@ Section JoinSym.
   Definition joinrecdata_sym_natequiv (A B : Type)
     : NatEquiv (joinrecdata_0gpd_fun A B) (joinrecdata_0gpd_fun B A).
   Proof.
-    snrapply Build_NatEquiv.
+    snapply Build_NatEquiv.
     (* An equivalence of 0-groupoids for each [P]: *)
     - intro P.
-      snrapply cate_adjointify.
+      snapply cate_adjointify.
       1, 2: apply joinrecdata_sym.
       1, 2: apply joinrecdata_sym_inv.
     (* Naturality: *)
-    - snrapply Build_Is1Natural.
+    - snapply Build_Is1Natural.
       intros P Q g f; simpl.
       bundle_joinrecpath.
       intros b a; simpl.
@@ -658,7 +736,7 @@ Section JoinSym.
   Definition equiv_join_sym' (A B : Type)
     : Join A B <~> Join B A.
   Proof.
-    rapply (opyon_equiv_0gpd (A:=Type)).
+    tapply (opyon_equiv_0gpd (A:=Type)).
     apply joinrecdata_fun_sym.
   Defined.
 
@@ -692,7 +770,7 @@ Section JoinSym.
   Proof.
     symmetry.
     (** Both sides are [join_rec] applied to [JoinRecData]: *)
-    rapply (fmap join_rec).
+    tapply (fmap join_rec).
     bundle_joinrecpath; intros; cbn.
     refine (ap inverse _).
     apply ap_idmap.
@@ -704,13 +782,13 @@ Section JoinSym.
                               (join_sym_homotopic A B)
                               (join_sym_homotopic B A).
 
-  Global Instance isequiv_join_sym A B : IsEquiv (join_sym A B)
+  #[export] Instance isequiv_join_sym A B : IsEquiv (join_sym A B)
     := equiv_isequiv (equiv_join_sym A B).
 
   (** It's also straightforward to directly prove that [join_sym] is an equivalence.  The above approach is meant to illustrate the Yoneda lemma.  In the case of [equiv_trijoin_twist], the Yoneda approach seems to be more straightforward. *)
   Definition join_sym_inv A B : join_sym A B o join_sym B A == idmap.
   Proof.
-    snrapply (Join_ind_FFlr (join_sym B A)).
+    snapply (Join_ind_FFlr (join_sym B A)).
     - reflexivity.
     - reflexivity.
     - intros a b; cbn beta.
@@ -727,15 +805,13 @@ Section JoinSym.
   Definition join_sym_nat {A B A' B'} (f : A -> A') (g : B -> B')
     : join_sym A' B' o functor_join f g == functor_join g f o join_sym A B.
   Proof.
-    snrapply Join_ind_FlFr.
+    snapply Join_ind_FFlFFr.
     1, 2: reflexivity.
     intros a b; cbn beta.
     apply equiv_p1_1q.
-    lhs nrefine (ap_compose' (functor_join f g) _ (jglue a b)).
     lhs nrefine (ap _ (functor_join_beta_jglue _ _ _ _)).
-    lhs nrapply join_sym_beta_jglue.
+    lhs napply join_sym_beta_jglue.
     symmetry.
-    lhs nrefine (ap_compose' (join_sym A B) _ (jglue a b)).
     lhs nrefine (ap _ (join_sym_beta_jglue a b)).
     refine (ap_V _ (jglue b a) @ ap inverse _).
     apply functor_join_beta_jglue.
@@ -749,22 +825,22 @@ End JoinSym.
 Section JoinTrunc.
 
   (** Joining with a contractible type produces a contractible type *)
-  Global Instance contr_join A B `{Contr A} : Contr (Join A B).
+  #[export] Instance contr_join A B `{Contr A} : Contr (Join A B).
   Proof.
     apply (Build_Contr _ (joinl (center A))).
-    snrapply Join_ind.
+    snapply Join_ind.
     - intros a; apply ap, contr.
     - intros b; apply jglue.
     - intros a b; cbn.
-      lhs nrapply transport_paths_r.
+      lhs napply transport_paths_r.
       apply triangle_h.
   Defined.
 
   (** The join of hprops is an hprop *)
-  Global Instance ishprop_join `{Funext} A B `{IsHProp A} `{IsHProp B} : IsHProp (Join A B).
+  #[export] Instance ishprop_join `{Funext} A B `{IsHProp A} `{IsHProp B} : IsHProp (Join A B).
   Proof.
     apply hprop_inhabited_contr.
-    snrapply Join_rec.
+    snapply Join_rec.
     - intros a; apply contr_join.
       exact (contr_inhabited_hprop A a).
     - intros b; refine (contr_equiv (Join B A) (equiv_join_sym B A)).
@@ -780,7 +856,7 @@ Section JoinTrunc.
     apply equiv_iff_hprop.
     1: exact (fun f => f o joinr).
     intros g.
-    snrapply Join_rec.
+    snapply Join_rec.
     1,2: assumption.
     intros a b.
     apply path_ishprop.
@@ -796,38 +872,29 @@ Section JoinTrunc.
   Defined.
 
   (** Joins add connectivity *)
-  Global Instance isconnected_join `{Funext} {m n : trunc_index}
+  #[export] Instance isconnected_join `{Funext} {m n : trunc_index}
          (A B : Type) `{IsConnected m A} `{IsConnected n B}
     : IsConnected (m +2+ n) (Join A B).
   Proof.
     apply isconnected_from_elim; intros C ? k.
-    pose @istrunc_inO_tr.
-    pose proof (istrunc_extension_along_conn
-                  (fun b:B => tt) (fun _ => C) (k o joinr)).
-    unfold ExtensionAlong in *.
     transparent assert (f : (A -> {s : Unit -> C &
                                    forall x, s tt = k (joinr x)})).
     { intros a; exists (fun _ => k (joinl a)); intros b.
       exact (ap k (jglue a b)). }
-    assert (h := isconnected_elim
-                   m {s : Unit -> C & forall x : B, s tt = k (joinr x)} f).
+    assert (h : NullHomotopy f).
+    { rapply (isconnected_elim m).
+      rapply (istrunc_extension_along_conn (n:=n)). }
     unfold NullHomotopy in *; destruct h as [[c g] h].
     exists (c tt).
-    snrapply Join_ind.
-    - intros a; cbn. exact (ap10 (h a)..1 tt).
-    - intros b; cbn. exact ((g b)^).
+    snapply Join_ind.
+    - intros a; cbn beta. exact (ap10 (h a)..1 tt).
+    - intros b; cbn beta. exact (g b)^.
     - intros a b.
-      rewrite transport_paths_FlFr, ap_const, concat_p1; cbn.
-      subst f; set (ha := h a); clearbody ha; clear h;
-      assert (ha2 := ha..2); set (ha1 := ha..1) in *;
-      clearbody ha1; clear ha; cbn in *.
-      rewrite <- (inv_V (ap10 ha1 tt)).
-      rewrite <- inv_pp.
-      apply inverse2.
-      refine (_ @ apD10 ha2 b); clear ha2.
-      rewrite transport_forall_constant, transport_paths_FlFr.
-      rewrite ap_const, concat_p1.
-      reflexivity.
+      transport_paths Fl.
+      apply moveL_pV, moveR_Mp.
+      lhs_V napply (apD10 (h a)..2 b); simpl.
+      lhs napply transport_forall_constant.
+      napply transport_paths_Fl.
   Defined.
 
 End JoinTrunc.
@@ -837,35 +904,35 @@ Section JoinEmpty.
 
   Definition equiv_join_empty_right A : Join A Empty <~> A.
   Proof.
-    snrapply equiv_adjointify.
-    - apply join_rec; snrapply (Build_JoinRecData idmap); contradiction.
+    snapply equiv_adjointify.
+    - apply join_rec; snapply (Build_JoinRecData idmap); contradiction.
     - exact joinl.
     - reflexivity.
-    - snrapply Join_ind; [reflexivity| |]; contradiction.
+    - snapply Join_ind; [reflexivity| |]; contradiction.
   Defined.
 
   Definition equiv_join_empty_left A : Join Empty A <~> A
     := equiv_join_empty_right _ oE equiv_join_sym _ _.
 
-  Global Instance join_right_unitor : RightUnitor Join Empty.
+  #[export] Instance join_right_unitor : RightUnitor Join Empty.
   Proof.
-    snrapply Build_NatEquiv.
-    - apply equiv_join_empty_right.
-    - snrapply Build_Is1Natural.
+    snapply Build_NatEquiv.
+    - exact equiv_join_empty_right.
+    - snapply Build_Is1Natural.
       intros A B f.
       cbn -[equiv_join_empty_right].
-      snrapply Join_ind_FlFr.
+      snapply Join_ind_FlFr.
       + intro a.
         reflexivity.
       + intros [].
       + intros a [].
   Defined.
 
-  Global Instance join_left_unitor : LeftUnitor Join Empty.
+  #[export] Instance join_left_unitor : LeftUnitor Join Empty.
   Proof.
-    snrapply Build_NatEquiv.
-    - apply equiv_join_empty_left.
-    - snrapply Build_Is1Natural.
+    snapply Build_NatEquiv.
+    - exact equiv_join_empty_left.
+    - snapply Build_Is1Natural.
       intros A B f x.
       cbn -[equiv_join_empty_right].
       rhs_V rapply (isnat_natequiv join_right_unitor).
@@ -897,7 +964,7 @@ Section JoinPower.
 
 End JoinPower.
 
-(** ** Doulbe recursion for Join *)
+(** ** Double recursion for Join *)
 
 Section Rec2.
   Context {A B C D : Type} (P : Type)
@@ -911,19 +978,19 @@ Section Rec2.
   Definition Join_rec2 : Join A B -> Join C D -> P.
   Proof.
     intros x y; revert x.
-    snrapply Join_rec.
+    snapply Join_rec.
     1: intros a; exact (Join_rec (P_AC a) (P_AD a) (P_gAx a) y).
     1: intros b; exact (Join_rec (P_BC b) (P_BD b) (P_gBx b) y).
     intros a b.
     revert y.
-    snrapply Join_ind_FlFr.
+    snapply Join_ind_FlFr.
     1: intros c; exact (P_gxC c a b).
     1: intros d; exact (P_gxD d a b).
     intros c d.
     simpl.
-    lhs nrapply whiskerR.
+    lhs napply whiskerR.
     1: apply Join_rec_beta_jglue.
-    rhs nrapply whiskerL.
+    rhs napply whiskerL.
     2: apply Join_rec_beta_jglue.
     exact (P_g a b c d).
   Defined.

@@ -31,7 +31,7 @@ Section congruence.
   Class OpsCompatible : Type
     := ops_compatible : ∀ (u : Symbol σ), OpCompatible u.#A.
 
-  Global Instance trunc_ops_compatible `{Funext} {n : trunc_index}
+  #[export] Instance trunc_ops_compatible `{Funext} {n : trunc_index}
     `{!∀ s x y, IsTrunc n (Φ s x y)}
     : IsTrunc n OpsCompatible.
   Proof.
@@ -42,21 +42,15 @@ Section congruence.
       mere equivalence relations and [OpsCompatible A Φ] holds. *)
 
   Class IsCongruence : Type := BuildIsCongruence
-   { is_mere_relation_cong : ∀ (s : Sort σ), is_mere_relation (A s) (Φ s)
-   ; equiv_rel_cong : ∀ (s : Sort σ), EquivRel (Φ s)
-   ; ops_compatible_cong : OpsCompatible }.
+   { is_mere_relation_cong :: ∀ (s : Sort σ), is_mere_relation (A s) (Φ s)
+   ; equiv_rel_cong :: ∀ (s : Sort σ), EquivRel (Φ s)
+   ; ops_compatible_cong :: OpsCompatible }.
 
   Global Arguments BuildIsCongruence {is_mere_relation_cong}
                                      {equiv_rel_cong}
                                      {ops_compatible_cong}.
 
-  Global Existing Instance is_mere_relation_cong.
-
-  Global Existing Instance equiv_rel_cong.
-
-  Global Existing Instance ops_compatible_cong.
-
-  Global Instance hprop_is_congruence `{Funext} : IsHProp IsCongruence.
+  #[export] Instance hprop_is_congruence `{Funext} : IsHProp IsCongruence.
   Proof.
     apply (equiv_hprop_allpath _)^-1.
     intros [C1 C2 C3] [D1 D2 D3].

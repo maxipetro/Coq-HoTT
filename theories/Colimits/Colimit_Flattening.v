@@ -1,4 +1,4 @@
-Require Import Basics.
+From HoTT Require Import Basics.
 Require Import Types.
 Require Import Diagrams.Diagram.
 Require Import Diagrams.Graph.
@@ -30,7 +30,7 @@ Section Flattening.
     - exact (fun i x => E (i; x)).
     - intros i j g x; cbn.
       symmetry.
-      srapply (path_universe (E_f _ _)).
+      exact (path_universe (E_f _ _)).
   Defined.
 
   (** ** Helper lemmas *)
@@ -132,19 +132,19 @@ Section Flattening.
     + cbn; reflexivity.
     + intros i j g x; cbn.
       funext y.
+      set (L := cocone_extends Z (cocone_postcompose cocone_E' f)).
       refine (transport_forall _ _ _ @ _).
-      rewrite transport_paths_FlFr.
-      refine ((1 @@ _ @@ 1) @ (concat_p1 _ @@ 1) @ concat_Vp _).
-      match goal with |- transportD E' ?C _ _ _ = _ =>
-                        rewrite (transportD_is_transport _ (fun w => C w.1 w.2)) end.
-      rewrite transport_paths_FlFr.
-      lhs rapply concat_pp_p.
-      apply moveR_Vp.
-      apply equiv_1p_q1.
+      transport_paths (transport_paths_FlFr (f:=fun y0 => L (_; y0))).
+      lhs napply concat_p1.
+      lhs_V napply concat_1p.
+      refine (_^ @@ 1).
+      lhs rapply (transportD_is_transport E' (fun w => L w = f w)).
+      transport_paths FlFr; apply equiv_p1_1q.
       rewrite ap_path_sigma.
       rewrite Colimit_ind_beta_colimp.
       rewrite ap10_path_forall.
       simpl.
+      clear L.
       rewrite concat_pp_p, concat_V_pp.
       rewrite ap11_is_ap10_ap01.
       cbn.
@@ -154,6 +154,7 @@ Section Flattening.
         => (colim j (pr1 x0); pr2 x0)) f).
       rewrite <- ! (ap_pp f).
       apply (ap (ap f)).
+      symmetry.
       refine (_ @ concat_pp_p _ _ _).
       match goal with |- _ = (ap ?ff ?pp1 @ ?pp2) @ ?pp3
         => set (p1 := pp1) end.
@@ -163,7 +164,7 @@ Section Flattening.
         etransitivity.
         1: srapply moveL_transport_V_1.
         etransitivity.
-        1: nrapply inverse2; snrapply transport_VpV.
+        1: napply inverse2; snapply transport_VpV.
         symmetry; apply ap_V. }
       rewrite p1eq; clear p1eq p1.
       rewrite <- ap_compose; cbn.
@@ -193,7 +194,7 @@ Section Flattening.
       srefine (_ @ _).
       - refine (ap (transport E' (colimp i j g x)) _).
         refine ((transport_E'_V _ _ _)^ @ _).
-        refine (ap _ (transport_pV _ _ _)).
+        exact (ap _ (transport_pV _ _ _)).
       - f_ap.
         refine (1 @@ _).
         apply transport_VpV.
@@ -209,7 +210,7 @@ Section Flattening.
         apply transport_VpV.
   Defined. (* TODO: a little slow, 0.40s *)
 
-  Global Instance unicocone_cocone_E' : UniversalCocone cocone_E'.
+  #[export] Instance unicocone_cocone_E' : UniversalCocone cocone_E'.
   Proof.
     srapply Build_UniversalCocone.
     intro Z; srapply isequiv_adjointify.
@@ -218,14 +219,14 @@ Section Flattening.
     - exact (cocone_issect Z).
   Defined.
 
-  (** The flattening lemma follows by colimit unicity. *)
+  (** The flattening lemma follows by colimit uniqueness. *)
 
   Definition flattening_lemma : Colimit (diagram_sigma E) <~> sig E'.
   Proof.
     srapply colimit_unicity.
     3: apply iscolimit_colimit.
     rapply Build_IsColimit.
-    apply unicocone_cocone_E'.
+    exact unicocone_cocone_E'.
   Defined.
 
 End Flattening.

@@ -1,11 +1,12 @@
-Require Import Basics Types.
+From HoTT Require Import Basics Types.
+From HoTT.WildCat Require Import Core Universe Equiv Induced PointedCat.
+Require Import Truncations.Core Modalities.ReflectiveSubuniverse.
 Require Import Spaces.Nat.Core Spaces.Int.
-Require Export Classes.interfaces.canonical_names (Zero, zero, Plus).
+Require Export Classes.interfaces.canonical_names (Zero, zero, Plus, plus, Negate, negate, Involutive, involutive).
 Require Export Classes.interfaces.abstract_algebra (IsAbGroup(..), abgroup_group, abgroup_commutative).
 Require Export Algebra.Groups.Group.
 Require Export Algebra.Groups.Subgroup.
 Require Import Algebra.Groups.QuotientGroup.
-Require Import WildCat.
 
 Local Set Polymorphic Inductive Cumulativity.
 
@@ -18,52 +19,49 @@ Local Open Scope mc_add_scope.
 
 Record AbGroup := {
   abgroup_group : Group;
-  abgroup_commutative : Commutative (@group_sgop abgroup_group);
+  abgroup_commutative :: @Commutative abgroup_group _ (+);
 }.
 
 Coercion abgroup_group : AbGroup >-> Group.
-Global Existing Instance abgroup_commutative.
 
-Global Instance isabgroup_abgroup {A : AbGroup} : IsAbGroup A.
+Definition zero_abgroup (A : AbGroup) : Zero A := mon_unit.
+Definition negate_abgroup (A : AbGroup) : Negate A := inv.
+Definition plus_abgroup (A : AbGroup) : Plus A := sg_op.
+
+(** Sometimes we want an abelian group to act as if it has a [Plus], [Zero] and [Negate] operation. For example, when working with rings. We therefore make this module of hints available for import so that consumers can control the way the abelian group operation is treated.
+
+Files about abelian groups (apart from this one) typically don't have these instances available, whereas files about rings do. *)
+Module Import AdditiveInstances.
+  #[export] Hint Immediate zero_abgroup : typeclass_instances.
+  #[export] Hint Immediate negate_abgroup : typeclass_instances.
+  #[export] Hint Immediate plus_abgroup : typeclass_instances.
+End AdditiveInstances.
+
+Instance isabgroup_abgroup {A : AbGroup} : IsAbGroup A.
 Proof.
   split; exact _.
 Defined.
 
 (** Easier way to build abelian groups without redundant information. *)
 Definition Build_AbGroup' (G : Type)
-  `{Zero G, Negate G, Plus G, IsHSet G}
+  `{MonUnit G, Inverse G, SgOp G, IsHSet G}
   (comm : Commutative (A:=G) (+))
   (assoc : Associative (A:=G) (+))
   (unit_l : LeftIdentity (A:=G) (+) 0)
   (inv_l : LeftInverse (A:=G) (+) (-) 0)
   : AbGroup.
 Proof.
-  snrapply Build_AbGroup.
-  - (* TODO: introduce smart constructor for [Build_Group] *)
-    rapply (Build_Group G).
-    repeat split; only 1-3, 5: exact _.
-    + intros x.
-      lhs nrapply comm.
-      exact (unit_l x).
-    + intros x.
-      lhs nrapply comm.
-      exact (inv_l x).
+  snapply Build_AbGroup.
+  - rapply (Build_Group' G).
   - exact comm.
 Defined.
 
 Definition issig_abgroup : _ <~> AbGroup := ltac:(issig).
 
-Global Instance zero_abgroup (A : AbGroup) : Zero A := group_unit.
-Global Instance plus_abgroup (A : AbGroup) : Plus A := group_sgop.
-Global Instance negate_abgroup (A : AbGroup) : Negate A := group_inverse.
-
-Definition ab_comm {A : AbGroup} (x y : A) : x + y = y + x
-  := commutativity x y.
-
 Definition ab_neg_op {A : AbGroup} (x y : A) : - (x + y) = -x - y.
 Proof.
-  lhs nrapply grp_inv_op.
-  apply ab_comm.
+  lhs napply grp_inv_op.
+  apply commutativity.
 Defined.
 
 (** ** Paths between abelian groups *)
@@ -82,11 +80,13 @@ Definition equiv_path_abgroup_group `{Univalence} {A B : AbGroup}
 
 (** ** Subgroups of abelian groups *)
 
+Local Hint Immediate canonical_names.inverse_is_negate : typeclass_instances.
+
 (** Subgroups of abelian groups are abelian *)
-Global Instance isabgroup_subgroup (G : AbGroup) (H : Subgroup G)
+Instance isabgroup_subgroup (G : AbGroup) (H : Subgroup G)
   : IsAbGroup H.
 Proof.
-  nrapply Build_IsAbGroup.
+  napply Build_IsAbGroup.
   1: exact _.
   intros x y.
   apply path_sigma_hprop.
@@ -99,19 +99,19 @@ Definition abgroup_subgroup (G : AbGroup) : Subgroup G -> AbGroup
 #[warnings="-uniform-inheritance"]
 Coercion abgroup_subgroup : Subgroup >-> AbGroup.
 
-Global Instance isnormal_ab_subgroup (G : AbGroup) (H : Subgroup G)
+Instance isnormal_ab_subgroup (G : AbGroup) (H : Subgroup G)
   : IsNormalSubgroup H.
 Proof.
   intros x y h.
-  by rewrite ab_comm.
+  by rewrite commutativity.
 Defined.
 
 (** ** Quotients of abelian groups *)
 
-Global Instance isabgroup_quotient (G : AbGroup) (H : Subgroup G)
+Instance isabgroup_quotient (G : AbGroup) (H : Subgroup G)
   : IsAbGroup (QuotientGroup' G H (isnormal_ab_subgroup G H)).
 Proof.
-  nrapply Build_IsAbGroup.
+  napply Build_IsAbGroup.
   1: exact _.
   srapply Quotient_ind2_hprop; intros x y.
   apply (ap (class_of _)).
@@ -139,32 +139,35 @@ Defined.
 
 (** ** The wild category of abelian groups *)
 
-Global Instance isgraph_abgroup : IsGraph AbGroup
+Instance isgraph_abgroup : IsGraph AbGroup
   := isgraph_induced abgroup_group.
 
-Global Instance is01cat_abgroup : Is01Cat AbGroup
+Instance is01cat_abgroup : Is01Cat AbGroup
   := is01cat_induced abgroup_group.
 
-Global Instance is01cat_grouphomomorphism {A B : AbGroup} : Is01Cat (A $-> B)
-  := is01cat_induced (@grp_homo_map A B).
-
-Global Instance is0gpd_grouphomomorphism {A B : AbGroup} : Is0Gpd (A $-> B)
-  := is0gpd_induced (@grp_homo_map A B).
-
-Global Instance is2graph_abgroup : Is2Graph AbGroup
+Instance is2graph_abgroup : Is2Graph AbGroup
   := is2graph_induced abgroup_group.
 
-(** AbGroup forms a 1Cat *)
-Global Instance is1cat_abgroup : Is1Cat AbGroup
+Instance isgraph_abgrouphomomorphism {A B : AbGroup} : IsGraph (A $-> B)
+  := is2graph_induced abgroup_group A B.
+
+Instance is01cat_abgrouphomomorphism {A B : AbGroup} : Is01Cat (A $-> B)
+  := is01cat_induced (@grp_homo_map A B).
+
+Instance is0gpd_abgrouphomomorphism {A B : AbGroup} : Is0Gpd (A $-> B)
+  := is0gpd_induced (@grp_homo_map A B).
+
+(** [AbGroup] forms a 1Cat *)
+Instance is1cat_abgroup : Is1Cat AbGroup
   := is1cat_induced _.
 
-Global Instance hasmorext_abgroup `{Funext} : HasMorExt AbGroup
+Instance hasmorext_abgroup `{Funext} : HasMorExt AbGroup
   := hasmorext_induced _.
 
-Global Instance hasequivs_abgroup : HasEquivs AbGroup
+Instance hasequivs_abgroup : HasEquivs AbGroup
   := hasequivs_induced _.
 
-(** Zero object of AbGroup *)
+(** Zero object of [AbGroup] *)
 
 Definition abgroup_trivial : AbGroup.
 Proof.
@@ -172,12 +175,19 @@ Proof.
   by intros [].
 Defined.
 
-(** AbGroup is a pointed category *)
-Global Instance ispointedcat_abgroup : IsPointedCat AbGroup.
+(** [AbGroup] is a pointed category *)
+Instance ispointedcat_abgroup : IsPointedCat AbGroup.
 Proof.
   apply Build_IsPointedCat with abgroup_trivial.
   all: intro A; apply ispointedcat_group.
 Defined.
+
+(** [abgroup_group] is a functor *)
+Instance is0functor_abgroup_group : Is0Functor abgroup_group
+  := is0functor_induced _.
+
+Instance is1functor_abgroup_group : Is1Functor abgroup_group
+  := is1functor_induced _.
 
 (** Image of group homomorphisms between abelian groups *)
 Definition abgroup_image {A B : AbGroup} (f : A $-> B) : AbGroup
@@ -240,24 +250,24 @@ Defined.
 (** The negation automorphism of an abelian group *)
 Definition ab_homo_negation {A : AbGroup} : GroupIsomorphism A A.
 Proof.
-  snrapply Build_GroupIsomorphism.
-  - snrapply Build_GroupHomomorphism.
+  snapply Build_GroupIsomorphism.
+  - snapply Build_GroupHomomorphism.
     + exact (fun a => -a).
     + intros x y.
       refine (grp_inv_op x y @ _).
       apply commutativity.
   - srapply isequiv_adjointify.
     1: exact (fun a => -a).
-    1-2: exact negate_involutive.
+    1-2: exact inverse_involutive.
 Defined.
 
 (** Multiplication by [n : Int] defines an endomorphism of any abelian group [A]. *)
 Definition ab_mul {A : AbGroup} (n : Int) : GroupHomomorphism A A.
 Proof.
-  snrapply Build_GroupHomomorphism.
+  snapply Build_GroupHomomorphism.
   1: exact (fun a => grp_pow a n).
   intros a b.
-  apply grp_pow_mul, ab_comm.
+  apply grp_pow_mul, commutativity.
 Defined.
 
 (** [ab_mul n] is natural. *)
@@ -266,8 +276,12 @@ Definition ab_mul_natural {A B : AbGroup}
   : f o ab_mul n == ab_mul n o f
   := grp_pow_natural f n.
 
-(** The image of an inclusion is a normal subgroup. *)
-Definition ab_image_embedding {A B : AbGroup} (f : A $-> B) `{IsEmbedding f} : NormalSubgroup B
+(** The image of a homomorphism as a normal subgroup. *)
+Definition ab_image {A : Group} {B : AbGroup} (f : A $-> B) : NormalSubgroup B
+  := {| normalsubgroup_subgroup := grp_image f; normalsubgroup_isnormal := _ |}.
+
+(** The image of an inclusion as a normal subgroup. *)
+Definition ab_image_embedding {A : Group} {B : AbGroup} (f : A $-> B) `{IsEmbedding f} : NormalSubgroup B
   := {| normalsubgroup_subgroup := grp_image_embedding f; normalsubgroup_isnormal := _ |}.
 
 Definition ab_image_in_embedding {A B : AbGroup} (f : A $-> B) `{IsEmbedding f}
@@ -285,8 +299,35 @@ Definition ab_cokernel_embedding_rec {G: Group} {A B : AbGroup} (f : G $-> A) `{
   (h : A $-> B) (p : grp_homo_compose h f $== grp_homo_const)
   : ab_cokernel_embedding f $-> B.
 Proof.
-  snrapply (grp_quotient_rec _ _ h).
+  snapply (grp_quotient_rec _ _ h).
   intros a [g q].
   induction q.
   exact (p g).
 Defined.
+
+(** An epimorphism of abelian groups is surjective.  This is likely true for general groups as well, but the proof is more complicated, probably needing an argument like the one given by Trimble, using a lemma by Lumsdaine, here: https://mathoverflow.net/questions/41208/are-all-group-monomorphisms-regular-constructively .  However, the elementary proof for abelian groups also works when the domain is non-abelian, at the cost of having to explicitly state what we mean by epimorphism in this case.  We state this version first. *)
+Definition grp_issurj_epi_ab `{Univalence} {A : Group} {B : AbGroup} (f : A $-> B)
+  {ef : forall (C : AbGroup) (g h : Hom (A:=Group) B C), g $o f $== h $o f -> g $== h}
+  : IsSurjection f.
+Proof.
+  apply issurj_ismaximal_image.
+  apply (ismaximalsubgroup_istrivial_grp_quotient_map _ (ab_image f)).
+  (* The previous line uses univalence, the rest do not. *)
+  change (grp_quotient_map (N:=ab_image f) $== grp_homo_const).
+  rapply (ef (ab_cokernel f)).
+  intro b.
+  apply grp_quotient_map_trivial.
+  apply (grp_homo_image_in f b).
+Defined.
+
+(** The version when both [A] and [B] are abelian immediately follows, where here we assume that [f] is epic in the category of abelian groups. *)
+Definition ab_issurj_epi `{Univalence} {A B : AbGroup} (f : A $-> B) {ef : Epic f}
+  : IsSurjection f
+  := @grp_issurj_epi_ab _ A B f ef.
+
+(** We can also restate [grp_issurj_epi] using the a priori stronger assumption that [f] is epic in the category of groups. *)
+Definition grp_issurj_epi' `{Univalence} {A : Group} {B : AbGroup} (f : A $-> B) {ef : Epic f}
+  : IsSurjection f
+  := @grp_issurj_epi_ab _ A B f (ef o abgroup_group).
+
+(** Note that by [issurj_pullback_pr2], every surjection is an epimorphism in the wild category [Type], so it follows that a surjection of groups or abelian groups is an epimorphism in [Group] or [AbGroup]. *)

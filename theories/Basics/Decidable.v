@@ -67,40 +67,62 @@ Ltac decidable_false p n :=
   try intro.
 
 Class DecidablePaths (A : Type) :=
-  dec_paths : forall (x y : A), Decidable (x = y).
-Global Existing Instance dec_paths.
+  dec_paths :: forall (x y : A), Decidable (x = y).
 
 Class Stable P := stable : ~~P -> P.
 
-Global Instance stable_decidable P `{!Decidable P} : Stable P.
-Proof.
-  intros dn;destruct (dec P) as [p|n].
-  - assumption.
-  - apply Empty_rect,dn,n.
-Qed.
+(** We always have a map in the other direction. *)
+Definition not_not_unit {P : Type} : P -> ~~P
+  := fun x np => np x.
 
-Global Instance stable_negation P : Stable (~ P).
+Instance ishprop_stable_hprop `{Funext} P `{IsHProp P} : IsHProp (Stable P)
+  := istrunc_forall.
+
+Instance stable_decidable P `{Decidable P} : Stable P.
+Proof.
+  intros dn.
+  (* [dec P] either solves the goal or contradicts [dn]. *)
+  by destruct (dec P).
+Defined.
+
+Instance stable_negation P : Stable (~ P).
 Proof.
   intros nnnp p.
-  exact (nnnp (fun np => np p)).
+  exact (nnnp (not_not_unit p)).
 Defined.
 
 Definition iff_stable P `(Stable P) : ~~P <-> P.
 Proof.
   split.
-  - apply stable.
-  - exact (fun x f => f x).
+  - exact stable.
+  - exact not_not_unit.
 Defined.
+
+Definition stable_iff {A B} (f : A <-> B)
+  : Stable A -> Stable B.
+Proof.
+  intros stableA nnb.
+  destruct f as [f finv].
+  exact (f (stableA (fun na => nnb (fun b => na (finv b))))).
+Defined.
+
+Definition stable_equiv' {A B} (f : A <~> B)
+  : Stable A -> Stable B
+  := stable_iff f.
+
+Definition stable_equiv {A B} (f : A -> B) `{!IsEquiv f}
+  : Stable A -> Stable B
+  := stable_equiv' (Build_Equiv _ _ f _).
 
 (**
   Because [vm_compute] evaluates terms in [PROP] eagerly
   and does not remove dead code we
   need the decide_rel hack. Suppose we have [(x = y) =def  (f x = f y)], now:
-     bool_decide (x = y) -> bool_decide (f x = f y) -> ...
+     [bool_decide (x = y) -> bool_decide (f x = f y) -> ...]
   As we see, the dead code [f x] and [f y] is actually evaluated,
   which is of course an utter waste.
-  Therefore we introduce decide_rel and bool_decide_rel.
-     bool_decide_rel (=) x y -> bool_decide_rel (fun a b => f a = f b) x y -> ...
+  Therefore we introduce [decide_rel] and [bool_decide_rel].
+     [bool_decide_rel (=) x y -> bool_decide_rel (fun a b => f a = f b) x y -> ...]
   Now the definition of equality remains under a lambda and
   our problem does not occur anymore!
 *)
@@ -113,17 +135,17 @@ Definition decide_rel {A B} (R : A -> B -> Type)
 
 (** Contractible types are decidable. *)
 
-Global Instance decidable_contr X `{Contr X} : Decidable X
+Instance decidable_contr X `{Contr X} : Decidable X
   := inl (center X).
 
 (** Thus, hprops have decidable equality. *)
 
-Global Instance decidablepaths_hprop X `{IsHProp X} : DecidablePaths X
+Instance decidablepaths_hprop X `{IsHProp X} : DecidablePaths X
   := fun x y => dec (x = y).
 
 (** Empty types are trivial. *)
 
-Global Instance decidable_empty : Decidable Empty
+Instance decidable_empty : Decidable Empty
   := inr idmap.
 
 
@@ -176,15 +198,13 @@ Defined.
 (** A type is collapsible if it admits a weakly constant endomap. *)
 Class Collapsible (A : Type) :=
   { collapse : A -> A ;
-    wconst_collapse : WeaklyConstant collapse
+    wconst_collapse :: WeaklyConstant collapse
   }.
-Global Existing Instance wconst_collapse.
 
 Class PathCollapsible (A : Type) :=
-  path_coll : forall (x y : A), Collapsible (x = y).
-Global Existing Instance path_coll.
+  path_coll :: forall (x y : A), Collapsible (x = y).
 
-Global Instance collapsible_decidable (A : Type) `{Decidable A}
+Instance collapsible_decidable (A : Type) `{Decidable A}
 : Collapsible A.
 Proof.
   destruct (dec A) as [a | na].
@@ -194,14 +214,14 @@ Proof.
     intros x y; destruct (na x).
 Defined.
 
-Global Instance pathcoll_decpaths (A : Type) `{DecidablePaths A}
+Instance pathcoll_decpaths (A : Type) `{DecidablePaths A}
 : PathCollapsible A.
 Proof.
   intros x y; exact _.
 Defined.
 
 (** We give this a relatively high-numbered priority so that in deducing [IsHProp -> IsHSet] Coq doesn't detour via [DecidablePaths]. *)
-Global Instance hset_pathcoll (A : Type) `{PathCollapsible A}
+Instance hset_pathcoll (A : Type) `{PathCollapsible A}
 : IsHSet A | 1000.
 Proof.
   apply istrunc_S.
@@ -252,7 +272,7 @@ Defined.
 
 (** Having decidable equality (which implies being an hset, by Hedberg's theorem above) is itself an hprop. *)
 
-Global Instance ishprop_decpaths `{Funext} (A : Type)
+Instance ishprop_decpaths `{Funext} (A : Type)
 : IsHProp (DecidablePaths A).
 Proof.
   apply hprop_inhabited_contr; intros d.

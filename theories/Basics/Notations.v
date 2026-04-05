@@ -10,13 +10,14 @@ Reserved Notation "'exists' x .. y , p"
 
 
 (** Work around bug 5569, https://coq.inria.fr/bugs/show_bug.cgi?id=5569, Warning skip-spaces-curly,parsing seems bogus *)
-Local Set Warnings Append "-skip-spaces-curly".
+Local Set Warnings "-skip-spaces-curly".
 
 (** These are the notations whose level and associativity are imposed by Coq *)
 
 (** Notations for propositional connectives *)
 
 Reserved Notation "x -> y" (at level 99, right associativity, y at level 200).
+Reserved Notation "(->)" (at level 0).
 Reserved Notation "x <-> y" (at level 95, no associativity).
 Reserved Notation "x /\ y" (at level 80, right associativity).
 Reserved Notation "x \/ y" (at level 85, right associativity).
@@ -81,7 +82,7 @@ Reserved Notation "{ x : A  |  P  & Q }" (at level 0, x at level 99).
 Reserved Notation "{ x : A  & P }" (at level 0, x at level 99).
 Reserved Notation "{ x : A  & P  & Q }" (at level 0, x at level 99).
 
- 
+
 (** Numeric *)
 Reserved Notation "n .+1" (at level 1, left associativity, format "n .+1").
 Reserved Notation "n .+2" (at level 1, left associativity, format "n .+2").
@@ -201,6 +202,11 @@ Reserved Notation " [ u , v ] " (at level 0).
 Reserved Infix "*L" (at level 40).
 Reserved Infix "*R" (at level 40).
 
+(** Type Family Extensions *)
+Reserved Notation "P <| j" (at level 40).
+Reserved Notation "P |> j" (at level 40).
+Reserved Notation "P >=> R" (at level 55).
+
 (** Other / Not sorted yet *)
 
 Reserved Infix "<=>" (at level 70).
@@ -254,7 +260,7 @@ Reserved Notation "x ^++" (at level 1).
 Reserved Notation "x ^++ k" (at level 1).
 Reserved Notation "b ^+f" (at level 1).
 
-(** Mathclasses *)
+(** Notations for the mathclasses library *)
 Reserved Notation "' x" (at level 20).
 Reserved Notation "// x" (at level 40, no associativity).
 Reserved Infix "?=" (at level 70, no associativity).

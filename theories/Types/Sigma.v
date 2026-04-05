@@ -68,7 +68,7 @@ Definition dpath_forall'
     <~> (forall p, transportD P (fun x => fun p => Q ( x ; p)) h p (f p) = g (transport P h p)).
 Proof.
   destruct h.
-  apply 1%equiv.
+  exact 1%equiv.
 Defined.
 
 (** This version produces only paths between pairs, as opposed to paths between arbitrary inhabitants of dependent sum types.  But it has the advantage that the components of those pairs can more often be inferred, so we make them implicit arguments. *)
@@ -163,7 +163,7 @@ Definition transport_pr1_path_sigma
 
 (** This lets us identify the path space of a sigma-type, up to equivalence. *)
 
-Global Instance isequiv_path_sigma `{P : A -> Type} {u v : sig P}
+Instance isequiv_path_sigma `{P : A -> Type} {u v : sig P}
   : IsEquiv (path_sigma_uncurried P u v) | 0.
 Proof.
   simple refine (Build_IsEquiv
@@ -182,7 +182,7 @@ Definition equiv_path_sigma `(P : A -> Type) (u v : sig P)
   := Build_Equiv _ _ (path_sigma_uncurried P u v) _.
 
 (* A contravariant version of [isequiv_path_sigma'] *)
-Global Instance isequiv_path_sigma_contra `{P : A -> Type} {u v : sig P}
+Instance isequiv_path_sigma_contra `{P : A -> Type} {u v : sig P}
   : IsEquiv (path_sigma_uncurried_contra P u v) | 0.
 Proof.
   apply (isequiv_adjointify (path_sigma_uncurried_contra P u v)
@@ -279,7 +279,7 @@ Defined.
 (** Applying a two variable function to a [path_sigma]. *)
 Definition ap_path_sigma {A B} (P : A -> Type) (F : forall a : A, P a -> B)
   {x x' : A} {y : P x} {y' : P x'} (p : x = x') (q : p # y = y')
-  : ap (fun w => F w.1 w.2) (path_sigma' P p q)
+  : ap (sig_rec F) (path_sigma' P p q)
     = ap _ (moveL_transport_V _ p _ _ q)
         @ (transport_arrow_toconst _ _ _)^ @ ap10 (apD F p) y'.
 Proof.
@@ -337,7 +337,7 @@ Definition path_path_sigma {A : Type} (P : A -> Type) (u v : sig P)
 
 (** The concrete description of transport in sigmas (and also pis) is rather trickier than in the other types.  In particular, these cannot be described just in terms of transport in simpler types; they require also the dependent transport [transportD].
 
-  In particular, this indicates why "transport" alone cannot be fully defined by induction on the structure of types, although Id-elim/transportD can be (cf. Observational Type Theory).  A more thorough set of lemmas, along the lines of the present ones but dealing with Id-elim rather than just transport, might be nice to have eventually? *)
+  In particular, this indicates why "transport" alone cannot be fully defined by induction on the structure of types, although Id-elim/[transportD] can be (cf. Observational Type Theory).  A more thorough set of lemmas, along the lines of the present ones but dealing with Id-elim rather than just transport, might be nice to have eventually? *)
 
 Definition transport_sigma {A : Type} {B : A -> Type} {C : forall a:A, B a -> Type}
   {x1 x2 : A} (p : x1 = x2) (yz : { y : B x1 & C x1 y })
@@ -393,26 +393,24 @@ Defined.
 (** ** Equivalences *)
 
 (** The converse to [isequiv_functor_sigma] when [f] is [idmap] is [isequiv_from_functor_sigma] in Types/Equiv.v, which also contains Theorem 4.7.7 *)
-Global Instance isequiv_functor_sigma `{P : A -> Type} `{Q : B -> Type}
+Instance isequiv_functor_sigma `{P : A -> Type} `{Q : B -> Type}
   `{IsEquiv A B f} `{forall a, @IsEquiv (P a) (Q (f a)) (g a)}
   : IsEquiv (functor_sigma f g) | 1000.
 Proof.
-  refine (isequiv_adjointify (functor_sigma f g)
-                             (functor_sigma (f^-1)
-                                            (fun x y => ((g (f^-1 x))^-1 ((eisretr f x)^ # y)))) _ _);
-  intros [x y].
-  - refine (path_sigma' _ (eisretr f x) _); simpl.
-    abstract (
-        rewrite (eisretr (g (f^-1 x)));
-        apply transport_pV
-      ).
-  - refine (path_sigma' _ (eissect f x) _); simpl.
-    refine ((ap_transport (eissect f x) (fun x' => (g x') ^-1)
-                          (transport Q (eisretr f (f x)) ^ (g x y)))^ @ _).
-    abstract (
-        rewrite transport_compose, eisadj, transport_pV;
-        apply eissect
-      ).
+  snapply isequiv_adjointify.
+  - napply (functor_sigma f^-1).
+    exact (fun b q => (g (f^-1 b))^-1 ((transport Q (eisretr f b)^) q)).
+  - intros [b q].
+    apply (path_sigma' _ (eisretr f _)); simpl.
+    lhs napply (ap _ (eisretr (g (f^-1 _)) _)).
+    apply transport_pV.
+  - intros [a p].
+    apply (path_sigma' _ (eissect f _)); simpl.
+    lhs_V rapply (ap_transport _ (fun a' => (g a') ^-1) _).
+    lhs napply (ap _ (transport_compose _ _ _ _)).
+    lhs_V napply (ap (fun x => (g _)^-1 (transport Q x _)) (eisadj f _)).
+    lhs napply (ap _ (transport_pV _ _ _)).
+    apply eissect.
 Defined.
 
 Definition equiv_functor_sigma `{P : A -> Type} `{Q : B -> Type}
@@ -438,8 +436,17 @@ Definition equiv_functor_sigma_pb {A B : Type} {Q : B -> Type}
   : sig (Q o f) <~> sig Q
   := equiv_functor_sigma f (fun a => 1%equiv).
 
+(** ** Functoriality on logical equivalences *)
+
+(** At least over a fixed base *)
+Definition iff_functor_sigma {A : Type} {P Q : A -> Type}
+           (f : forall a, P a <-> Q a)
+  : sig P <-> sig Q
+  := (functor_sigma idmap (fun a => fst (f a)),
+    functor_sigma idmap (fun a => snd (f a))).
+
 (** Lemma 3.11.9(i): Summing up a contractible family of types does nothing. *)
-Global Instance isequiv_pr1_contr {A} {P : A -> Type}
+Instance isequiv_pr1_contr {A} {P : A -> Type}
   `{forall a, Contr (P a)}
   : IsEquiv (@pr1 A P) | 100.
 Proof.
@@ -447,7 +454,7 @@ Proof.
                              (fun a => (a ; center (P a))) _ _).
   - intros a; reflexivity.
   - intros [a p].
-    refine (path_sigma' P 1 (contr _)).
+    exact (path_sigma' P 1 (contr _)).
 Defined.
 
 Definition equiv_sigma_contr {A : Type} (P : A -> Type)
@@ -533,7 +540,7 @@ Defined.
 (** ** Universal mapping properties *)
 
 (** *** The positive universal property. *)
-Global Instance isequiv_sig_ind `{P : A -> Type} (Q : sig P -> Type)
+Instance isequiv_sig_ind `{P : A -> Type} (Q : sig P -> Type)
   : IsEquiv (sig_ind Q) | 0
   := Build_IsEquiv
        _ _
@@ -566,7 +573,7 @@ Definition sig_coind
   : (forall x, sig (P x))
   := sig_coind_uncurried P (f;g).
 
-Global Instance isequiv_sig_coind
+Instance isequiv_sig_coind
   `{A : X -> Type} {P : forall x, A x -> Type}
   : IsEquiv (sig_coind_uncurried P) | 0
   := Build_IsEquiv
@@ -587,7 +594,7 @@ Definition equiv_sig_coind
 
 (** ** Sigmas preserve truncation *)
 
-Global Instance istrunc_sigma `{P : A -> Type}
+Instance istrunc_sigma `{P : A -> Type}
   `{IsTrunc n A} `{forall a, IsTrunc n (P a)}
   : IsTrunc n (sig P) | 100.
 Proof.
@@ -595,10 +602,10 @@ Proof.
   simple_induction' n; simpl; intros A P ac Pc.
   { apply (Build_Contr _ (center A; center (P (center A)))).
     intros [a ?].
-    refine (path_sigma' P (contr a) (path_contr _ _)). }
+    exact (path_sigma' P (contr a) (path_contr _ _)). }
   apply istrunc_S.
   intros u v.
-  refine (istrunc_isequiv_istrunc _ (path_sigma_uncurried P u v)).
+  exact (istrunc_isequiv_istrunc _ (path_sigma_uncurried P u v)).
 Defined.
 
 (** The sigma of an arbitrary family of *disjoint* hprops is an hprop. *)
@@ -620,9 +627,9 @@ Definition path_sigma_hprop {A : Type} {P : A -> Type}
   : u.1 = v.1 -> u = v
   := path_sigma_uncurried P u v o pr1^-1.
 
-Global Instance isequiv_path_sigma_hprop {A P} `{forall x : A, IsHProp (P x)} {u v : sig P}
+Instance isequiv_path_sigma_hprop {A P} `{forall x : A, IsHProp (P x)} {u v : sig P}
   : IsEquiv (@path_sigma_hprop A P _ u v) | 100
-  := isequiv_compose.
+  := isequiv_compose _ _.
 
 #[export]
 Hint Immediate isequiv_path_sigma_hprop : typeclass_instances.
@@ -654,7 +661,7 @@ Proof.
   unfold path_sigma_hprop.
   unfold isequiv_pr1_contr; simpl.
   (** Ugh *)
-  refine (ap (fun p => match p in (_ = v2) return (u = (u.1; v2)) with 1 => 1 end)
+  exact (ap (fun p => match p in (_ = v2) return (u = (u.1; v2)) with 1 => 1 end)
              (contr (idpath u.2))).
 Defined.
 
@@ -665,7 +672,7 @@ Definition path_sigma_hprop_V {A : Type} {P : A -> Type}
 Proof.
   destruct p; simpl.
   rewrite (path_ishprop x y).
-  refine (path_sigma_hprop_1 _ @ (ap inverse (path_sigma_hprop_1 _))^).
+  exact (path_sigma_hprop_1 _ @ (ap inverse (path_sigma_hprop_1 _))^).
 Qed.
 
 Definition path_sigma_hprop_pp {A : Type} {P : A -> Type}
@@ -680,7 +687,7 @@ Proof.
   rewrite (path_ishprop y x).
   rewrite (path_ishprop z x).
   refine (_ @ (ap (fun z => z @ _) (path_sigma_hprop_1 _))^).
-  apply (concat_1p _)^.
+  exact (concat_1p _)^.
 Qed.
 
 (** The inverse of [path_sigma_hprop] has its own name, so we give special names to the section and retraction homotopies to help [rewrite] out. *)
@@ -721,7 +728,7 @@ Proof.
   apply equiv_moveL_transport_V.
 Defined.
 
-Global Instance istruncmap_functor_sigma n {A B P Q}
+Instance istruncmap_functor_sigma n {A B P Q}
   (f : A -> B) (g : forall a, P a -> Q (f a))
   {Hf : IsTruncMap n f} {Hg : forall a, IsTruncMap n (g a)}
   : IsTruncMap n (functor_sigma f g).

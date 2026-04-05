@@ -35,7 +35,7 @@ Proof.
 Defined.
 
 Section equiv_iso_set_cat.
-  (** ** Isomorphisms in [set_cat] are eqivalent to equivalences. *)
+  (** ** Isomorphisms in [set_cat] are equivalent to equivalences. *)
   Context `{Funext}.
 
   Definition isiso_isequiv s d (m : morphism set_cat s d)
@@ -62,7 +62,7 @@ Section equiv_iso_set_cat.
     := Build_Isomorphic
          (@isiso_isequiv s d m _).
 
-  Global Instance isequiv_isiso_isequiv s d
+  #[export] Instance isequiv_isiso_isequiv s d
   : IsEquiv (@iso_equiv s d) | 0.
   Proof.
     refine (isequiv_adjointify
@@ -90,7 +90,7 @@ Section equiv_iso_set_cat.
 End equiv_iso_set_cat.
 
 Section equiv_iso_prop_cat.
-  (** ** Isomorphisms in [prop_cat] are eqivalent to equivalences. *)
+  (** ** Isomorphisms in [prop_cat] are equivalent to equivalences. *)
   Context `{Funext}.
 
   Definition isiso_isequiv_prop s d (m : morphism prop_cat s d)
@@ -117,7 +117,7 @@ Section equiv_iso_prop_cat.
     := Build_Isomorphic
          (@isiso_isequiv_prop s d m _).
 
-  Global Instance isequiv_isiso_isequiv_prop s d
+  #[export] Instance isequiv_isiso_isequiv_prop s d
   : IsEquiv (@iso_equiv_prop s d) | 0.
   Proof.
     refine (isequiv_adjointify
@@ -145,7 +145,7 @@ Section equiv_iso_prop_cat.
 End equiv_iso_prop_cat.
 
 Local Close Scope morphism_scope.
-Global Instance iscategory_set_cat `{Univalence}
+Instance iscategory_set_cat `{Univalence}
 : IsCategory set_cat.
 Proof.
   intros C D.
@@ -154,7 +154,7 @@ Proof.
   typeclasses eauto.
 Defined.
 
-Global Instance iscategory_prop_cat `{Univalence}
+Instance iscategory_prop_cat `{Univalence}
 : IsCategory prop_cat.
 Proof.
   intros C D.
