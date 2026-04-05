@@ -2,7 +2,7 @@
 
 (** Following "The integers as a higher inductive type" by Scoccola and Altenkirch, we define the integers as a higher inductive type.  Morally it is the free pointed type with a biinvertible self-map. *)
 
-Require Import Basics.
+Require Import HoTT.Basics.
 Require Import Types.Paths.
 Require Import Spaces.Nat.Core.
 Require Import Spaces.SInt.

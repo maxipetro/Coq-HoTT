@@ -1,4 +1,4 @@
-Require Import Basics Types.Prod Types.Equiv Types.Sigma Types.Universe.
+Require Import HoTT.Basics Types.Prod Types.Equiv Types.Sigma Types.Universe.
 
 Local Open Scope path_scope.
 Generalizable Variables A B f.
