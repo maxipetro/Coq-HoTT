@@ -37,7 +37,7 @@ Definition retr_is_sect {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
   : f o retr_biinv f == idmap.
 Proof.
   intro z.
-  lhs_V nrapply (ap f (sect_retr_homotopic_biinv f z)).
+  lhs_V napply (ap f (sect_retr_homotopic_biinv f z)).
   apply eisretr_biinv.
 Defined.
 
@@ -45,7 +45,7 @@ Definition sect_is_retr {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
   : sect_biinv f o f == idmap.
 Proof.
   intro z.
-  lhs nrapply sect_retr_homotopic_biinv.
+  lhs napply sect_retr_homotopic_biinv.
   apply eissect_biinv.
 Defined.
 
@@ -80,11 +80,11 @@ Global Instance isequiv_isbiinv_retr {A B : Type} (f : A -> B) `{bi : !IsBiInv f
 (** Here we take the inverse to be the section. *)
 Definition isequiv_isbiinv' {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv f.
 Proof.
-  snrapply isequiv_adjointify.
+  snapply isequiv_adjointify.
   - apply (sect_biinv f).
   - apply eisretr_biinv.  (* We provide proof of eissect, but it gets modified. *)
   - intro a.
-    lhs nrapply sect_retr_homotopic_biinv.
+    lhs napply sect_retr_homotopic_biinv.
     apply eissect_biinv.
 Defined.
 
@@ -122,10 +122,10 @@ Defined.
 
 (** Some lemmas to send equivalences and biinvertible maps back and forth. *)
 
-Definition equiv_biinv A B (f : EquivBiInv A B) : A <~> B 
+Definition equiv_biinv A B (f : EquivBiInv A B) : A <~> B
   := Build_Equiv A B f _.
 
-Definition biinv_equiv A B  (e : A <~> B) : EquivBiInv A B 
+Definition biinv_equiv A B (e : A <~> B) : EquivBiInv A B
   := Build_EquivBiInv A B e (isbiinv_isequiv e (equiv_isequiv e)).
 
 Definition equiv_biinv_equiv `{Funext} A B
@@ -214,5 +214,5 @@ Section EquivalenceCompatibility.
     apply moveL_pM.
     reflexivity.
   Defined.
-  
+ 
 End EquivalenceCompatibility.

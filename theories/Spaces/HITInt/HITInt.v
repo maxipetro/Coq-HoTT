@@ -61,12 +61,12 @@ Instance isequiv_IntHIT_pred : IsEquiv pred
   := isequiv_isbiinv_retr succ.
 
 Definition IntHIT_ind_hprop {P : IntHIT -> Type} `{forall x, IsHProp (P x)}
-  (t0 : P zero_i) 
+  (t0 : P zero_i)
   (f : forall z : IntHIT, P z -> P (succ z))
   (g : forall z : IntHIT, P z -> P (pred z))
   : forall x, P x.
 Proof.
-  snrapply (IntHIT_ind t0 f g).
+  snapply (IntHIT_ind t0 f g).
   - intros z t.
     exact ((sect_retr_homotopic_biinv succ z)^ # (g z) t).
   - intros z t.
@@ -93,9 +93,9 @@ Definition IntHIT_rec {P : Type} (t0 : P)
   (r : forall (t : P), f (g2 t) = t)
   : IntHIT -> P.
 Proof.
-  snrapply (IntHIT_ind t0 (fun _ => f) (fun _ => g1) (fun _ => g2)).
+  snapply (IntHIT_ind t0 (fun _ => f) (fun _ => g1) (fun _ => g2)).
   all: intros z t; cbn.
-  all: lhs nrapply transport_const.
+  all: lhs napply transport_const.
   - apply s.
   - apply r.
 Defined.
@@ -120,7 +120,7 @@ Definition IntHIT_rec_equiv {P : Type} (t0 : P) (f : P -> P) `{IsEquiv P P f}
 (** We define equivalence iteration. *)
 Definition IntHIT_iter {A} (f : A -> A) `{!IsEquiv f} (n : IntHIT) (a0 : A) : A
   := IntHIT_rec_equiv a0 f n.
-  
+
 Definition IntHIT_rec_beta_succ_is_sect
   (P : Type)
   (t0 : P)
@@ -165,7 +165,7 @@ Section Uniqueness.
   Local Definition r := retr_biinv e.
   Local Definition re:= eissect_biinv e.
   Local Definition es := eisretr_biinv e.
-  
+
   (** We prove a uniqueness principle expressing the universal property of the recursor, up to propositional equality. *)
   Definition uniquenessZ
     (t0 : P)
@@ -175,7 +175,7 @@ Section Uniqueness.
     (rec := IntHIT_rec t0 e r s re es)
     : forall (z : IntHIT), k z = rec z.
     Proof.
-    snrapply IntHIT_ind.
+    snapply IntHIT_ind.
     - simpl.
       exact p0.
     - simpl.
@@ -233,7 +233,7 @@ Section Uniqueness.
     : forall (z : IntHIT), k1 z = k2 z.
   Proof.
     intro z.
-    exact ((uniquenessZ (k2 zero_i) k1 p0 pf1 z) 
+    exact ((uniquenessZ (k2 zero_i) k1 p0 pf1 z)
     @ (uniquenessZ (k2 zero_i) k2 idpath pf2 z)^).
   Defined.
 
@@ -319,7 +319,7 @@ Section IntHITEquiv.
   Definition IntITtoIntHIT_is_linv (z : IntHIT)
     : (IntITtoIntHIT o IntHITtoIntIT) z = z.
   Proof.
-    exact (((uniquenessZ (P := IntHIT) (e := biinv_IntHIT_succ) zero_i (IntITtoIntHIT o IntHITtoIntIT) idpath IntITtoIntHIT_comp_succ') z) 
+    exact (((uniquenessZ (P := IntHIT) (e := biinv_IntHIT_succ) zero_i (IntITtoIntHIT o IntHITtoIntIT) idpath IntITtoIntHIT_comp_succ') z)
     @ ((uniquenessZ (P := IntHIT) (e := biinv_IntHIT_succ) zero_i idmap idpath (fun x => idpath)) z)^).
   Defined.
 
@@ -393,8 +393,8 @@ Section IntegerArithmetic.
   (* * Negation is an equivalence. *)
   #[export] Instance isequiv_int_neg : IsEquiv IntHIT_neg.
   Proof.
-    snrapply (isequiv_adjointify IntHIT_neg IntHIT_neg).
-    1,2: nrapply IntHIT_neg_neg.
+    snapply (isequiv_adjointify IntHIT_neg IntHIT_neg).
+    1,2: napply IntHIT_neg_neg.
   Defined.
 
   (** Negation is injective. *)
@@ -402,11 +402,11 @@ Section IntegerArithmetic.
     := equiv_inj IntHIT_neg.
 
   (** The negation of a successor is the predecessor of the negation. *)
-  Definition IntHIT_neg_succ (x : IntHIT) : - succ x = pred (-x) 
+  Definition IntHIT_neg_succ (x : IntHIT) : - succ x = pred (-x)
     := idpath.
 
   (** The negation of a predecessor is the successor of the negation. *)
-  Definition IntHIT_neg_pred (x : IntHIT) : - pred x = succ (- x) 
+  Definition IntHIT_neg_pred (x : IntHIT) : - pred x = succ (- x)
     := idpath.
 
   (** *** Addition *)
@@ -415,7 +415,7 @@ Section IntegerArithmetic.
   Infix "-" := (fun x y => x + -y) : IntHIT_scope.
 
   (** Integer addition with zero on the left is the identity by definition. *)
-  Definition IntHIT_add_0_l (x : IntHIT) : 0 + x = x 
+  Definition IntHIT_add_0_l (x : IntHIT) : 0 + x = x
     := idpath.
 
   (** Integer addition with zero on the right is the identity. *)
@@ -426,11 +426,11 @@ Section IntegerArithmetic.
   Defined.
 
   (** Adding a successor on the left is the successor of the sum. *)
-  Definition IntHIT_add_succ_l (x y : IntHIT) : (succ x) + y = succ (x + y) 
+  Definition IntHIT_add_succ_l (x y : IntHIT) : (succ x) + y = succ (x + y)
     := idpath.
 
   (** Adding a predecessor on the left is the predecessor of the sum. *)
-  Definition IntHIT_add_pred_l (x y : IntHIT) : (pred x) + y = pred (x + y) 
+  Definition IntHIT_add_pred_l (x y : IntHIT) : (pred x) + y = pred (x + y)
     := idpath.
 
   (** Adding a successor on the right is the successor of the sum. *)
@@ -454,7 +454,7 @@ Section IntegerArithmetic.
   Defined.
 
   (** Integer addition with 1 on the left is the successor. *)
-  Definition IntHIT_add_1_l (x : IntHIT) : 1 + x = succ x 
+  Definition IntHIT_add_1_l (x : IntHIT) : 1 + x = succ x
     := idpath.
 
   (** Integer addition with 1 on the right is the successor. *)
@@ -526,7 +526,7 @@ Section IntegerArithmetic.
   (** Addition is an equivalence with second argument fixed. *)
   #[export] Instance isequiv_IntHIT_add_r (y : IntHIT): IsEquiv (fun x => IntHIT_add x y).
   Proof.
-    snrapply (isequiv_adjointify (fun x => IntHIT_add x y) (fun x => IntHIT_add x (-y))).
+    snapply (isequiv_adjointify (fun x => IntHIT_add x y) (fun x => IntHIT_add x (-y))).
     - simpl.
       intro x.
       rewrite <- IntHIT_add_assoc.
@@ -548,15 +548,15 @@ Section IntegerArithmetic.
   Infix "*" := IntHIT_mul : IntHIT_scope.
 
   (** Multiplication with a successor on the left is the sum of the multplication without the successor and the multiplicand which was not a successor. *)
-  Definition IntHIT_mul_succ_l (x y : IntHIT) : (succ x) * y = x * y + y 
+  Definition IntHIT_mul_succ_l (x y : IntHIT) : (succ x) * y = x * y + y
     := idpath.
 
   (** Similarly, multiplication with a predecessor on the left is the sum of the multiplication without the predecessor and the negation of the multiplicand which was not a predecessor. *)
-  Definition IntHIT_mul_pred_l (x y : IntHIT) : (pred x) * y = x * y - y 
+  Definition IntHIT_mul_pred_l (x y : IntHIT) : (pred x) * y = x * y - y
     := idpath.
 
   (** Integer multiplication with zero on the left is zero by definition. *)
-  Definition IntHIT_mul_0_l (x : IntHIT) : 0 * x = 0 
+  Definition IntHIT_mul_0_l (x : IntHIT) : 0 * x = 0
     := idpath.
 
   (** Integer multiplication with zero on the right is zero. *)
@@ -572,7 +572,7 @@ Section IntegerArithmetic.
   Defined.
 
   (** Integer multiplication with one on the left is the identity. *)
-  Definition IntHIT_mul_1_l (x : IntHIT) : 1 * x = x 
+  Definition IntHIT_mul_1_l (x : IntHIT) : 1 * x = x
     := idpath.
 
   (** Integer multiplication with one on the right is the identity. *)
@@ -587,7 +587,7 @@ Section IntegerArithmetic.
   Defined.
 
   (** Integer multiplication with -1 on the left is negation. *)
-  Definition IntHIT_mul_neg1_l (x : IntHIT) : (-1) * x = - x 
+  Definition IntHIT_mul_neg1_l (x : IntHIT) : (-1) * x = - x
     := idpath.
 
   (** Multiplying with a negation on the left is the same as negating the product. *)
