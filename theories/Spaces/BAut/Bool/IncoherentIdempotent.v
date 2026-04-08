@@ -39,10 +39,10 @@ Section IncoherentQuasiIdempotent.
   Proof.
     intros oops.
     assert (IsEquiv s).
-    { apply isequiv_biinv; split.
-      - exists r; exact issect.
-      - exists (fun q => (oops q).1).
-        exact (fun q => (oops q).2). }
+    { apply isequiv_isbiinv.
+      apply (Build_IsBiInv _ _ s (fun q => (oops q).1) r).
+      2: exact issect.
+      exact (fun q => (oops q).2). }
     apply splitting_preidem_notequiv_qidem_baut_baut_bool; intros q.
     refine (ap s (ap r (eisretr s q)^) @ _).
     refine (ap s (issect (s^-1 q)) @ _).

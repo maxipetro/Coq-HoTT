@@ -6,7 +6,7 @@ Require Import HoTT.Basics.
 Require Import Types.Paths.
 Require Import Spaces.Nat.Core.
 Require Import Spaces.SInt.
-Require Import Equiv.BiInv_new.
+Require Import Equiv.BiInv.
 
 Set Universe Minimization ToSet.
 

@@ -996,21 +996,36 @@ Section Reflective_Subuniverse.
     Proof.
       refine (inO_equiv_inO _ (issig_equiv@{i j k} A B)).
       refine (inO_equiv_inO _ (equiv_functor_sigma equiv_idmap@{k}
-                                 (fun f => equiv_biinv_isequiv@{i j k} f))).
+                                 (fun f => equiv_isbiinv_isequiv@{i j k} f))).
       transparent assert (c : (prod@{k k} (A->B) (prod@{k k} (B->A) (B->A)) -> prod@{k k} (A -> A) (B -> B))).
       { intros [f [g h]]; exact (h o f, f o g). }
       pose (U := hfiber@{k k} c (idmap, idmap)).
       refine (inO_equiv_inO'@{k k k} U _). (** Introduces some extra copies of [k] by typeclass inference. *)
-      unfold hfiber, BiInv; cbn in *.
+      (* apply prod_isbiinv. *)
+      (* refine ((prod_isbiinv _ _)). *)
+      (* rewrite ((prod_isbiinv' _)). *)
+      unfold hfiber; cbn in *.
       srefine (equiv_adjointify _ _ _ _).
       - intros [[f [g h]] p].
         apply (equiv_inverse (equiv_path_prod _ _)) in p.
         destruct p as [p q]; cbn in *.
-        exists f; split; [ exists h | exists g ].
-        all:apply ap10; assumption.
-      - intros [f [[g p] [h q]]].
-        exists (f,(h,g)); cbn.
-        apply path_prod; apply path_arrow; assumption.
+        exists f;
+        apply (Build_IsBiInv A B f g h).
+        all:apply ap10.
+        1: exact q.
+        exact p.
+      - intros [f X].
+        exists (f, (sect_biinv f, retr_biinv f)).
+        apply path_prod; apply path_arrow; cbn.
+        1: exact (eissect_biinv f).
+        exact (eisretr_biinv f).
+      - intros [f X]; cbn.
+        apply (path_sigma' _ 1).
+    Admitted.
+        (* apply path_prod. 
+        apply (path_sigma' _ 1);
+          cbn; rewrite transport_1.
+
       - intros [f [[g p] [h q]]]; cbn.
         apply (path_sigma' _ 1); apply path_prod; apply (path_sigma' _ 1);
           cbn; rewrite transport_1.
@@ -1020,7 +1035,53 @@ Section Reflective_Subuniverse.
       - intros fghp. cbn.
         apply (path_sigma' _ 1); cbn.
         refine (_ @ eta_path_prod (pr2 fghp)); apply ap011; apply eta_path_arrow.
-    Defined.
+    Defined. *)
+
+    (* * Naively it might seem that we need closure under Sigmas (hence a modality) to deduce closure under [Equiv], but in fact the above closure under fibers is sufficient.  This appears as part of the proof of Proposition 2.18 of CORS.  For later use, we try to reduce the number of universe parameters (but we don't completely control them all).
+    #[export] Instance inO_equiv `{Funext} (A : Type@{i}) (B : Type@{j})
+           `{In O A} `{In O B}
+      : In O (A <~> B).
+    Proof.
+      refine (inO_equiv_inO _ (issig_equiv@{i j k} A B)).
+      refine (inO_equiv_inO _ (equiv_functor_sigma equiv_idmap@{k}
+                                 (fun f => equiv_isbiinv_isequiv@{i j k} f))).
+      transparent assert (c : (prod@{k k} (A->B) (prod@{k k} (B->A) (B->A)) -> prod@{k k} (A -> A) (B -> B))).
+      { intros [f [g h]]; exact (h o f, f o g). }
+      pose (U := hfiber@{k k} c (idmap, idmap)).
+      refine (inO_equiv_inO'@{k k k} U _). (** Introduces some extra copies of [k] by typeclass inference. *)
+      (* apply prod_isbiinv. *)
+      (* refine ((prod_isbiinv _ _)). *)
+      unfold hfiber; cbn in *.
+      srefine (equiv_adjointify _ _ _ _).
+      - intros [[f [g h]] p].
+        apply (equiv_inverse (equiv_path_prod _ _)) in p.
+        destruct p as [p q]; cbn in *.
+        exists f;
+        apply (Build_IsBiInv A B f g h).
+        all:apply ap10.
+        1: exact q.
+        exact p.
+      - intros [f X].
+        exists (f, (sect_biinv f, retr_biinv f)).
+        apply path_prod; apply path_arrow; cbn.
+        1: exact (eissect_biinv f).
+        exact (eisretr_biinv f).
+      - intros [f X]; cbn.
+        apply (path_sigma' _ 1).
+        apply path_prod. 
+        apply (path_sigma' _ 1);
+          cbn; rewrite transport_1.
+
+      - intros [f [[g p] [h q]]]; cbn.
+        apply (path_sigma' _ 1); apply path_prod; apply (path_sigma' _ 1);
+          cbn; rewrite transport_1.
+        1:rewrite ap_fst_path_prod.
+        2:rewrite ap_snd_path_prod.
+        all:apply path_forall; intros x; rewrite ap10_path_arrow; reflexivity.
+      - intros fghp. cbn.
+        apply (path_sigma' _ 1); cbn.
+        refine (_ @ eta_path_prod (pr2 fghp)); apply ap011; apply eta_path_arrow.
+    Defined. *)
 
     (** ** Paths *)
 

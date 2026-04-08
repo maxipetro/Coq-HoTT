@@ -1452,12 +1452,10 @@ Section Book_4_5.
 
     Local Instance Book_4_5_g : IsEquiv g.
     Proof.
-      apply isequiv_biinv.
-      split.
-      - exists ((h o g)^-1 o h).
-        exact (eissect (h o g)).
-      - exists (f o (g o f)^-1).
-        exact (eisretr (g o f)).
+      apply isequiv_isbiinv.
+      apply (Build_IsBiInv _ _ _ (f o (g o f)^-1) ((h o g)^-1 o h)).
+      - exact (eisretr (g o f)).
+      - exact (eissect (h o g)).
     Defined.
 
     Local Instance Book_4_5_f : IsEquiv f.
