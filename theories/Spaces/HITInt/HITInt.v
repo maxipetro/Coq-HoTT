@@ -68,7 +68,7 @@ Definition IntHIT_ind_hprop {P : IntHIT -> Type} `{forall x, IsHProp (P x)}
 Proof.
   snapply (IntHIT_ind t0 f g).
   - intros z t.
-    exact ((sect_retr_homotopic_biinv succ z)^ # (g z) t).
+    exact ((sect_retr_homotopic_isbiinv succ z)^ # (g z) t).
   - intros z t.
     rapply path_ishprop.
   - intros z t.
@@ -304,9 +304,9 @@ Section IntHITEquiv.
     - simpl.
       reflexivity.
     - simpl.
-      exact (retr_is_sect succ zero_i).
+      exact (retr_is_sect_isbiinv succ zero_i).
     - simpl.
-      exact (retr_is_sect succ _).
+      exact (retr_is_sect_isbiinv succ _).
   Defined.
 
   Definition IntITtoIntHIT_comp_succ' (z: IntHIT)
@@ -450,7 +450,7 @@ Section IntegerArithmetic.
     - intro z.
       simpl.
       rewrite succ_is_sect.
-      by rewrite (fun z => (retr_is_sect succ z)^).
+      by rewrite (fun z => (retr_is_sect_isbiinv succ z)^).
   Defined.
 
   (** Integer addition with 1 on the left is the successor. *)

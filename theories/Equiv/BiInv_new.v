@@ -25,7 +25,7 @@ Arguments eisretr_biinv {A B}%_type_scope e%_function_scope {_} _.
 Arguments eissect_biinv {A B}%_type_scope e%_function_scope {_} _.
 
 (** If [e] is bi-invertible, then the retraction and the section of [e] are equal. *)
-Definition sect_retr_homotopic_biinv {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
+Definition sect_retr_homotopic_isbiinv {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
   : sect_biinv f == retr_biinv f.
 Proof.
   revert bi.
@@ -33,19 +33,19 @@ Proof.
   exact (fun y => (s (h y))^ @ ap g (r y)).
 Defined.
 
-Definition retr_is_sect {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
+Definition retr_is_sect_isbiinv {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
   : f o retr_biinv f == idmap.
 Proof.
   intro z.
-  lhs_V napply (ap f (sect_retr_homotopic_biinv f z)).
+  lhs_V napply (ap f (sect_retr_homotopic_isbiinv f z)).
   apply eisretr_biinv.
 Defined.
 
-Definition sect_is_retr {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
+Definition sect_is_retr_isbiinv {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
   : sect_biinv f o f == idmap.
 Proof.
   intro z.
-  lhs napply sect_retr_homotopic_biinv.
+  lhs napply sect_retr_homotopic_isbiinv.
   apply eissect_biinv.
 Defined.
 
@@ -84,7 +84,7 @@ Proof.
   - apply (sect_biinv f).
   - apply eisretr_biinv.  (* We provide proof of eissect, but it gets modified. *)
   - intro a.
-    lhs napply sect_retr_homotopic_biinv.
+    lhs napply sect_retr_homotopic_isbiinv.
     apply eissect_biinv.
 Defined.
 
