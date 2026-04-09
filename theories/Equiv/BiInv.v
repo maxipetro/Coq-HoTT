@@ -168,7 +168,7 @@ Section EquivalenceCompatibility.
     exact (es' (g y) @ (ap g (es y))^ @ (pe (s y))^).
   Defined.
 
-  (** The following lemmas express each one of these coherence conditions mentioned above.*)
+  (** The following lemmas express each one of these coherence conditions mentioned above. *)
 
   Definition biinv_compat_pr (pe : forall (x : A), e' (f x) = g (e x))
     : forall (y : B), r' (g y) = f (r y).
