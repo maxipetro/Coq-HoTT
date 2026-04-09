@@ -140,15 +140,6 @@ Proof.
   by nrefine (Build_EquivBiInv A A idmap (Build_IsBiInv A A idmap idmap idmap _ _ )).
 Defined.
 
-(* TODO: move this to right after equiv_inj in PathGroupoids.v *)
-Definition equiv_inj_comp `(f : A -> B) `{IsEquiv A B f} {x y : A}
-  (p : f x = f y)
-  : ap f (equiv_inj f p) = p.
-Proof.
-  unfold equiv_inj.
-  apply eisretr.
-Defined.
-
 (** Assume we have a commutative square [e' o f == g o e] in which [e] and [e'] are bi-invertible. Then [f] and [g] also commute with the retractions and sections, and the homotopies in these new squares each satisfy a coherence condition. *)
 
 Section EquivalenceCompatibility.
