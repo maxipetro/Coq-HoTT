@@ -205,5 +205,5 @@ Section EquivalenceCompatibility.
     apply moveL_pM.
     reflexivity.
   Defined.
- 
+
 End EquivalenceCompatibility.

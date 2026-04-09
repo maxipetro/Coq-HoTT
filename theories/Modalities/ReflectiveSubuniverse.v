@@ -990,7 +990,7 @@ Section Reflective_Subuniverse.
     (** ** Equivalences *)
 
     (** Naively it might seem that we need closure under Sigmas (hence a modality) to deduce closure under [Equiv], but in fact the above closure under fibers is sufficient.  This appears as part of the proof of Proposition 2.18 of CORS.  For later use, we try to reduce the number of universe parameters (but we don't completely control them all). *)
-    #[export] Instance inO_equiv' `{Funext} (A : Type@{i}) (B : Type@{j})
+    #[export] Instance inO_equiv `{Funext} (A : Type@{i}) (B : Type@{j})
            `{In O A} `{In O B}
       : In O (A <~> B).
     Proof.
