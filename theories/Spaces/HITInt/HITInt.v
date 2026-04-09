@@ -53,8 +53,8 @@ End IntHIT.
 Instance isbiinv_IntHIT_succ : IsBiInv succ
   := Build_IsBiInv _ _ _ succ_sect pred succ_is_retr succ_is_sect.
 
-Definition biinv_IntHIT_succ : EquivBiInv IntHIT IntHIT
-  := Build_EquivBiInv _ _ _ _.
+Definition biinv_IntHIT_succ : BiInv IntHIT IntHIT
+  := Build_BiInv _ _ _ _.
 
 (** The predecessor is an equivalence on [IntHIT]. *)
 Instance isequiv_IntHIT_pred : IsEquiv pred
@@ -159,7 +159,7 @@ Defined.
 
 Section Uniqueness.
 
-  Context {P : Type} {e: EquivBiInv P P}.
+  Context {P : Type} {e: BiInv P P}.
 
   Local Definition s := sect_biinv e.
   Local Definition r := retr_biinv e.
@@ -250,7 +250,7 @@ Definition uniquenessZ_two_fun_equiv
   (pf1 : forall (z : IntHIT), (f o k1) z = (k1 o succ) z)
   (pf2 : forall (z : IntHIT), (f o k2) z = (k2 o succ) z)
   : forall (z : IntHIT), k1 z = k2 z
-  := uniquenessZ_two_fun_biinv (e := Build_EquivBiInv P P _ (isbiinv_isequiv f e')) k1 k2 p0 pf1 pf2.
+  := uniquenessZ_two_fun_biinv (e := Build_BiInv P P _ (isbiinv_isequiv f e')) k1 k2 p0 pf1 pf2.
 
 (** Next we prove that [IntHIT] is equivalent to [SInt]. *)
 

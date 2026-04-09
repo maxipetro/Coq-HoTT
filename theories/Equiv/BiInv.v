@@ -14,9 +14,9 @@ Class IsBiInv {A B : Type} (e : A -> B) := {
   eissect_biinv : retr_biinv o e == idmap ;
 }.
 
-Record EquivBiInv A B := {
-  equiv_fun_biinv :> A -> B ;
-  equiv_isbiinv :> IsBiInv equiv_fun_biinv
+Record BiInv A B := {
+  biinv_fun :> A -> B ;
+  biinv_isbiinv :> IsBiInv biinv_fun
 }.
 
 Arguments sect_biinv {A B}%_type_scope e%_function_scope {_} _.
@@ -56,10 +56,10 @@ Proof.
   make_equiv.
 Defined.
 
-Existing Instance equiv_isbiinv.
+Existing Instance biinv_isbiinv.
 
-Definition issig_equivbiinv (A B : Type)
-  : {f : A -> B & IsBiInv f} <~> EquivBiInv A B.
+Definition issig_BiInv (A B : Type)
+  : {f : A -> B & IsBiInv f} <~> BiInv A B.
 Proof.
   issig.
 Defined.
@@ -122,22 +122,22 @@ Defined.
 
 (** Some lemmas to send equivalences and biinvertible maps back and forth. *)
 
-Definition equiv_biinv A B (f : EquivBiInv A B) : A <~> B
+Definition equiv_biinv A B (f : BiInv A B) : A <~> B
   := Build_Equiv A B f _.
 
-Definition biinv_equiv A B (e : A <~> B) : EquivBiInv A B
-  := Build_EquivBiInv A B e (isbiinv_isequiv e (equiv_isequiv e)).
+Definition biinv_equiv A B (e : A <~> B) : BiInv A B
+  := Build_BiInv A B e (isbiinv_isequiv e (equiv_isequiv e)).
 
 Definition equiv_biinv_equiv `{Funext} A B
-  : EquivBiInv A B <~> (A <~> B) .
+  : BiInv A B <~> (A <~> B) .
 Proof.
-  refine ((issig_equiv A B) oE _ oE (issig_equivbiinv A B)^-1).
+  refine ((issig_equiv A B) oE _ oE (issig_BiInv A B)^-1).
   rapply (equiv_functor_sigma_id equiv_isbiinv_isequiv).
 Defined.
 
-Definition equiv_idmap_biinv (A : Type) : EquivBiInv A A.
+Definition idmap_biinv (A : Type) : BiInv A A.
 Proof.
-  by nrefine (Build_EquivBiInv A A idmap (Build_IsBiInv A A idmap idmap idmap _ _ )).
+  by nrefine (Build_BiInv A A idmap (Build_IsBiInv A A idmap idmap idmap _ _ )).
 Defined.
 
 (** Assume we have a commutative square [e' o f == g o e] in which [e] and [e'] are bi-invertible. Then [f] and [g] also commute with the retractions and sections, and the homotopies in these new squares each satisfy a coherence condition. *)
@@ -145,7 +145,7 @@ Defined.
 Section EquivalenceCompatibility.
 
   Context {A B C D : Type}.
-  Context (e : EquivBiInv A B) (e' : EquivBiInv C D) (f : A -> C) (g : B -> D).
+  Context (e : BiInv A B) (e' : BiInv C D) (f : A -> C) (g : B -> D).
 
   Let s := sect_biinv e.
   Let r := retr_biinv e.
