@@ -54,7 +54,7 @@ Instance isbiinv_IntHIT_succ : IsBiInv succ
   := Build_IsBiInv _ _ _ succ_sect pred succ_is_retr succ_is_sect.
 
 Definition biinv_IntHIT_succ : BiInv IntHIT IntHIT
-  := Build_BiInv _ _ _ _.
+  := Build_BiInv _ _ succ _.
 
 (** The predecessor is an equivalence on [IntHIT]. *)
 Instance isequiv_IntHIT_pred : IsEquiv pred
