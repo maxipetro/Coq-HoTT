@@ -1002,21 +1002,18 @@ Section Reflective_Subuniverse.
       pose (U := hfiber@{k k} c (idmap, idmap)).
       refine (inO_equiv_inO'@{k k k} U _). (** Introduces some extra copies of [k] by typeclass inference. *)
       unfold hfiber; cbn in *.
-      assert ({f: A -> B & {g : B -> A & g o f == idmap} * {h : B -> A & f o h == idmap}} <~> {f: A -> B & IsBiInv f}).
-      1: make_equiv.
-      refine (X oE _).
       srefine (equiv_adjointify _ _ _ _).
       - intros [[f [g h]] p].
         apply (equiv_inverse (equiv_path_prod _ _)) in p.
         destruct p as [p q]; cbn in *.
-        exists f; split; [ exists h | exists g ].
+        exists f; nrefine (Build_IsBiInv _ _ f g h _ _).
         all:apply ap10; assumption.
-      - intros [f [[g p] [h q]]].
-        exists (f,(h,g)); cbn.
+      - intros [f [g h p q]].
+        exists (f,(g,h)); cbn.
         apply path_prod; apply path_arrow; assumption.
-      - intros [f [[g p] [h q]]]; cbn.
-        apply (path_sigma' _ 1); apply path_prod; apply (path_sigma' _ 1);
-          cbn; rewrite transport_1.
+      - intros [f [g h p q]]; cbn.
+        apply (path_sigma' _ 1); cbn.
+        apply (ap011 (fun r s => Build_IsBiInv _ _ f g h s r)).
         1:rewrite ap_fst_path_prod.
         2:rewrite ap_snd_path_prod.
         all:apply path_forall; intros x; rewrite ap10_path_arrow; reflexivity.
