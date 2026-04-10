@@ -92,9 +92,9 @@ Proof.
   intros [x | | x] [y | | y].
   2-4,6-8: right; intros; discriminate.
   2: by left.
-  1,2: nrapply decidable_iff.
+  1,2: napply decidable_iff.
   1,3: split.
-  1,3: nrapply ap.
+  1,3: napply ap.
   1,2: intros H; by injection H.
   1,2: exact _.
 Defined.
