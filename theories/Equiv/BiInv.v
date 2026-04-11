@@ -14,15 +14,20 @@ Class IsBiInv {A B : Type} (e : A -> B) := {
   eissect_biinv : retr_biinv o e == idmap ;
 }.
 
-Record BiInv A B := {
-  biinv_fun :> A -> B ;
-  biinv_isbiinv :> IsBiInv biinv_fun
-}.
-
 Arguments sect_biinv {A B}%_type_scope e%_function_scope {_} _.
 Arguments retr_biinv {A B}%_type_scope e%_function_scope {_} _.
 Arguments eisretr_biinv {A B}%_type_scope e%_function_scope {_} _.
 Arguments eissect_biinv {A B}%_type_scope e%_function_scope {_} _.
+
+Record BiInv A B := {
+  biinv_fun : A -> B ;
+  biinv_isbiinv :: IsBiInv biinv_fun
+}.
+
+Coercion biinv_fun : BiInv >-> Funclass.
+
+Arguments biinv_fun {A B} _ _.
+Arguments biinv_isbiinv {A B} _.
 
 (** If [e] is bi-invertible, then the retraction and the section of [e] are equal. *)
 Definition sect_retr_homotopic_isbiinv {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
@@ -56,25 +61,19 @@ Proof.
   make_equiv.
 Defined.
 
-Existing Instance biinv_isbiinv.
-
-Definition issig_BiInv (A B : Type)
-  : {f : A -> B & IsBiInv f} <~> BiInv A B.
-Proof.
-  issig.
-Defined.
+Definition issig_BiInv (A B : Type) : {f : A -> B & IsBiInv f} <~> BiInv A B
+  := ltac:(issig).
 
 (** From a bi-invertible map, we can construct a half-adjoint equivalence in two ways. Here we take the inverse to be the retraction. *)
-Global Instance isequiv_isbiinv {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv f.
+#[export] Instance isequiv_isbiinv {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv f.
 Proof.
-  revert bi.
-  intros [h g r s].
+  destruct bi as [h g r s].
   exact (isequiv_adjointify f g
     (fun x => ap f (ap g (r x)^ @ s (h x)) @ r x)
     s).
 Defined.
 
-Global Instance isequiv_isbiinv_retr {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv (retr_biinv f)
+#[export] Instance isequiv_isbiinv_retr {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv (retr_biinv f)
   := isequiv_inverse f.
 
 (** Here we take the inverse to be the section. *)
@@ -88,7 +87,7 @@ Proof.
     apply eissect_biinv.
 Defined.
 
-Global Instance isequiv_isbiinv_sect {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv (sect_biinv f)
+#[export] Instance isequiv_isbiinv_sect {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv (sect_biinv f)
   := isequiv_inverse f (feq := (isequiv_isbiinv' f)).
 
 Definition isbiinv_isequiv `(f : A -> B)
@@ -107,7 +106,7 @@ Proof.
 Defined.
 
 (** This uses implicitly that the product of contractible types is contractible. *)
-Global Instance ishprop_isbiinv `{Funext} `(f : A -> B) : IsHProp (IsBiInv f) | 0.
+#[export] Instance ishprop_isbiinv `{Funext} `(f : A -> B) : IsHProp (IsBiInv f) | 0.
 Proof.
   apply hprop_inhabited_contr.
   intros bif.

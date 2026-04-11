@@ -324,7 +324,7 @@ Section IntHITEquiv.
   Defined.
 
   (** [IntITtoIntHIT] is biinvertible.  It follows from typeclass inference that it is an equivalence and that [SInt] and [IntHIT] are equivalent. *)
-  Global Instance isbiinv_IntITtoIntHIT
+  #[export] Instance isbiinv_IntITtoIntHIT
     : IsBiInv IntITtoIntHIT
     := Build_IsBiInv _ _ _ _ _ IntITtoIntHIT_is_linv IntITtoIntHIT_is_rinv.
 
