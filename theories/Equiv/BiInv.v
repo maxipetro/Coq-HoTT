@@ -54,7 +54,7 @@ Proof.
   apply eissect_biinv.
 Defined.
 
-(** The record is equivalent to a product type. This is used below in a 'product of contractible types is contractible' argument. *)
+(** The record is equivalent to a product type.  This is used below in a 'product of contractible types is contractible' argument. *)
 Definition prod_isbiinv (A B : Type) `{f: A -> B}
   : {g : B -> A & g o f == idmap} * {h : B -> A & f o h == idmap} <~> IsBiInv f.
 Proof.
@@ -64,7 +64,7 @@ Defined.
 Definition issig_BiInv (A B : Type) : {f : A -> B & IsBiInv f} <~> BiInv A B
   := ltac:(issig).
 
-(** From a bi-invertible map, we can construct a half-adjoint equivalence in two ways. Here we take the inverse to be the retraction. *)
+(** From a bi-invertible map, we can construct a half-adjoint equivalence in two ways.  Here we take the inverse to be the retraction. *)
 #[export] Instance isequiv_isbiinv {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv f.
 Proof.
   destruct bi as [h g r s].
@@ -139,7 +139,7 @@ Proof.
   by nrefine (Build_BiInv A A idmap (Build_IsBiInv A A idmap idmap idmap _ _ )).
 Defined.
 
-(** Assume we have a commutative square [e' o f == g o e] in which [e] and [e'] are bi-invertible. Then [f] and [g] also commute with the retractions and sections, and the homotopies in these new squares each satisfy a coherence condition. *)
+(** Assume we have a commutative square [e' o f == g o e] in which [e] and [e'] are bi-invertible.  Then [f] and [g] also commute with the retractions and sections, and the homotopies in these new squares each satisfy a coherence condition. *)
 
 Section EquivalenceCompatibility.
 
