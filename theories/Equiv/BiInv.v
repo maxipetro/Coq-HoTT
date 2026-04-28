@@ -109,7 +109,7 @@ Proof.
   - apply isbiinv_isequiv.
 Defined.
 
-#[export] Instance ishprop_isbiinv `{Funext} `(f : A -> B)
+#[export] Instance ishprop_isbiinv `{Funext} {A B : Type} (f : A -> B)
   : IsHProp (IsBiInv f) | 0.
 Proof.
   apply hprop_inhabited_contr.
@@ -118,7 +118,7 @@ Proof.
   srapply (contr_equiv' _ (prod_isbiinv A B)).
 Defined.
 
-Definition equiv_isbiinv_isequiv `{Funext} `(f : A -> B)
+Definition equiv_isbiinv_isequiv `{Funext} {A B : Type} (f : A -> B)
   : IsBiInv f <~> IsEquiv f.
 Proof.
   apply equiv_iff_hprop_uncurried, iff_isbiinv_isequiv.
