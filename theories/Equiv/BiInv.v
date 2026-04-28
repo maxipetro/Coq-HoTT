@@ -55,7 +55,7 @@ Proof.
 Defined.
 
 (** The record is equivalent to a product type.  This is used below in a 'product of contractible types is contractible' argument. *)
-Definition prod_isbiinv (A B : Type) `{f: A -> B}
+Definition prod_isbiinv (A B : Type) `{f : A -> B}
   : {g : B -> A & g o f == idmap} * {h : B -> A & f o h == idmap} <~> IsBiInv f.
 Proof.
   make_equiv.
@@ -65,7 +65,8 @@ Definition issig_BiInv (A B : Type) : {f : A -> B & IsBiInv f} <~> BiInv A B
   := ltac:(issig).
 
 (** From a bi-invertible map, we can construct a half-adjoint equivalence in two ways.  Here we take the inverse to be the retraction. *)
-#[export] Instance isequiv_isbiinv {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv f.
+#[export] Instance isequiv_isbiinv {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
+  : IsEquiv f.
 Proof.
   destruct bi as [h g r s].
   exact (isequiv_adjointify f g
@@ -73,11 +74,13 @@ Proof.
     s).
 Defined.
 
-#[export] Instance isequiv_isbiinv_retr {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv (retr_biinv f)
+#[export] Instance isequiv_isbiinv_retr {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
+  : IsEquiv (retr_biinv f)
   := isequiv_inverse f.
 
 (** Here we take the inverse to be the section. *)
-Definition isequiv_isbiinv' {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv f.
+Definition isequiv_isbiinv' {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
+  : IsEquiv f.
 Proof.
   snapply isequiv_adjointify.
   - apply (sect_biinv f).
@@ -87,8 +90,9 @@ Proof.
     apply eissect_biinv.
 Defined.
 
-#[export] Instance isequiv_isbiinv_sect {A B : Type} (f : A -> B) `{bi : !IsBiInv f} : IsEquiv (sect_biinv f)
-  := isequiv_inverse f (feq := (isequiv_isbiinv' f)).
+#[export] Instance isequiv_isbiinv_sect {A B : Type} (f : A -> B) `{bi : !IsBiInv f}
+  : IsEquiv (sect_biinv f)
+  := isequiv_inverse f (feq:=isequiv_isbiinv' f).
 
 Definition isbiinv_isequiv `(f : A -> B)
   : IsEquiv f -> IsBiInv f.
@@ -128,7 +132,7 @@ Definition biinv_equiv A B (e : A <~> B) : BiInv A B
   := Build_BiInv A B e (isbiinv_isequiv e (equiv_isequiv e)).
 
 Definition equiv_biinv_equiv `{Funext} A B
-  : BiInv A B <~> (A <~> B) .
+  : BiInv A B <~> (A <~> B).
 Proof.
   refine ((issig_equiv A B) oE _ oE (issig_BiInv A B)^-1).
   rapply (equiv_functor_sigma_id equiv_isbiinv_isequiv).
@@ -136,7 +140,7 @@ Defined.
 
 Definition idmap_biinv (A : Type) : BiInv A A.
 Proof.
-  by nrefine (Build_BiInv A A idmap (Build_IsBiInv A A idmap idmap idmap _ _ )).
+  by nrefine (Build_BiInv A A idmap (Build_IsBiInv A A idmap idmap idmap _ _)).
 Defined.
 
 (** Assume we have a commutative square [e' o f == g o e] in which [e] and [e'] are bi-invertible.  Then [f] and [g] also commute with the retractions and sections, and the homotopies in these new squares each satisfy a coherence condition. *)
@@ -149,7 +153,7 @@ Section EquivalenceCompatibility.
   Let s := sect_biinv e.
   Let r := retr_biinv e.
   Let re := eissect_biinv e : r o e == idmap.
-  Let es := eisretr_biinv e: e o s == idmap.
+  Let es := eisretr_biinv e : e o s == idmap.
   Let s' := sect_biinv e'.
   Let r' := retr_biinv e'.
   Let re' := eissect_biinv e' : r' o e' == idmap.
@@ -172,8 +176,8 @@ Section EquivalenceCompatibility.
   Definition biinv_compat_pr (pe : forall (x : A), e' (f x) = g (e x))
     : forall (y : B), r' (g y) = f (r y).
   Proof.
-    - apply (equiv_ind e).
-      apply (helper_r pe).
+    apply (equiv_ind e).
+    apply (helper_r pe).
   Defined.
 
   Definition biinv_compat_ps (pe : forall (x : A), e' (f x) = g (e x))
