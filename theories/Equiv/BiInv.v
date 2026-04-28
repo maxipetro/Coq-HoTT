@@ -109,7 +109,8 @@ Proof.
   - apply isbiinv_isequiv.
 Defined.
 
-#[export] Instance ishprop_isbiinv `{Funext} `(f : A -> B) : IsHProp (IsBiInv f) | 0.
+#[export] Instance ishprop_isbiinv `{Funext} `(f : A -> B)
+  : IsHProp (IsBiInv f) | 0.
 Proof.
   apply hprop_inhabited_contr.
   intros bif.
@@ -174,7 +175,7 @@ Section EquivalenceCompatibility.
   (** The following lemmas express the coherence conditions mentioned above. *)
 
   Definition biinv_compat_pr (pe : forall (x : A), e' (f x) = g (e x))
-   : r' o g == f o r.
+    : r' o g == f o r.
   Proof.
     rapply (equiv_ind e).
     apply (helper_r pe).
