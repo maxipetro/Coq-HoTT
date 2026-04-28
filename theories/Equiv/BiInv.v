@@ -61,7 +61,7 @@ Proof.
   make_equiv.
 Defined.
 
-Definition issig_BiInv (A B : Type) : {f : A -> B & IsBiInv f} <~> BiInv A B
+Definition issig_biinv (A B : Type) : {f : A -> B & IsBiInv f} <~> BiInv A B
   := ltac:(issig).
 
 (** From a bi-invertible map, we can construct a half-adjoint equivalence in two ways.  Here we take the inverse to be the retraction. *)
@@ -94,14 +94,14 @@ Defined.
   : IsEquiv (sect_biinv f)
   := isequiv_inverse f (feq:=isequiv_isbiinv' f).
 
-Definition isbiinv_isequiv `(f : A -> B)
+Definition isbiinv_isequiv {A B : Type} (f : A -> B)
   : IsEquiv f -> IsBiInv f.
 Proof.
   intros [g s r adj].
   exact (Build_IsBiInv _ _ f g g s r).
 Defined.
 
-Definition iff_isbiinv_isequiv `(f : A -> B)
+Definition iff_isbiinv_isequiv {A B : Type} (f : A -> B)
   : IsBiInv f <-> IsEquiv f.
 Proof.
   split.
@@ -109,11 +109,11 @@ Proof.
   - apply isbiinv_isequiv.
 Defined.
 
-(** This uses implicitly that the product of contractible types is contractible. *)
 #[export] Instance ishprop_isbiinv `{Funext} `(f : A -> B) : IsHProp (IsBiInv f) | 0.
 Proof.
   apply hprop_inhabited_contr.
   intros bif.
+  (* This uses implicitly that the product of contractible types is contractible: *)
   srapply (contr_equiv' _ (prod_isbiinv A B)).
 Defined.
 
@@ -134,8 +134,8 @@ Definition biinv_equiv A B (e : A <~> B) : BiInv A B
 Definition equiv_biinv_equiv `{Funext} A B
   : BiInv A B <~> (A <~> B).
 Proof.
-  refine ((issig_equiv A B) oE _ oE (issig_BiInv A B)^-1).
-  rapply (equiv_functor_sigma_id equiv_isbiinv_isequiv).
+  nrefine ((issig_equiv A B) oE _ oE (issig_biinv A B)^-1).
+  napply (equiv_functor_sigma_id equiv_isbiinv_isequiv).
 Defined.
 
 Definition idmap_biinv (A : Type) : BiInv A A.
@@ -171,27 +171,26 @@ Section EquivalenceCompatibility.
     exact (es' (g y) @ (ap g (es y))^ @ (pe (s y))^).
   Defined.
 
-  (** The following lemmas express each one of these coherence conditions mentioned above. *)
+  (** The following lemmas express the coherence conditions mentioned above. *)
 
   Definition biinv_compat_pr (pe : forall (x : A), e' (f x) = g (e x))
-    : forall (y : B), r' (g y) = f (r y).
+   : r' o g == f o r.
   Proof.
-    apply (equiv_ind e).
+    rapply (equiv_ind e).
     apply (helper_r pe).
   Defined.
 
   Definition biinv_compat_ps (pe : forall (x : A), e' (f x) = g (e x))
-    : forall (y : B), s' (g y) = f (s y).
+    : s' o g == f o s.
   Proof.
     intro y.
-    apply (equiv_inj e'); cbn.
+    apply (equiv_inj e').
     apply (helper_s pe).
   Defined.
 
-  Definition biinv_compat_pre (pe : forall (x : A), e' (f x) = g (e x))
-    : forall (x : A), re' (f x) = ap r' (pe x) @ (biinv_compat_pr pe) (e x) @ ap f (re x).
+  Definition biinv_compat_pre (pe : forall (x : A), e' (f x) = g (e x)) (x : A)
+    : re' (f x) = ap r' (pe x) @ (biinv_compat_pr pe) (e x) @ ap f (re x).
   Proof.
-    intro x.
     unfold biinv_compat_pr.
     rewrite equiv_ind_comp.
     apply moveL_pM.
@@ -199,10 +198,9 @@ Section EquivalenceCompatibility.
     reflexivity.
   Defined.
 
-  Definition biinv_compat_pes (pe : forall (x : A), e' (f x) = g (e x))
-    : forall (y : B), es' (g y) = ap e' ((biinv_compat_ps pe) y) @ pe (s y) @ ap g (es y).
+  Definition biinv_compat_pes (pe : forall (x : A), e' (f x) = g (e x)) (y : B)
+    : es' (g y) = ap e' ((biinv_compat_ps pe) y) @ pe (s y) @ ap g (es y).
   Proof.
-    intro y; cbn beta.
     rewrite equiv_inj_comp.
     apply moveL_pM.
     apply moveL_pM.
