@@ -6,10 +6,8 @@ Require Import FunctorCategory.Core.
 Require Import Functor.Paths.
 Require Import HoTT.Tactics.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Local Open Scope functor_scope.
 

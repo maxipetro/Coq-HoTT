@@ -1,10 +1,8 @@
 (** * Identity profunctor *)
 Require Import Category.Core Profunctor.Core HomFunctor.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Local Open Scope profunctor_scope.
 

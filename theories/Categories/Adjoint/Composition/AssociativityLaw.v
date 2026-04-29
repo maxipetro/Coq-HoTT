@@ -4,10 +4,8 @@ Require Import Adjoint.Composition.Core Adjoint.Core.
 Require Adjoint.Composition.LawsTactic.
 Require Import Types.Sigma Types.Prod.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Local Open Scope adjunction_scope.
 Local Open Scope morphism_scope.

@@ -6,10 +6,8 @@ Require Import NaturalTransformation.Core.
 Require Import FunctorCategory.Core FunctorCategory.Morphisms.
 Require Import ProductLaws.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Section MonoidalStructure.
   Context `{Funext}.

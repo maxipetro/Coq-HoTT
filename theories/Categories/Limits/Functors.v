@@ -6,10 +6,8 @@ Require Import FunctorCategory.Core.
 Require Import Adjoint.Core.
 Require Import NatCategory.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 (** (co)limits assemble into functors *)
 

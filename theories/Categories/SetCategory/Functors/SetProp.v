@@ -2,10 +2,8 @@
 Require Import Category.Core Functor.Core SetCategory.Core.
 Require Import Basics.Trunc.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Section set_coercions_definitions.
   Context `{Funext}.

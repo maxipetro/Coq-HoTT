@@ -4,10 +4,8 @@ Require Import InitialTerminalCategory.Core.
 Require Import Basics.Trunc ExponentialLaws.Tactics.
 Require Import Basics.Tactics.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Local Open Scope functor_scope.
 

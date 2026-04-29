@@ -2,10 +2,8 @@
 Require Import Category.Core Functor.Core.
 Require Import FunctorCategory.Core Functor.Composition.Core NaturalTransformation.Composition.Core NaturalTransformation.Composition.Laws.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Local Open Scope functor_scope.
 

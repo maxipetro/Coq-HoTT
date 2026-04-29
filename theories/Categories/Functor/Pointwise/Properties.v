@@ -3,10 +3,8 @@ Require Import Category.Core Functor.Core Functor.Pointwise.Core NaturalTransfor
 Require Import PathGroupoids Types.Forall HoTT.Tactics.
 Require Import Basics.Tactics.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Local Open Scope category_scope.
 Local Open Scope functor_scope.

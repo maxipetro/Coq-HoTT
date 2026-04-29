@@ -5,10 +5,8 @@ Require Import Functor.Identity Functor.Composition.Core.
 Require Import ExponentialLaws.Law4.Functors.
 Require Import ExponentialLaws.Tactics.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Local Open Scope functor_scope.
 

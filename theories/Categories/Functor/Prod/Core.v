@@ -2,10 +2,8 @@
 Require Import Category.Core Functor.Core Category.Prod Functor.Composition.Core.
 Require Import Types.Prod.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Local Notation fst_type := fst.
 Local Notation snd_type := snd.

@@ -3,10 +3,8 @@ Require Import HoTT.Basics HoTT.Types.
 Require Import Category.Core.
 Require Import NatCategory.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 Local Unset Primitive Projections. (* suppress a warning about [IsTerminalCategory] *)
 
 Notation initial_category := (nat_category 0) (only parsing).

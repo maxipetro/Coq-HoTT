@@ -3,10 +3,8 @@ Require Import Category.Core.
 Require Import HoTT.Truncations.Core.
 Require Import HoTT.Basics.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Local Open Scope path_scope.
 

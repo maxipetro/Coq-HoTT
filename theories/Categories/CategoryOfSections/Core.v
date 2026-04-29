@@ -6,12 +6,8 @@ Require Import NaturalTransformation.Paths NaturalTransformation.Composition.Cor
 Require Import Functor.Paths.
 Require Import HoTT.Basics HoTT.Types.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
-
-
 Local Open Scope functor_scope.
 
 Section FunctorSectionCategory.

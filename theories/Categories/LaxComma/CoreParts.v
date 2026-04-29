@@ -9,12 +9,8 @@ Require Import Basics.Tactics.
 
 Import Functor.Identity.FunctorIdentityNotations.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
-
-
 Local Open Scope morphism_scope.
 Local Open Scope category_scope.
 Local Open Scope type_scope.

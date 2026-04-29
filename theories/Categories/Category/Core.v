@@ -1,10 +1,8 @@
 (** * Definition of a [PreCategory] *)
 Require Export Overture Basics.Notations.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Declare Scope morphism_scope.
 Declare Scope category_scope.

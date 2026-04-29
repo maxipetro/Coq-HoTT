@@ -1,10 +1,8 @@
 (** * Coproduct of natural transformations *)
 Require Import Category.Sum Functor.Sum NaturalTransformation.Core.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Section sum.
   Definition sum

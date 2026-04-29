@@ -8,10 +8,8 @@ Require Import Functor.Identity.
 Require Import FunctorCategory.Core.
 From HoTT Require Import Basics Types Tactics.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Local Open Scope morphism_scope.
 

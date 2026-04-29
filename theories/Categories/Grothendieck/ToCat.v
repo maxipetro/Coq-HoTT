@@ -4,10 +4,8 @@ Require Import Pseudofunctor.FromFunctor.
 Require Import Cat.Core.
 Require Import Grothendieck.PseudofunctorToCat.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Local Open Scope morphism_scope.
 

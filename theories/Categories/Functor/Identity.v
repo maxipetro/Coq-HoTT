@@ -1,10 +1,8 @@
 (** * Identity functor *)
 Require Import Category.Core Functor.Core.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 Section identity.
   (** There is an identity functor.  It does the obvious thing. *)

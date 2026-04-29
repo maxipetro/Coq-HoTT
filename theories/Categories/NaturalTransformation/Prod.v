@@ -2,10 +2,8 @@
 Require Import Category.Core Functor.Core Category.Prod Functor.Prod.Core NaturalTransformation.Core.
 Require Import Types.Prod.
 
-Set Universe Polymorphism.
 Set Implicit Arguments.
 Generalizable All Variables.
-Set Asymmetric Patterns.
 
 (** ** Product of natural transformations *)
 Section prod.
