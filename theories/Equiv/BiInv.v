@@ -139,7 +139,7 @@ Proof.
   napply (equiv_functor_sigma_id equiv_isbiinv_isequiv).
 Defined.
 
-Definition idmap_biinv (A : Type) : BiInv A A.
+Definition biinv_idmap (A : Type) : BiInv A A.
 Proof.
   by nrefine (Build_BiInv A A idmap (Build_IsBiInv A A idmap idmap idmap _ _)).
 Defined.
@@ -202,7 +202,7 @@ Section EquivalenceCompatibility.
   Definition biinv_compat_pes (pe : forall (x : A), e' (f x) = g (e x)) (y : B)
     : es' (g y) = ap e' ((biinv_compat_ps pe) y) @ pe (s y) @ ap g (es y).
   Proof.
-    rewrite equiv_inj_comp.
+    rewrite ap_equiv_inj.
     apply moveL_pM.
     apply moveL_pM.
     reflexivity.

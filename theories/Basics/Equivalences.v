@@ -310,7 +310,7 @@ Definition equiv_inj `(f : A -> B) `{IsEquiv A B f} {x y : A}
   : (f x = f y) -> (x = y)
   := (ap f)^-1.
 
-Definition equiv_inj_comp `(f : A -> B) `{IsEquiv A B f} {x y : A}
+Definition ap_equiv_inj `(f : A -> B) `{IsEquiv A B f} {x y : A}
   (p : f x = f y)
   : ap f (equiv_inj f p) = p.
 Proof.
