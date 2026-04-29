@@ -310,6 +310,14 @@ Definition equiv_inj `(f : A -> B) `{IsEquiv A B f} {x y : A}
   : (f x = f y) -> (x = y)
   := (ap f)^-1.
 
+Definition ap_equiv_inj `(f : A -> B) `{IsEquiv A B f} {x y : A}
+  (p : f x = f y)
+  : ap f (equiv_inj f p) = p.
+Proof.
+  unfold equiv_inj.
+  apply eisretr.
+Defined.
+
 (** Assuming function extensionality, composing with an equivalence is itself an equivalence *)
 
 Instance isequiv_precompose `{Funext} {A B C : Type}
