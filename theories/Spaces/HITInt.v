@@ -167,24 +167,25 @@ Section Uniqueness.
     (t0 : P)
     (k: IntHIT -> P)
     (p0 : (k zero_i) = t0)
-    (pf : forall (z : IntHIT), (e o k) z = (k o succ) z)
+    (pf : forall (z : IntHIT), (k o succ) z = (e o k) z)
     (rec := IntHIT_rec t0 e r s re es)
     : forall (z : IntHIT), k z = rec z.
     Proof.
+    pose proof (fun z => (pf z)^) as pf'.
     snapply IntHIT_ind.
     - simpl.
       exact p0.
     - simpl.
       intros z H.
       apply (ap e) in H.
-      exact ((pf z)^ @ H).
+      exact ((pf' z)^ @ H).
     - simpl.
       intros z H.
       apply (ap r) in H.
-      exact ((biinv_compat_pr biinv_IntHIT_succ e k k pf z)^ @ H).
+      exact ((biinv_compat_pr biinv_IntHIT_succ e k k pf' z)^ @ H).
     - intros z H.
       apply (ap s) in H.
-      exact ((biinv_compat_ps biinv_IntHIT_succ e k k pf z)^ @ H).
+      exact ((biinv_compat_ps biinv_IntHIT_succ e k k pf' z)^ @ H).
     - simpl.
       intros z t.
       rewrite transport_paths_FlFr.
@@ -195,7 +196,7 @@ Section Uniqueness.
       rewrite ap_V.
       rewrite (inv_pp _ _)^.
       rewrite concat_p_pp.
-      rewrite (biinv_compat_pre biinv_IntHIT_succ e k k pf z)^.
+      rewrite (biinv_compat_pre biinv_IntHIT_succ e k k pf' z)^.
       rewrite (concat_p_pp _ _ _)^.
       apply moveR_Vp.
       rewrite (ap_compose _ _ _)^.
@@ -211,7 +212,7 @@ Section Uniqueness.
       rewrite ap_V.
       rewrite (inv_pp _ _)^.
       rewrite concat_p_pp.
-      rewrite (biinv_compat_pes biinv_IntHIT_succ e k k pf z)^.
+      rewrite (biinv_compat_pes biinv_IntHIT_succ e k k pf' z)^.
       rewrite (concat_p_pp _ _ _)^.
       apply moveR_Vp.
       rewrite (ap_compose _ _ _)^.
@@ -224,8 +225,8 @@ Section Uniqueness.
     (k1: IntHIT -> P)
     (k2: IntHIT -> P)
     (p0 : k1 zero_i = k2 zero_i)
-    (pf1 : forall (z : IntHIT), (e o k1) z = (k1 o succ) z)
-    (pf2 : forall (z : IntHIT), (e o k2) z = (k2 o succ) z)
+    (pf1 : forall (z : IntHIT), (k1 o succ) z = (e o k1) z)
+    (pf2 : forall (z : IntHIT), (k2 o succ) z = (e o k2) z)
     : forall (z : IntHIT), k1 z = k2 z.
   Proof.
     intro z.
@@ -243,8 +244,8 @@ Definition uniquenessZ_two_fun_equiv
   (k1: IntHIT -> P)
   (k2: IntHIT -> P)
   (p0 : k1 zero_i = k2 zero_i)
-  (pf1 : forall (z : IntHIT), (f o k1) z = (k1 o succ) z)
-  (pf2 : forall (z : IntHIT), (f o k2) z = (k2 o succ) z)
+  (pf1 : forall (z : IntHIT), (k1 o succ) z = (f o k1) z)
+  (pf2 : forall (z : IntHIT), (k2 o succ) z = (f o k2) z)
   : forall (z : IntHIT), k1 z = k2 z
   := uniquenessZ_two_fun_biinv (e := Build_BiInv P P _ (isbiinv_isequiv f e')) k1 k2 p0 pf1 pf2.
 
@@ -315,7 +316,7 @@ Section IntHITEquiv.
   Definition IntITtoIntHIT_is_linv (z : IntHIT)
     : (IntITtoIntHIT o IntHITtoIntIT) z = z.
   Proof.
-    exact (((uniquenessZ (P := IntHIT) (e := biinv_IntHIT_succ) zero_i (IntITtoIntHIT o IntHITtoIntIT) idpath IntITtoIntHIT_comp_succ') z)
+    exact (((uniquenessZ (P := IntHIT) (e := biinv_IntHIT_succ) zero_i (IntITtoIntHIT o IntHITtoIntIT) idpath (fun z => (IntITtoIntHIT_comp_succ' z)^)) z)
     @ ((uniquenessZ (P := IntHIT) (e := biinv_IntHIT_succ) zero_i idmap idpath (fun x => idpath)) z)^).
   Defined.
 
@@ -446,7 +447,7 @@ Section IntegerArithmetic.
     - intro z.
       simpl.
       rewrite succ_is_sect.
-      by rewrite (fun z => (retr_is_sect_isbiinv succ z)^).
+      exact (retr_is_sect_isbiinv succ _)^.
   Defined.
 
   (** Integer addition with 1 on the left is the successor. *)
@@ -620,11 +621,11 @@ Section IntegerArithmetic.
     - intro z.
       rewrite IntHIT_mul_succ_l.
       rewrite <- IntHIT_add_assoc.
-      rewrite (IntHIT_add_comm (-z) _).
+      simpl.
+      rewrite (IntHIT_add_comm y _).
       rewrite IntHIT_add_pred_l.
       rewrite <- IntHIT_add_assoc.
-      rewrite IntHIT_neg_succ.
-      by rewrite (IntHIT_add_pred_r y _).
+      by rewrite (IntHIT_add_pred_r _ y).
   Defined.
 
   (** Integer multiplication is commutative. *)
@@ -636,7 +637,7 @@ Section IntegerArithmetic.
     - reflexivity.
     - intro z.
       rewrite IntHIT_add_comm.
-      symmetry; apply IntHIT_mul_succ_r.
+      apply IntHIT_mul_succ_r.
   Defined.
 
   (** Multiplying with a negation on the right is the same as negating the product. *)
@@ -687,7 +688,7 @@ Section IntegerArithmetic.
     srapply (uniquenessZ_two_fun_equiv succ).
     - reflexivity.
     - simpl.
-      exact IntITtoIntHIT_comp_succ'.
+      exact (fun z => (IntITtoIntHIT_comp_succ' z)^).
     - reflexivity.
   Defined.
 
