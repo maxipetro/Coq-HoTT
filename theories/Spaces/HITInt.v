@@ -1,12 +1,8 @@
+Require Import HoTT.Basics Types.Paths Spaces.Nat.Core Spaces.SInt Equiv.BiInv.
+
 (** * The integers, defined as a HIT *)
 
 (** Following "The integers as a higher inductive type" by Scoccola and Altenkirch, we define the integers as a higher inductive type.  Morally it is the free pointed type with a biinvertible self-map. *)
-
-Require Import HoTT.Basics.
-Require Import Types.Paths.
-Require Import Spaces.Nat.Core.
-Require Import Spaces.SInt.
-Require Import Equiv.BiInv.
 
 Set Universe Minimization ToSet.
 
@@ -112,7 +108,7 @@ Definition IntHIT_rec_qinv {P : Type} (t0 : P) (f : P -> P) (g : P -> P)
   : IntHIT -> P
   := IntHIT_rec t0 f g g s r.
 
-(** This verison of the recursion principle requires only a half-adjoint equivalence.  Since it is an Instance that biinvertible maps are equivalent to half-adjoint equivalences using type class search one could also use IntHIT_rec_biinv instead. *)
+(** This version of the recursion principle requires only a half-adjoint equivalence.  Since it is an Instance that biinvertible maps are equivalent to half-adjoint equivalences using type class search one could also use IntHIT_rec_biinv instead. *)
 Definition IntHIT_rec_equiv {P : Type} (t0 : P) (f : P -> P) `{IsEquiv P P f}
   : IntHIT -> P
   := @IntHIT_rec_biinv P t0 f (isbiinv_isequiv _ _).
