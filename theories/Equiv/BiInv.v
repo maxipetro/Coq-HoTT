@@ -160,28 +160,28 @@ Section EquivalenceCompatibility.
   Let re' := eissect_biinv e' : r' o e' == idmap.
   Let es' := eisretr_biinv e' : e' o s' == idmap.
 
-  Definition helper_r (pe : e' o f == g o e) : r' o g o e == f o r o e.
+  Definition helper_r (pe :g o e == e' o f) : r' o g o e == f o r o e.
   Proof.
     intro x.
-    exact ((ap r' (pe x))^ @ (re' (f x) @ (ap f (re x))^)).
+    exact (ap r' (pe x) @ (re' (f x) @ (ap f (re x))^)).
   Defined.
 
-  Definition helper_s (pe : e' o f == g o e) : e' o s' o g == e' o f o s.
+  Definition helper_s (pe : g o e == e' o f) : e' o s' o g == e' o f o s.
   Proof.
     intro y.
-    exact (es' (g y) @ (ap g (es y))^ @ (pe (s y))^).
+    exact (es' (g y) @ (ap g (es y))^ @ pe (s y)).
   Defined.
 
   (** The following lemmas express the coherence conditions mentioned above. *)
 
-  Definition biinv_compat_pr (pe : forall (x : A), e' (f x) = g (e x))
+  Definition biinv_compat_pr (pe : forall (x : A), g (e x) = e' (f x))
     : r' o g == f o r.
   Proof.
     rapply (equiv_ind e).
     apply (helper_r pe).
   Defined.
 
-  Definition biinv_compat_ps (pe : forall (x : A), e' (f x) = g (e x))
+  Definition biinv_compat_ps (pe : forall (x : A), g (e x) = e' (f x))
     : s' o g == f o s.
   Proof.
     intro y.
@@ -189,23 +189,25 @@ Section EquivalenceCompatibility.
     apply (helper_s pe).
   Defined.
 
-  Definition biinv_compat_pre (pe : forall (x : A), e' (f x) = g (e x)) (x : A)
-    : re' (f x) = ap r' (pe x) @ (biinv_compat_pr pe) (e x) @ ap f (re x).
+  Definition biinv_compat_pre (pe : forall (x : A), g (e x) = e' (f x)) (x : A)
+    : re' (f x) = (ap r' (pe x))^ @ (biinv_compat_pr pe) (e x) @ ap f (re x).
   Proof.
     unfold biinv_compat_pr.
     rewrite equiv_ind_comp.
     apply moveL_pM.
     apply moveL_Mp.
+    rewrite inv_V.
     reflexivity.
   Defined.
 
-  Definition biinv_compat_pes (pe : forall (x : A), e' (f x) = g (e x)) (y : B)
-    : es' (g y) = ap e' ((biinv_compat_ps pe) y) @ pe (s y) @ ap g (es y).
+  Definition biinv_compat_pes (pe : forall (x : A), g (e x) = e' (f x)) (y : B)
+    : es' (g y) = ap e' ((biinv_compat_ps pe) y) @ (pe (s y))^ @ ap g (es y).
   Proof.
     rewrite ap_equiv_inj.
     apply moveL_pM.
     apply moveL_pM.
+    rewrite inv_V.
     reflexivity.
-  Defined.
-
+  Defined. 
+  
 End EquivalenceCompatibility.
