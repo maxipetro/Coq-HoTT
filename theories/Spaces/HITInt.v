@@ -287,7 +287,7 @@ Section IntHITEquiv.
   Defined.
 
   Definition IntITtoIntHIT_comp_succ (z: SInt)
-    : succ (IntITtoIntHIT z) = IntITtoIntHIT (int_succ z).
+    : IntITtoIntHIT (int_succ z) = succ (IntITtoIntHIT z).
   Proof.
     simpl.
     induction z as [|[|n] IHz|[|n] IHz].
@@ -298,13 +298,13 @@ Section IntHITEquiv.
     - simpl.
       reflexivity.
     - simpl.
-      exact (retr_is_sect_isbiinv succ zero_i).
+      exact (retr_is_sect_isbiinv succ zero_i)^.
     - simpl.
-      exact (retr_is_sect_isbiinv succ _).
+      exact (retr_is_sect_isbiinv succ _)^.
   Defined.
 
   Definition IntITtoIntHIT_comp_succ' (z: IntHIT)
-    : succ (IntITtoIntHIT (IntHITtoIntIT z)) = IntITtoIntHIT (IntHITtoIntIT (succ z)).
+    : IntITtoIntHIT (IntHITtoIntIT (succ z)) = succ (IntITtoIntHIT (IntHITtoIntIT z)).
   Proof.
     simpl.
     exact ((IntITtoIntHIT_comp_succ o IntHITtoIntIT) z).
@@ -313,7 +313,7 @@ Section IntHITEquiv.
   Definition IntITtoIntHIT_is_linv (z : IntHIT)
     : (IntITtoIntHIT o IntHITtoIntIT) z = z.
   Proof.
-    exact (((uniquenessZ (P := IntHIT) (e := biinv_IntHIT_succ) zero_i (IntITtoIntHIT o IntHITtoIntIT) idpath (fun z => (IntITtoIntHIT_comp_succ' z)^)) z)
+    exact (((uniquenessZ (P := IntHIT) (e := biinv_IntHIT_succ) zero_i (IntITtoIntHIT o IntHITtoIntIT) idpath IntITtoIntHIT_comp_succ') z)
     @ ((uniquenessZ (P := IntHIT) (e := biinv_IntHIT_succ) zero_i idmap idpath (fun x => idpath)) z)^).
   Defined.
 
@@ -685,7 +685,7 @@ Section IntegerArithmetic.
     srapply (uniquenessZ_two_fun_equiv succ).
     - reflexivity.
     - simpl.
-      exact (fun z => (IntITtoIntHIT_comp_succ' z)^).
+      exact IntITtoIntHIT_comp_succ'.
     - reflexivity.
   Defined.
 
